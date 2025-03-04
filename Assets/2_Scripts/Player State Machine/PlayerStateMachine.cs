@@ -205,16 +205,10 @@ public class PlayerStateMachine : MonoBehaviour
 
     private void Update()
     {
-        if (!IsAiming && _robot && _robot.CanCommend() && InputHandler.RobotInteractInput)
-        {
-            _robot.FollowPlayer();
-        }
         CheckCollisions();
         UpdateFallTime();
-        UpdateAimRay();
-        HandleAimingToggle();
-        CurrentState.UpdateState();
         UpdateDebugText();
+        CurrentState.UpdateState();
     }
 
     private void FixedUpdate()
@@ -226,6 +220,8 @@ public class PlayerStateMachine : MonoBehaviour
     private void OnTestLoaded(SOTest test)
     {
         _robot = TestManager.Instance.GetRobot();
+        SwitchState(GroundedState);
+        transform.rotation = Quaternion.Euler(0, 0, 0);
         transform.position = test.GetPlayerSpawnPoint();
     }
     
@@ -274,7 +270,7 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
     
-    private void OnAimEnter(IInteractable interactable)
+    private void OnAimInteractableEnter(IInteractable interactable)
     {
         if (_robot && CurrentAimedInteractable is { RobotCanInteract: true })
         {
@@ -282,9 +278,9 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
 
-    private void OnAimStay(IInteractable interactable)
+    private void OnAimInteractableStay(IInteractable interactable)
     {
-        interactable.OnAimStay(this);
+        interactable.OnAimInteractableStay(this);
         
         if (_robot && CurrentAimedInteractable is { RobotCanInteract: true } && InputHandler.RobotInteractInput)
         {
@@ -317,134 +313,11 @@ public class PlayerStateMachine : MonoBehaviour
 
 
     #endregion State Control ---------------------------------------------------------------
-
-    
-    #region Aiming ---------------------------------------------------------------
-    
-
-    
-    private void UpdateAimRay()
-    {
-        if (!IsAiming)
-        {
-            // Hide line renderer when not aiming
-            if (_lineRenderer.enabled)
-            {
-                _lineRenderer.enabled = false;
-                if (CurrentAimedInteractable != null)
-                {
-                    OnAimExit(CurrentAimedInteractable);
-                    CurrentAimedInteractable = null;
-                }
-            }
-            return;
-        }
-
-        // Show line renderer when aiming
-        if (!_lineRenderer.enabled)
-        {
-            _lineRenderer.enabled = true;
-        }
-
-        // Set ray origin (player position, slightly adjusted to match camera view)
-        Vector3 rayOrigin = transform.position;
-        if (aimRayStartPosition)
-        {
-            rayOrigin = aimRayStartPosition.position;
-        }
-        
-        // Get ray direction from camera
-        Vector3 rayDirection = _cameraManager.GetCameraAimDirection();
-        
-        // Set first point of line renderer
-        _lineRenderer.SetPosition(0, rayOrigin);
-        
-        // Create the actual ray for Physics ray-casting
-        Ray aimRay = new Ray(rayOrigin, rayDirection);
-        
-        // Perform raycast to see if we hit anything
-        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, aimRayHitMask))
-        {
-            // Set second point of line renderer to hit position
-            _lineRenderer.SetPosition(1, hitInfo.point);
-            
-            // Check if the hit object implements IInteractable
-            if (hitInfo.collider.TryGetComponent(out IInteractable hitInteractable))
-            {
-                if (CurrentAimedInteractable != hitInteractable)
-                {
-                    // Exit previous target if there was one
-                    if (CurrentAimedInteractable != null)
-                    {
-                        OnAimExit(CurrentAimedInteractable);
-                    }
-                    
-                    // Set new target and enter it
-                    CurrentAimedInteractable = hitInteractable;
-                    OnAimEnter(CurrentAimedInteractable);
-                }
-                
-                // Update aim on current target
-                OnAimStay(CurrentAimedInteractable);
-            }
-            else if (CurrentAimedInteractable != null)
-            {
-                // We're no longer aiming at an interactable
-                OnAimExit(CurrentAimedInteractable);
-                CurrentAimedInteractable = null;
-            }
-        }
-        else
-        {
-            // No hit, set line end point to max distance
-            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
-            
-            // Clear current target if we had one
-            if (CurrentAimedInteractable != null)
-            {
-                OnAimExit(CurrentAimedInteractable);
-                CurrentAimedInteractable = null;
-            }
-        }
-    }
-    
-    private void HandleAimingToggle()
-    {
-        // Toggle aim mode based on input
-        if (InputHandler.AimInput)
-        {
-            if (!IsAiming)
-            {
-                IsAiming = true;
-            
-                // When first entering aiming mode, immediately align character with camera
-                Vector3 initialAimDirection = GetCameraAimDirection();
-                // Flatten the direction to prevent tilting
-                Vector3 flattenedAimDirection = new Vector3(initialAimDirection.x, 0, initialAimDirection.z).normalized;
-                Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
-                transform.rotation = targetRotation;
-                _lastRotationDirection = flattenedAimDirection;
-        
-                // Switch to aim camera
-                _cameraManager.SwitchToAimCamera();
-            }
-        }
-        else if (IsAiming)
-        {
-            IsAiming = false;
-        
-            // Switch to free look camera
-            _cameraManager.SwitchToFreeLookCamera();
-        }
-    }
-    
-    
-    #endregion Aiming ---------------------------------------------------------------
     
     
     #region State modules ---------------------------------------------------------------
     
-    public void ApplyMovement(MovementParams parameters)
+    public void HandleMovement(MovementParams parameters)
     {
         // Calculate movement intensity (0-1)
         float movementIntensity = Mathf.Clamp01(
@@ -541,7 +414,7 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
     
-    public void ApplyRotation(RotationParams parameters)
+    public void HandleRotation(RotationParams parameters)
     {
         // Skip rotation if not allowed
         if (!parameters.AllowRotation)
@@ -596,24 +469,6 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
     
-    private void MoveCharacter()
-    {
-        // Create movement vector using the active properties
-        Vector3 movement = Vector3.zero;
-    
-        // Only apply horizontal movement if we have both direction and speed
-        if (ActiveMoveDirection.sqrMagnitude > 0.001f && ActiveHorizontalVelocity > 0.01f)
-        {
-            movement = ActiveMoveDirection * ActiveHorizontalVelocity;
-        }
-    
-        // Always apply vertical movement
-        movement.y = ActiveVerticalVelocity;
-    
-        // Apply movement
-        _controller.Move(movement * Time.fixedDeltaTime);
-    }
-    
     
     public void ApplyGravity(bool isGrounded)
     {
@@ -632,6 +487,45 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
     
+    public void HandleAiming()
+    {
+        // Toggle aim mode based on input
+        if (InputHandler.AimInput)
+        {
+            if (!IsAiming)
+            {
+                IsAiming = true;
+            
+                // When first entering aiming mode, immediately align character with camera
+                Vector3 initialAimDirection = GetCameraAimDirection();
+                // Flatten the direction to prevent tilting
+                Vector3 flattenedAimDirection = new Vector3(initialAimDirection.x, 0, initialAimDirection.z).normalized;
+                Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
+                transform.rotation = targetRotation;
+                _lastRotationDirection = flattenedAimDirection;
+        
+                // Switch to aim camera
+                _cameraManager.SwitchToAimCamera();
+            }
+        }
+        else if (IsAiming)
+        {
+            IsAiming = false;
+        
+            // Switch to free look camera
+            _cameraManager.SwitchToFreeLookCamera();
+        }
+        
+        UpdateAimRay();
+    }
+
+    public void DisableAiming()
+    {
+        if (!IsAiming) return;
+        IsAiming = false;
+        UpdateAimRay();
+    }
+
     
     public void SetCharacterHeight(bool crouching)
     {
@@ -644,6 +538,16 @@ public class PlayerStateMachine : MonoBehaviour
         {
             _controller.height = _defaultCharacterHeight;
             _controller.center = _defaultCharacterCenter;
+        }
+    }
+
+    public void CommandRobot()
+    {
+        if (!_robot || !_robot.CanCommend()) return;
+            
+        if (!IsAiming && InputHandler.RobotInteractInput)
+        {
+            _robot.FollowPlayer();
         }
     }
     
@@ -708,6 +612,23 @@ public class PlayerStateMachine : MonoBehaviour
     
     #region Utility ---------------------------------------------------------------
 
+    private void MoveCharacter()
+    {
+        // Create movement vector using the active properties
+        Vector3 movement = Vector3.zero;
+    
+        // Only apply horizontal movement if we have both direction and speed
+        if (ActiveMoveDirection.sqrMagnitude > 0.001f && ActiveHorizontalVelocity > 0.01f)
+        {
+            movement = ActiveMoveDirection * ActiveHorizontalVelocity;
+        }
+    
+        // Always apply vertical movement
+        movement.y = ActiveVerticalVelocity;
+    
+        // Apply movement
+        _controller.Move(movement * Time.fixedDeltaTime);
+    }
     private void UpdateFallTime()
     {
         // Only increment fall time when moving downward
@@ -716,6 +637,99 @@ public class PlayerStateMachine : MonoBehaviour
             FallTime += Time.deltaTime;
         }
     }
+    
+    private void UpdateAimRay()
+    {
+        if (!IsAiming)
+        {
+            // Hide line renderer when not aiming
+            if (_lineRenderer.enabled)
+            {
+                _lineRenderer.enabled = false;
+                if (CurrentAimedInteractable != null)
+                {
+                    OnAimExit(CurrentAimedInteractable);
+                    CurrentAimedInteractable = null;
+                }
+            }
+            return;
+        }
+
+        // Show line renderer when aiming
+        if (!_lineRenderer.enabled)
+        {
+            _lineRenderer.enabled = true;
+        }
+
+        // Set ray origin (player position, slightly adjusted to match camera view)
+        Vector3 rayOrigin = transform.position;
+        if (aimRayStartPosition)
+        {
+            rayOrigin = aimRayStartPosition.position;
+        }
+        
+        // Get ray direction from camera
+        Vector3 rayDirection = _cameraManager.GetCameraAimDirection();
+        
+        // Set first point of line renderer
+        _lineRenderer.SetPosition(0, rayOrigin);
+        
+        // Create the actual ray for Physics ray-casting
+        Ray aimRay = new Ray(rayOrigin, rayDirection);
+        
+        // Perform raycast to see if we hit anything
+        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, aimRayHitMask))
+        {
+            // Set second point of line renderer to hit position
+            _lineRenderer.SetPosition(1, hitInfo.point);
+            
+            // Check if the hit object implements IInteractable
+            if (hitInfo.collider.TryGetComponent(out IInteractable hitInteractable))
+            {
+                if (CurrentAimedInteractable != hitInteractable)
+                {
+                    // Exit previous target if there was one
+                    if (CurrentAimedInteractable != null)
+                    {
+                        OnAimExit(CurrentAimedInteractable);
+                    }
+                    
+                    // Set new target and enter it
+                    CurrentAimedInteractable = hitInteractable;
+                    OnAimInteractableEnter(CurrentAimedInteractable);
+                }
+                
+                // Update aim on current target
+                OnAimInteractableStay(CurrentAimedInteractable);
+            }
+            else if (CurrentAimedInteractable != null)
+            {
+                // We're no longer aiming at an interactable
+                OnAimExit(CurrentAimedInteractable);
+                CurrentAimedInteractable = null;
+            }
+        }
+        else
+        {
+            // No hit, set line end point to max distance
+            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
+            
+            // Clear current target if we had one
+            if (CurrentAimedInteractable != null)
+            {
+                OnAimExit(CurrentAimedInteractable);
+                CurrentAimedInteractable = null;
+            }
+        }
+    }
+
+    
+
+
+    #endregion Utility ---------------------------------------------------------------
+    
+    
+    #region Debug ---------------------------------------------------------------
 
     
     private void UpdateDebugText()
@@ -760,6 +774,7 @@ public class PlayerStateMachine : MonoBehaviour
         Vector3 ceilingSpherePosition = transform.position + ceilingCheckOffset;
         Gizmos.DrawWireSphere(ceilingSpherePosition, environmentCheckRadius);
     }
+    
+    #endregion Debug ---------------------------------------------------------------
 
-    #endregion Utility ---------------------------------------------------------------
 }

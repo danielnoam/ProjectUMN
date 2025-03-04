@@ -7,6 +7,7 @@ public class PlayerInMenuState : PlayerBaseState
     public override void EnterState()
     {
         StateMachine.InputHandler.ConsumeToggleMenuBuffer();
+        StateMachine.DisableAiming();
         StateMachine.menu.SetActive(true);
     }
     
@@ -27,7 +28,7 @@ public class PlayerInMenuState : PlayerBaseState
         
         // Apply movement with menu-specific parameters
         // Setting speed multiplier to 0 to gradually stop the player
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
             speedMultiplier: 0f, // Target speed of 0
             accelMultiplier: 2f, // Faster deceleration in menu
@@ -35,7 +36,7 @@ public class PlayerInMenuState : PlayerBaseState
         ));
         
         // No rotation needed in menu
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: false,
             rotationMultiplier: 0f,
             allowRotation: false // Prevent rotation in menu

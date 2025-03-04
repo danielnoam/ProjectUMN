@@ -15,6 +15,7 @@ public class PlayerInteractingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming();
         CheckStateTransitions();
     }
 
@@ -24,7 +25,7 @@ public class PlayerInteractingState : PlayerBaseState
         
         // Apply movement with interacting-specific parameters
         // Setting speed multiplier to 0 to gradually stop the player
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
             speedMultiplier: 0f, // Target speed of 0
             accelMultiplier: 2f, // Faster deceleration during interaction
@@ -32,7 +33,7 @@ public class PlayerInteractingState : PlayerBaseState
         ));
         
         // No rotation while interacting
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: false,
             rotationMultiplier: 0f,
             allowRotation: false // Prevent rotation while interacting

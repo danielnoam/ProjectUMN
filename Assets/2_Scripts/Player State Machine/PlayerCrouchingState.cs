@@ -18,6 +18,8 @@ public class PlayerCrouchingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming();
+        StateMachine.CommandRobot();
         CheckStateTransitions();
     }
 
@@ -27,7 +29,7 @@ public class PlayerCrouchingState : PlayerBaseState
         
         // Use the centralized movement system with crouch-specific parameters
         // Typically crouching has reduced movement speed
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
             speedMultiplier: 1f, // Reduced speed while crouching  0.6f,
             accelMultiplier: 1f, // Potentially slower acceleration 0.8f,
@@ -35,7 +37,7 @@ public class PlayerCrouchingState : PlayerBaseState
         ));
         
         // Use the centralized rotation system with crouch-specific parameters
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
             rotationMultiplier: 0.8f, // Slightly slower rotation while crouched 
             allowRotation: true

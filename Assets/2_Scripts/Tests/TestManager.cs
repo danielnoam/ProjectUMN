@@ -9,7 +9,10 @@ public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
     
+
     public SOTest[] tests;
+    
+    [Header("Current test")]
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject robotPrefab;
     [SerializeField, ReadOnly] private SOTest currentTest;
@@ -17,14 +20,15 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
-    
 
+    [Header("Events")]
+    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
+    
+    
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
-
-    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
-    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
     
     private void Awake()
     {

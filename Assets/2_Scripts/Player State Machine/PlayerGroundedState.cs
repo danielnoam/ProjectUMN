@@ -16,6 +16,8 @@ public class PlayerGroundedState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming();
+        StateMachine.CommandRobot();
         CheckStateTransitions();
     }
 
@@ -24,7 +26,7 @@ public class PlayerGroundedState : PlayerBaseState
         StateMachine.ApplyGravity(true);
         
         // Use the new centralized movement system
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
             speedMultiplier: 1.0f,
             accelMultiplier: 1.0f,
@@ -32,7 +34,7 @@ public class PlayerGroundedState : PlayerBaseState
         ));
         
         // Use the new centralized rotation system
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
             rotationMultiplier: 1.0f,
             allowRotation: true

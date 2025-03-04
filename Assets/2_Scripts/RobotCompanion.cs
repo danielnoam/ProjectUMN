@@ -140,7 +140,7 @@ public class RobotCompanion : MonoBehaviour
     private float _fullEyeLightIntensity;
     
     private IInteractable _currentInteractable;
-    private float _interactDistance = 0.5f; 
+    private float _interactDistance = 0f; 
 
    private void Awake()
    {
@@ -155,16 +155,14 @@ public class RobotCompanion : MonoBehaviour
        currentBattery = fullBattery;
    }
 
-   private void Start()
+   private void OnEnable()
    {
+       _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
+       _playerFollowPosition = _player.transform.GetChild(2);
+       
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-       }
-       else
-       {
-           _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
-           _playerFollowPosition = _player.transform.GetChild(2);
        }
    }
 
@@ -204,7 +202,6 @@ public class RobotCompanion : MonoBehaviour
                case RobotState.FollowingPlayer:
                    AdjustHeight();
                    Move(_playerFollowPosition);
-                   // Follow();
                    break;
                case RobotState.Idle:
                    AdjustHeight();
@@ -223,7 +220,8 @@ public class RobotCompanion : MonoBehaviour
    {
        _player = TestManager.Instance.GetPlayer();
        _playerFollowPosition = _player.transform.GetChild(2);
-       transform.position = test.GetRobotSpawnPoint();
+       
+       if (!test.HasRobot()) transform.position = test.GetRobotSpawnPoint();
    }
 
 
@@ -602,65 +600,6 @@ private void OnDrawGizmos()
 
 
    #region Horizontal movement -------------------------------------------------------------------------------
-   
-    private void Follow()
-   {
-       if (!_playerFollowPosition) return;
-
-       // Calculate the direction to the target in the horizontal plane only
-       Vector3 targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
-       Vector3 directionToTarget = (targetPosition - transform.position);
-       
-       // Calculate distance to target
-       float distanceToTarget = directionToTarget.magnitude;
-       
-       // Get current horizontal velocity
-       Vector3 currentHorizontalVelocity = new Vector3(
-           rigidBody.linearVelocity.x,
-           0f,
-           rigidBody.linearVelocity.z
-       );
-       
-       // Calculate desired velocity
-       Vector3 desiredVelocity = Vector3.zero;
-       
-       if (distanceToTarget > minFollowDistance)
-       {
-           // Normalize the distance between min and max follow distance
-           float normalizedDistance = Mathf.Clamp01(
-               (distanceToTarget - minFollowDistance) / (maxFollowDistance - minFollowDistance)
-           );
-           
-           // Apply the curve to get the speed multiplier
-           float speedMultiplier = followCurve.Evaluate(normalizedDistance);
-           
-           // Calculate base desired velocity
-           Vector3 moveDirection = directionToTarget.normalized;
-           desiredVelocity = moveDirection * (horizontalMoveSpeed * speedMultiplier);
-       }
-       
-       // Calculate damping force
-       Vector3 dampingForce = -currentHorizontalVelocity * followSmoothness;
-       
-       // Calculate acceleration needed to reach desired velocity
-       Vector3 acceleration = (desiredVelocity - currentHorizontalVelocity) * (1f - followSmoothness);
-       
-       // Combine forces
-       Vector3 totalForce = acceleration + dampingForce;
-       
-       // Apply forces over time
-       Vector3 velocityChange = totalForce * Time.fixedDeltaTime;
-       
-       // Create new velocity vector, preserving Y component (handled by hover)
-       Vector3 newVelocity = new Vector3(
-           currentHorizontalVelocity.x + velocityChange.x,
-           rigidBody.linearVelocity.y,
-           currentHorizontalVelocity.z + velocityChange.z
-       );
-       
-       // Apply final velocity
-       rigidBody.linearVelocity = newVelocity;
-   }
    
    
    private void ApplyFriction()

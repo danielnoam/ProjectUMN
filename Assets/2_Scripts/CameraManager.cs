@@ -10,8 +10,8 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private int freeLookCameraPriority = 10;
     [SerializeField] private int aimCameraPriority = 15;
     [SerializeField] private int menuCameraPriority = 20;
-    [Tooltip("Minimum mouse movement required to rotate character when aiming")]
     [SerializeField] private float aimRotationThreshold = 0.1f;
+    [SerializeField] private float aimMaxPitch = 80f;
     
     
     [Header("References")]
@@ -20,13 +20,14 @@ public class CameraManager : MonoBehaviour
     public CinemachineCamera menuCamera;
     public GameObject aimCore;
     
+    public float AimRotationThreshold => aimRotationThreshold;
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
     private Vector3 _lastAimDirection = Vector3.forward;
     private float _pitchAccumulation = 0f;
     private float _yawAccumulation = 0f;
     private bool IsMenuActive => _player != null && _player.CurrentState == _player.InMenuState;
-    public float AimRotationThreshold => aimRotationThreshold;
+    
 
     private void Awake()
     {
@@ -55,11 +56,17 @@ public class CameraManager : MonoBehaviour
         menuCamera.Priority = freeLookCameraPriority;
     }
     
+    
     private void Update()
     {
         UpdateAimCore();
         CheckMenuToggle();
     }
+    
+    
+    
+
+    #region Public methods ----------------------------------------------------------------------------
 
     public void Initialize(PlayerStateMachine player)
     {
@@ -68,96 +75,7 @@ public class CameraManager : MonoBehaviour
         freeLookCamera.Follow = _player.transform;
         menuCamera.Follow = _player.transform;
     }
-
-    private void UpdateAimCore()
-    {
-        // Update aim core position to follow the player
-        if (!aimCore || !_playerInputHandler) return;
-        
-        aimCore.transform.position = _playerInputHandler.transform.position;
-        
-        
-        // Update aim core rotation
-        if (IsMenuActive) return;
-
-        // Get the appropriate sensitivity based on current camera state
-        float cameraSensitivity = IsAimCameraActive() 
-            ? _playerInputHandler.AimCameraSensitivity 
-            : _playerInputHandler.FreeCameraSensitivity;
     
-        // Accumulate rotation values
-        _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity;
-        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * _playerInputHandler.MouseSensitivity * cameraSensitivity;
-    
-        // Clamp pitch to prevent camera flipping
-        _pitchAccumulation = Mathf.Clamp(_pitchAccumulation, -89f, 89f);
-    
-        // Apply the accumulated rotation
-        aimCore.transform.rotation = Quaternion.Euler(_pitchAccumulation, _yawAccumulation, 0f);
-    }
-    
-
-    private void CheckMenuToggle()
-    {
-        // If player is in menu state, ensure menu camera is active
-        if (IsMenuActive)
-        {
-            if (!IsMenuCameraActive())
-            {
-                SwitchToMenuCamera();
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-            }
-        }
-        // If player is not in menu state, ensure appropriate gameplay camera is active
-        else if (IsMenuCameraActive())
-        {
-            // Switch back to previous camera (either free look or aim)
-            if (IsAimCameraActive())
-            {
-                SwitchToAimCamera();
-            }
-            else
-            {
-                SwitchToFreeLookCamera();
-            }
-            
-            // Hide cursor
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-    }
-
-    public void SwitchToAimCamera()
-    {
-        // Set camera priorities to switch to aim camera
-        aimCamera.Priority = aimCameraPriority;
-        freeLookCamera.Priority = freeLookCameraPriority;
-        menuCamera.Priority = freeLookCameraPriority;
-        
-        // When switching to aim camera, align it with the freelook camera
-        if (aimCamera && freeLookCamera)
-        {
-            aimCamera.transform.rotation = freeLookCamera.transform.rotation;
-        }
-    }
-
-    public void SwitchToFreeLookCamera()
-    {
-        // Reset camera priorities
-        freeLookCamera.Priority = aimCameraPriority;
-        aimCamera.Priority = freeLookCameraPriority;
-        menuCamera.Priority = freeLookCameraPriority;
-    }
-
-    private void SwitchToMenuCamera()
-    {
-        // Set menu camera as highest priority
-        menuCamera.Priority = menuCameraPriority;
-        freeLookCamera.Priority = freeLookCameraPriority;
-        aimCamera.Priority = freeLookCameraPriority;
-    }
-
     public bool IsAimCameraActive()
     {
         return aimCamera.Priority > freeLookCamera.Priority && aimCamera.Priority > menuCamera.Priority;
@@ -201,5 +119,109 @@ public class CameraManager : MonoBehaviour
         _lastAimDirection = cameraForward;
         return cameraForward;
     }
+    
+
+    #endregion Public methods ----------------------------------------------------------------------------
+
+    
+
+    #region Private methods ----------------------------------------------------------------------------
+    
+    private void UpdateAimCore()
+    {
+        // Update aim core position to follow the player
+        if (!aimCore || !_playerInputHandler) return;
+        
+        aimCore.transform.position = _playerInputHandler.transform.position;
+        
+        
+        // Update aim core rotation
+        if (IsMenuActive) return;
+
+        // Get the appropriate sensitivity based on current camera state
+        float cameraSensitivity = IsAimCameraActive() 
+            ? _playerInputHandler.AimCameraSensitivity 
+            : _playerInputHandler.FreeCameraSensitivity;
+    
+        // Accumulate rotation values
+        _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity;
+        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * _playerInputHandler.MouseSensitivity * cameraSensitivity;
+    
+        // Clamp pitch to prevent camera flipping
+        _pitchAccumulation = Mathf.Clamp(_pitchAccumulation, -aimMaxPitch, aimMaxPitch);
+    
+        // Apply the accumulated rotation
+        aimCore.transform.rotation = Quaternion.Euler(_pitchAccumulation, _yawAccumulation, 0f);
+    }
+    
+
+    private void CheckMenuToggle()
+    {
+        // If player is in menu state, ensure menu camera is active
+        if (IsMenuActive)
+        {
+            if (!IsMenuCameraActive())
+            {
+                SwitchToMenuCamera();
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            }
+        }
+        // If player is not in menu state, ensure appropriate gameplay camera is active
+        else if (IsMenuCameraActive())
+        {
+            // Switch back to previous camera (either free look or aim)
+            if (IsAimCameraActive())
+            {
+                SwitchToAimCamera();
+            }
+            else
+            {
+                SwitchToFreeLookCamera();
+            }
+            
+            // Hide cursor
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+    }
+    
+    
+    
+    #endregion Private methods ----------------------------------------------------------------------------
+
+
+
+    public void SwitchToAimCamera()
+    {
+        // Set camera priorities to switch to aim camera
+        aimCamera.Priority = aimCameraPriority;
+        freeLookCamera.Priority = freeLookCameraPriority;
+        menuCamera.Priority = freeLookCameraPriority;
+        
+        // When switching to aim camera, align it with the free look camera
+        if (aimCamera && freeLookCamera)
+        {
+            aimCamera.transform.rotation = freeLookCamera.transform.rotation;
+        }
+    }
+
+    public void SwitchToFreeLookCamera()
+    {
+        // Reset camera priorities
+        freeLookCamera.Priority = aimCameraPriority;
+        aimCamera.Priority = freeLookCameraPriority;
+        menuCamera.Priority = freeLookCameraPriority;
+    }
+
+    private void SwitchToMenuCamera()
+    {
+        // Set menu camera as highest priority
+        menuCamera.Priority = menuCameraPriority;
+        freeLookCamera.Priority = freeLookCameraPriority;
+        aimCamera.Priority = freeLookCameraPriority;
+    }
+
+
     
 }

@@ -12,7 +12,7 @@ public interface IInteractable
     void OnInteractionEnd(GameObject interactor = null);
     void CancelInteraction();
     void OnAimEnter(PlayerStateMachine player);
-    void OnAimStay(PlayerStateMachine player);
+    void OnAimInteractableStay(PlayerStateMachine player);
     void OnAimExit(PlayerStateMachine player);
     void SetHighlight(bool highlighted);
     bool IsHighlighted();

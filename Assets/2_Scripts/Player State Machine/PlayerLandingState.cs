@@ -30,7 +30,8 @@ public class PlayerLandingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        // Update recovery progress
+        StateMachine.HandleAiming();
+        StateMachine.CommandRobot();
         _recoveryProgress = Mathf.Min(1f, _recoveryProgress + (Time.deltaTime / (StateMachine.recoveryDuration * _landingIntensity)));
         CheckStateTransitions();
     }
@@ -47,7 +48,7 @@ public class PlayerLandingState : PlayerBaseState
         );
         
         // Apply movement with landing-specific parameters
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
             speedMultiplier: 0.8f, // Reduced speed during recovery
             accelMultiplier: 0.7f, // Slower acceleration during recovery
@@ -55,7 +56,7 @@ public class PlayerLandingState : PlayerBaseState
         ));
         
         // Apply rotation with landing-specific parameters
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
             rotationMultiplier: movementControl, // Limited rotation control during recovery
             allowRotation: true

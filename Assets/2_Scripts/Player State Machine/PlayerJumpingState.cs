@@ -17,6 +17,8 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming();
+        StateMachine.CommandRobot();
         StateMachine.AirTime += Time.deltaTime;
         CheckStateTransitions();
     }
@@ -24,7 +26,7 @@ public class PlayerJumpingState : PlayerBaseState
     public override void FixedUpdateState()
     {
         // Apply movement with jump-specific parameters
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: true,
             speedMultiplier: 1.0f,
             accelMultiplier: 1.0f,
@@ -35,7 +37,7 @@ public class PlayerJumpingState : PlayerBaseState
         StateMachine.ApplyGravity(false);
         
         // Apply rotation with jump-specific parameters
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
             rotationMultiplier: 0.5f, // Similar to falling state
             allowRotation: true

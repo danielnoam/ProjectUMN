@@ -174,7 +174,7 @@ public abstract class BaseInteractable : MonoBehaviour, IInteractable
     /// <summary>
     /// Called while player is aiming at this interactable
     /// </summary>
-    public virtual void OnAimStay(PlayerStateMachine player)
+    public virtual void OnAimInteractableStay(PlayerStateMachine player)
     {
 
     }

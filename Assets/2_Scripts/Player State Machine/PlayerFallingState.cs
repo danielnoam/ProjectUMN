@@ -17,6 +17,8 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming();
+        StateMachine.CommandRobot();
         StateMachine.AirTime += Time.deltaTime;
         CheckStateTransitions();
     }
@@ -24,7 +26,7 @@ public class PlayerFallingState : PlayerBaseState
     public override void FixedUpdateState()
     {
         // Apply movement with air-specific parameters
-        StateMachine.ApplyMovement(new PlayerStateMachine.MovementParams(
+        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: true,
             speedMultiplier: 1.0f,
             accelMultiplier: 1.0f,
@@ -35,7 +37,7 @@ public class PlayerFallingState : PlayerBaseState
         StateMachine.ApplyGravity(false);
         
         // Apply rotation with air-specific parameters
-        StateMachine.ApplyRotation(new PlayerStateMachine.RotationParams(
+        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
             rotationMultiplier: 0.5f, // Reduced rotation control in air
             allowRotation: true
@@ -44,18 +46,23 @@ public class PlayerFallingState : PlayerBaseState
 
     private void CheckStateTransitions()
     {
+        // if (StateMachine.IsGrounded)
+        // {
+        //     if (StateMachine.FallTime > StateMachine.fallThreshold)
+        //     {
+        //         StateMachine.SwitchState(StateMachine.LandingState);
+        //         return;
+        //     }
+        //     else
+        //     {
+        //         StateMachine.SwitchState(StateMachine.GroundedState);
+        //         return;
+        //     }
+        // }
+        
         if (StateMachine.IsGrounded)
         {
-            if (StateMachine.FallTime > StateMachine.fallThreshold)
-            {
-                StateMachine.SwitchState(StateMachine.LandingState);
-                return;
-            }
-            else
-            {
-                StateMachine.SwitchState(StateMachine.GroundedState);
-                return;
-            }
+            StateMachine.SwitchState(StateMachine.GroundedState);
         }
     }
 }
