@@ -27,6 +27,7 @@ public class CameraManager : MonoBehaviour
     private float _pitchAccumulation = 0f;
     private float _yawAccumulation = 0f;
     private bool IsMenuActive => _player != null && _player.CurrentState == _player.InMenuState;
+    private bool IsPlayerAiming => _player != null && _player.IsAiming;
     
 
     private void Awake()
@@ -60,7 +61,7 @@ public class CameraManager : MonoBehaviour
     private void Update()
     {
         UpdateAimCore();
-        CheckMenuToggle();
+        HandleCameraSwitching();
     }
     
     
@@ -84,6 +85,11 @@ public class CameraManager : MonoBehaviour
     public bool IsMenuCameraActive()
     {
         return menuCamera.Priority > freeLookCamera.Priority && menuCamera.Priority > aimCamera.Priority;
+    }
+    
+    public bool IsFreeLookCameraActive()
+    {
+        return freeLookCamera.Priority > aimCamera.Priority && freeLookCamera.Priority > menuCamera.Priority;
     }
     
     public Vector3 GetCameraAimDirection(bool flatenY = false)
@@ -155,44 +161,26 @@ public class CameraManager : MonoBehaviour
     }
     
 
-    private void CheckMenuToggle()
+    private void HandleCameraSwitching()
     {
-        // If player is in menu state, ensure menu camera is active
         if (IsMenuActive)
         {
             if (!IsMenuCameraActive())
             {
                 SwitchToMenuCamera();
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
             }
-        }
-        // If player is not in menu state, ensure appropriate gameplay camera is active
-        else if (IsMenuCameraActive())
+        } 
+        else if (IsPlayerAiming && !IsAimCameraActive())
         {
-            // Switch back to previous camera (either free look or aim)
-            if (IsAimCameraActive())
-            {
-                SwitchToAimCamera();
-            }
-            else
-            {
-                SwitchToFreeLookCamera();
-            }
-            
-            // Hide cursor
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            SwitchToAimCamera();
+        }
+        else if (!IsPlayerAiming &&!IsFreeLookCameraActive())
+        {
+            SwitchToFreeLookCamera();
         }
     }
     
-    
-    
-    #endregion Private methods ----------------------------------------------------------------------------
-
-
-
-    public void SwitchToAimCamera()
+    private void SwitchToAimCamera()
     {
         // Set camera priorities to switch to aim camera
         aimCamera.Priority = aimCameraPriority;
@@ -204,14 +192,22 @@ public class CameraManager : MonoBehaviour
         {
             aimCamera.transform.rotation = freeLookCamera.transform.rotation;
         }
+        
+        // Hide cursor
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    public void SwitchToFreeLookCamera()
+    private void SwitchToFreeLookCamera()
     {
         // Reset camera priorities
         freeLookCamera.Priority = aimCameraPriority;
         aimCamera.Priority = freeLookCameraPriority;
         menuCamera.Priority = freeLookCameraPriority;
+        
+        // Hide cursor
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void SwitchToMenuCamera()
@@ -220,7 +216,17 @@ public class CameraManager : MonoBehaviour
         menuCamera.Priority = menuCameraPriority;
         freeLookCamera.Priority = freeLookCameraPriority;
         aimCamera.Priority = freeLookCameraPriority;
+        
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
+    
+    
+    #endregion Private methods ----------------------------------------------------------------------------
+
+
+
+
 
 
     

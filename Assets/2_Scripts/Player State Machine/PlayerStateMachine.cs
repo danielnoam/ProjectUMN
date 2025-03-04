@@ -503,17 +503,11 @@ public class PlayerStateMachine : MonoBehaviour
                 Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
                 transform.rotation = targetRotation;
                 _lastRotationDirection = flattenedAimDirection;
-        
-                // Switch to aim camera
-                _cameraManager.SwitchToAimCamera();
             }
         }
         else if (IsAiming)
         {
             IsAiming = false;
-        
-            // Switch to free look camera
-            _cameraManager.SwitchToFreeLookCamera();
         }
         
         UpdateAimRay();
