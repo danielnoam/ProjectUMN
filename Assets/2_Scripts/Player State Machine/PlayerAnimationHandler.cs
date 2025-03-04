@@ -9,7 +9,7 @@ public enum PlayerAnimationState
     Landing = 3,
     Interact = 4,
     Crouch = 5,
-    Telepoting = 6,
+    Teleporting = 6,
 }
 
 [RequireComponent(typeof(Animator))]
@@ -35,12 +35,14 @@ public class PlayerAnimationHandler : MonoBehaviour
     [Tooltip("Maximum fall time used for animation blending")]
     [SerializeField] private float maxFallTime = 2.0f;
 
-    // Animation parameter hashes (for performance)
+
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
     private readonly int _verticalHash = Animator.StringToHash("Vertical");
     private readonly int _horizontalHash = Animator.StringToHash("Horizontal");
     private readonly int _fallTimeHash = Animator.StringToHash("FallTime");
     private readonly int _isAimingHash = Animator.StringToHash("IsAiming");
+    private readonly int _rotationMismatchHash = Animator.StringToHash("RotationMismatch");
+    private readonly int _isRotatingToTargetHash = Animator.StringToHash("IsRotatingToTarget");
 
     private void Awake()
     {
@@ -73,6 +75,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         UpdateMovementAnimation();
         UpdateAimingAnimation();
         UpdateFallAnimation();
+        UpdateRotationAnimation();
     }
 
     private void UpdateAnimationState()
@@ -86,7 +89,7 @@ public class PlayerAnimationHandler : MonoBehaviour
             PlayerLandingState => PlayerAnimationState.Landing,
             PlayerInteractingState => PlayerAnimationState.Interact,
             PlayerCrouchingState => PlayerAnimationState.Crouch,
-            PlayerTeleportingState => PlayerAnimationState.Telepoting,
+            PlayerTeleportingState => PlayerAnimationState.Teleporting,
             _ => PlayerAnimationState.Grounded
         };
 
@@ -94,65 +97,71 @@ public class PlayerAnimationHandler : MonoBehaviour
         _animator.SetInteger(_stateHash, (int)currentAnimState);
     }
 
-private void UpdateMovementAnimation()
-{
-    // Default animation values
-    float verticalValue = 0f;
-    float horizontalValue = 0f;
-    
-    // Get current movement speed and direction from state machine
-    float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
-    Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
-
-    // Calculate the speed blend value for animation
-    float speedBlendValue = CalculateSpeedBlend(activeSpeed);
-
-    if (_stateMachine.IsAiming && moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
+    private void UpdateMovementAnimation()
     {
-        // When aiming, map movement direction to the animation blend tree
-        Vector3 localMoveDir = transform.InverseTransformDirection(moveDirection);
+        // Default animation values
+        float verticalValue = 0f;
+        float horizontalValue = 0f;
         
-        if (localMoveDir.sqrMagnitude > 0.01f)
+        // Get current movement speed and direction from state machine
+        float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
+        Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
+
+        // Calculate the speed blend value for animation
+        float speedBlendValue = CalculateSpeedBlend(activeSpeed);
+
+        if (_stateMachine.IsAiming && moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
         {
-            // Normalize to get pure direction
-            localMoveDir.Normalize();
+            // When aiming, map movement direction to the animation blend tree
+            Vector3 localMoveDir = transform.InverseTransformDirection(moveDirection);
             
-            // Use direction components for strafe animations
-            horizontalValue = localMoveDir.x;
-            verticalValue = localMoveDir.z;
-            
-            // For diagonal movement, make sure we reach the same magnitude as non-aiming movement
-            // by adjusting the scale factor calculation
-            float directionMagnitude = Mathf.Sqrt(horizontalValue * horizontalValue + verticalValue * verticalValue);
-            if (directionMagnitude > 0.01f)
+            if (localMoveDir.sqrMagnitude > 0.01f)
             {
-                // When moving diagonally, we need to apply a correction factor to reach the same blend values
-                // as non-aiming movement. This ensures diagonal movement has the proper animation intensity.
-                float scaleFactor = speedBlendValue / directionMagnitude;
+                // Normalize to get pure direction
+                localMoveDir.Normalize();
                 
-                // For diagonal movement, we need to boost the scale factor to match non-aiming intensity
-                if (Mathf.Abs(horizontalValue) > 0.1f && Mathf.Abs(verticalValue) > 0.1f)
+                // Use direction components for strafe animations
+                horizontalValue = localMoveDir.x;
+                verticalValue = localMoveDir.z;
+                
+                // For diagonal movement, make sure we reach the same magnitude as non-aiming movement
+                // by adjusting the scale factor calculation
+                float directionMagnitude = Mathf.Sqrt(horizontalValue * horizontalValue + verticalValue * verticalValue);
+                if (directionMagnitude > 0.01f)
                 {
-                    // This correction ensures diagonal movement reaches the same intensity as cardinal directions
-                    scaleFactor *= 1.414f; // Approximately sqrt(2) to compensate for diagonal normalization
+                    // When moving diagonally, we need to apply a correction factor to reach the same blend values
+                    // as non-aiming movement. This ensures diagonal movement has the proper animation intensity.
+                    float scaleFactor = speedBlendValue / directionMagnitude;
+                    
+                    // For diagonal movement, we need to boost the scale factor to match non-aiming intensity
+                    if (Mathf.Abs(horizontalValue) > 0.1f && Mathf.Abs(verticalValue) > 0.1f)
+                    {
+                        // This correction ensures diagonal movement reaches the same intensity as cardinal directions
+                        scaleFactor *= 1.414f; // Approximately sqrt(2) to compensate for diagonal normalization
+                    }
+                    
+                    horizontalValue *= scaleFactor;
+                    verticalValue *= scaleFactor;
                 }
-                
-                horizontalValue *= scaleFactor;
-                verticalValue *= scaleFactor;
             }
         }
-    }
-    else if (activeSpeed > 0.01f)
-    {
-        // Non-aiming movement just uses forward speed
-        verticalValue = speedBlendValue;
-        horizontalValue = 0f;
+        else if (activeSpeed > 0.01f)
+        {
+            // Non-aiming movement just uses forward speed
+            verticalValue = speedBlendValue;
+            horizontalValue = 0f;
+        }
+
+        // Apply with smoothing
+        _animator.SetFloat(_verticalHash, verticalValue, verticalSmoothTime, Time.deltaTime);
+        _animator.SetFloat(_horizontalHash, horizontalValue, horizontalSmoothTime, Time.deltaTime);
     }
 
-    // Apply with smoothing
-    _animator.SetFloat(_verticalHash, verticalValue, verticalSmoothTime, Time.deltaTime);
-    _animator.SetFloat(_horizontalHash, horizontalValue, horizontalSmoothTime, Time.deltaTime);
-}
+    private void UpdateRotationAnimation()
+    {
+        _animator.SetFloat(_rotationMismatchHash, _stateMachine.RotationMismatch);
+        _animator.SetBool(_isRotatingToTargetHash, _stateMachine.IsRotatingToTarget);
+    }
 
     private void UpdateAimingAnimation()
     {

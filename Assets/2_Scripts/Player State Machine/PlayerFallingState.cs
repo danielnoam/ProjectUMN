@@ -26,22 +26,23 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
-        // Apply movement with air-specific parameters
         StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: true,
             speedMultiplier: 1.0f,
             accelMultiplier: 1.0f,
-            controlMultiplier: 1.0f
+            controlMultiplier: 1.0f,
+            dragMultiplier: 0.5f,
+            handleSteepSurfaces: true
         ));
-        
-        // Apply gravity with air-specific parameters (false = airborne)
+    
         StateMachine.ApplyGravity(false);
-        
-        // Apply rotation with air-specific parameters
+    
         StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 0.5f, // Reduced rotation control in air
-            allowRotation: true
+            rotationMultiplier: 0.5f,
+            allowRotation: true,
+            alignWithCameraWhenIdle: false,
+            idleAlignmentSpeed: 0.5f
         ));
     }
 

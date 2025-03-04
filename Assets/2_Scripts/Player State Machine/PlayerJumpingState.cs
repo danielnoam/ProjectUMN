@@ -7,7 +7,7 @@ public class PlayerJumpingState : PlayerBaseState
     public override void EnterState()
     {
         StateMachine.InputHandler.ConsumeJumpBuffer();
-        StateMachine.ActiveVerticalVelocity = StateMachine.jumpForce;
+        StateMachine.ActiveVerticalVelocity = Mathf.Sqrt(StateMachine.jumpForce * 3 * Mathf.Abs(StateMachine.gravity));
         StateMachine.AirTime = 0f;
     }
     
@@ -25,22 +25,23 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
-        // Apply movement with jump-specific parameters
         StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: true,
             speedMultiplier: 1.0f,
             accelMultiplier: 1.0f,
-            controlMultiplier: 1.0f
+            controlMultiplier: 1.0f,
+            dragMultiplier: 0.5f,
+            handleSteepSurfaces: false
         ));
-        
-        // Apply gravity with air-specific parameters
+    
         StateMachine.ApplyGravity(false);
-        
-        // Apply rotation with jump-specific parameters
+    
         StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 0.5f, // Similar to falling state
-            allowRotation: true
+            rotationMultiplier: 0.5f,
+            allowRotation: true,
+            alignWithCameraWhenIdle: false,
+            idleAlignmentSpeed: 0.5f
         ));
     }
 

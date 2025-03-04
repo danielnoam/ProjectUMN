@@ -31,42 +31,39 @@ public class PlayerStateMachine : MonoBehaviour
     public float sprintSpeed = 12f;
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
+    [Tooltip("Drag force applied to movement on ground")]
+    public float groundDrag = 20f;
+    [Tooltip("Anti-bump force to prevent sticking to slopes")]
+    public float antiBumpForce = 4f;
     [Tooltip("Base rotation speed when turning on the ground")]
     public float rotationSpeed = 2f;
-    [Tooltip("Rotation speed when turning while aiming")]
-    public float aimRotationSpeed = 4f;
+    [Tooltip("How quickly player rotates to align with camera when idle")]
+    public float idleAlignmentSpeed = 2f;
+    [Tooltip("Angle beyond which idle alignment triggers")]
+    public float rotationMismatchThreshold = 90f;
+    [Tooltip("Time to complete an idle rotation")]
+    public float idleRotationDuration = 0.67f;
 
-    [Header("Air Movement")]
-    [Tooltip("Maximum horizontal speed while in the air")]
-    public float airMoveSpeed = 4f;
-    [Tooltip("Base rotation speed when turning in the air")]
-    public float airRotationSpeed = 1f;
+    
+    [Header("Air")]
     [Tooltip("How quickly the character reaches target speed in air")]
     public float airAcceleration = 3f;
-    [Tooltip("How quickly the character loses momentum in air")]
-    public float airFriction = 2.0f;
-    
-    [Header("Jump")]
+    [Tooltip("Drag force applied to movement in air")]
+    public float airDrag = 5f;
+    [Tooltip("Rotation speed when turning while aiming")]
+    public float aimRotationSpeed = 4f;
     [Tooltip("Initial upward velocity applied when jumping")]
     public float jumpForce = 8f;
+    [Tooltip("Minimum time falling before impact animations trigger")]
+    public float fallThreshold = 0.1f;
 
     [Header("Gravity")]
     [Tooltip("Downward acceleration applied while in the air")]
     public float gravity = -15f;
-    [Tooltip("Small downward force applied while grounded to stick to slopes")]
-    public float groundedGravity = -5f;
     [Tooltip("Maximum downward velocity the character can reach")]
     public float maxVerticalVelocity = -50f;
 
-    [Header("Land")]
-    [Tooltip("Minimum time falling before impact animations trigger")]
-    public float fallThreshold = 0.1f;
-    [Tooltip("Fall time that results in maximum impact effect")]
-    public float maxFallTime = 2.0f;
-    [Tooltip("Time needed to recover from maximum impact landing")]
-    public float recoveryDuration = 1f;
-    [Tooltip("Percentage of movement control retained during landing recovery")]
-    public float minMovementControl = 0.1f;
+
 
 
     [Header("Collision Check")]
@@ -108,53 +105,65 @@ public class PlayerStateMachine : MonoBehaviour
     private CameraManager _cameraManager;
     private LineRenderer _lineRenderer;
     private bool _lockSprinting;
-    private Vector3 _lastRotationDirection = Vector3.forward;
     private float _defaultCharacterHeight;
     private Vector3 _defaultCharacterCenter;
     private readonly float _crouchCharacterHeight = 1.2333f;
     private readonly Vector3 _crouchCharacterCenter = new Vector3(0, -0.3f, 0.2f);
+    public float RotationMismatch { get; private set; }
+    public bool IsRotatingToTarget { get; private set; }
+    private float _rotatingToTargetTimer = 0f;
+    private Vector3 _lastCameraForward;
+    private bool _isMovingLaterally = false;
+    private bool _lastGroundedState = false;
     
     
     public struct MovementParams
     {
-        public readonly bool IsAirborne;        // Whether to use air or ground movement rules
-        public readonly float SpeedMultiplier;  // Multiplier for max speed (1.0f is normal)
-        public readonly float AccelMultiplier;  // Multiplier for acceleration (1.0f is normal)
-        public readonly float ControlMultiplier; // For movement control during landing (1.0f is full control)
+        public readonly bool IsAirborne;        
+        public readonly float SpeedMultiplier;  
+        public readonly float AccelMultiplier;  
+        public readonly float ControlMultiplier;
+        public readonly float DragMultiplier; 
+        public readonly bool HandleSteepSurfaces; 
     
-        // Constructor with default values
         public MovementParams(
             bool isAirborne = false, 
             float speedMultiplier = 1f, 
             float accelMultiplier = 1f, 
-            float controlMultiplier = 1f)
+            float controlMultiplier = 1f,
+            float dragMultiplier = 1f,
+            bool handleSteepSurfaces = false)
         {
             this.IsAirborne = isAirborne;
             this.SpeedMultiplier = speedMultiplier;
             this.AccelMultiplier = accelMultiplier;
             this.ControlMultiplier = controlMultiplier;
+            this.DragMultiplier = dragMultiplier;
+            this.HandleSteepSurfaces = handleSteepSurfaces;
         }
     }
 
 
     public struct RotationParams
     {
-        public readonly bool IsAirborne;         // Whether to use air or ground rotation rules
-        public readonly bool UseAimRotation;     // Whether to use aim-based rotation
-        public readonly float RotationMultiplier; // Multiplier for rotation speed (1.0f is normal)
-        public readonly bool AllowRotation;       // Whether to allow rotation at all
+        public readonly bool UseAimRotation;
+        public readonly float RotationMultiplier;
+        public readonly bool AllowRotation;
+        public readonly bool AlignWithCameraWhenIdle;
+        public readonly float IdleAlignmentSpeed;
     
-        // Constructor with default values
         public RotationParams(
-            bool isAirborne = false, 
             bool useAimRotation = false, 
             float rotationMultiplier = 1f, 
-            bool allowRotation = true)
+            bool allowRotation = true,
+            bool alignWithCameraWhenIdle = false,
+            float idleAlignmentSpeed = 1f)
         {
-            this.IsAirborne = isAirborne;
             this.UseAimRotation = useAimRotation;
             this.RotationMultiplier = rotationMultiplier;
             this.AllowRotation = allowRotation;
+            this.AlignWithCameraWhenIdle = alignWithCameraWhenIdle;
+            this.IdleAlignmentSpeed = idleAlignmentSpeed;
         }
     }
 
@@ -345,93 +354,115 @@ public class PlayerStateMachine : MonoBehaviour
             Mathf.Abs(InputHandler.MovementInput.y)
         );
 
+        // Check if input is above threshold
+        bool hasMovementInput = movementIntensity > InputHandler.MovementInputThreshold;
+        
         // Determine movement direction
-        Vector3 inputDirection;
-        Quaternion targetRotation = transform.rotation;
-        
-        if (IsAiming)
+        Vector3 inputDirection = Vector3.zero;
+        if (hasMovementInput)
         {
-            // When aiming, maintain player orientation toward camera
-            // and calculate movement direction relative to player orientation
-            Vector3 aimDirection = GetCameraAimDirection();
-            targetRotation = Quaternion.LookRotation(aimDirection);
-            
-            // Calculate movement relative to player orientation when aiming
-            // This creates proper strafing movement
-            Vector3 forward = aimDirection;
-            Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
-            
-            inputDirection = (forward * InputHandler.MovementInput.y + 
-                             right * InputHandler.MovementInput.x).normalized;
-        }
-        else
-        {
-            // Standard camera-relative movement for non-aiming
-            inputDirection = CalculateMoveDirection();
+            if (IsAiming)
+            {
+                // When aiming, calculate strafe movement
+                Vector3 aimDirection = GetCameraAimDirection();
+                Vector3 forward = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
+                Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+                
+                inputDirection = (forward * InputHandler.MovementInput.y + 
+                                right * InputHandler.MovementInput.x).normalized;
+            }
+            else
+            {
+                // Standard camera-relative movement
+                inputDirection = CalculateMoveDirection();
+            }
         }
         
-        float inputMagnitude = inputDirection.magnitude;
-        float targetSpeed;
+        // Calculate target speed based on state
+        float targetSpeed = hasMovementInput ? 
+            CalculateTargetSpeed(movementIntensity) * parameters.SpeedMultiplier : 0f;
         
-        // Calculate target speed based on whether we're airborne or grounded
-        if (parameters.IsAirborne)
-        {
-            // Airborne movement has fixed speed
-            targetSpeed = inputMagnitude > PlayerInputHandler.MovementInputThreshold ? 
-                airMoveSpeed * parameters.SpeedMultiplier : 0f;
-        }
-        else
-        {
-            // Grounded movement uses CalculateTargetSpeed with intensity
-            targetSpeed = CalculateTargetSpeed(movementIntensity) * parameters.SpeedMultiplier;
-        }
-
-        // Only update direction if we have meaningful input
-        if (inputMagnitude > PlayerInputHandler.MovementInputThreshold)
-        {
-            ActiveMoveDirection = inputDirection;
-        }
-        else
-        {
-            // No input - keep last direction but set target speed to 0
-            targetSpeed = 0f;
-        }
-
-        // Determine acceleration/deceleration rate
-        float speedChange;
-        
-        if (parameters.IsAirborne)
-        {
-            // Airborne uses different acceleration/deceleration rates
-            speedChange = ActiveHorizontalVelocity > targetSpeed ? 
-                airFriction * parameters.AccelMultiplier : 
-                airAcceleration * parameters.AccelMultiplier;
-        }
-        else
-        {
-            // Grounded uses standard acceleration
-            speedChange = acceleration * parameters.AccelMultiplier;
-        }
-
-        // Apply movement control multiplier (for landing recovery, etc.)
-        targetSpeed *= parameters.ControlMultiplier;
-        speedChange *= parameters.ControlMultiplier;
-
-        // Update current speed with acceleration
-        float newSpeed = Mathf.MoveTowards(
-            ActiveHorizontalVelocity, 
-            targetSpeed, 
-            speedChange * Time.fixedDeltaTime
+        // Current velocity excluding vertical component
+        Vector3 currentHorizontalVelocity = new Vector3(
+            _controller.velocity.x, 
+            0, 
+            _controller.velocity.z
         );
-
-        // Update state machine's speed
-        ActiveHorizontalVelocity = newSpeed;
         
-        // Only reset move direction when completely stopped
-        if (newSpeed <= 0.01f)
+        // Calculate acceleration based on params
+        float accelerationToUse = parameters.IsAirborne ? 
+            airAcceleration * parameters.AccelMultiplier : 
+            acceleration * parameters.AccelMultiplier;
+        
+        // Calculate new velocity with acceleration applied
+        Vector3 targetVelocity = hasMovementInput ? inputDirection * targetSpeed : Vector3.zero;
+        Vector3 velocityChange = targetVelocity - currentHorizontalVelocity;
+        
+        // Apply acceleration limit
+        velocityChange = Vector3.ClampMagnitude(velocityChange, accelerationToUse * Time.fixedDeltaTime);
+        Vector3 newHorizontalVelocity = currentHorizontalVelocity + velocityChange;
+        
+        // Apply drag
+        float dragToUse = parameters.IsAirborne ? 
+            airDrag * parameters.DragMultiplier : 
+            groundDrag * parameters.DragMultiplier;
+            
+        if (newHorizontalVelocity.magnitude > 0.01f)
         {
-            ActiveMoveDirection = Vector3.zero;
+            Vector3 dragForce = newHorizontalVelocity.normalized * (dragToUse * Time.fixedDeltaTime);
+            
+            // Only apply drag up to current speed
+            if (dragForce.magnitude > newHorizontalVelocity.magnitude)
+            {
+                newHorizontalVelocity = Vector3.zero;
+            }
+            else
+            {
+                newHorizontalVelocity -= dragForce;
+            }
         }
+        
+        // Apply steep surface handling for airborne movement
+        if (parameters is { IsAirborne: true, HandleSteepSurfaces: true })
+        {
+            newHorizontalVelocity = HandleSteepSurfaces(newHorizontalVelocity);
+        }
+        
+        // Apply control multiplier (for landing, etc.)
+        newHorizontalVelocity *= parameters.ControlMultiplier;
+        
+        // Update state machine values
+        ActiveHorizontalVelocity = newHorizontalVelocity.magnitude;
+        ActiveMoveDirection = newHorizontalVelocity.magnitude > 0.01f ? 
+            newHorizontalVelocity.normalized : ActiveMoveDirection;
+        
+        // Track if we're moving laterally for animation/rotation purposes
+        _isMovingLaterally = ActiveHorizontalVelocity > InputHandler.MovementInputThreshold;
+    }
+
+    private Vector3 HandleSteepSurfaces(Vector3 velocity)
+    {
+        // Don't apply when moving upward
+        if (ActiveVerticalVelocity >= 0) return velocity;
+        
+        // Cast a sphere to detect surface normal
+        Vector3 origin = transform.position + Vector3.up * _controller.radius;
+        float distance = _controller.height * 0.5f + 0.1f;
+        
+        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
+                out RaycastHit hitInfo, distance, environmentLayer))
+        {
+            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            
+            // Only apply for steep slopes beyond character controller's slope limit
+            if (angle > _controller.slopeLimit)
+            {
+                // Project movement onto the surface to slide
+                return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
+            }
+        }
+        
+        return velocity;
     }
     
     public void HandleRotation(RotationParams parameters)
@@ -439,8 +470,24 @@ public class PlayerStateMachine : MonoBehaviour
         // Skip rotation if not allowed
         if (!parameters.AllowRotation)
             return;
-                
-        // If aiming and using aim rotation
+        
+        // Calculate camera-to-player rotation mismatch
+        if (_cameraManager != null)
+        {
+            Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
+            Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
+            Vector3 playerForward = transform.forward;
+            
+            // Calculate cross product to determine direction
+            Vector3 cross = Vector3.Cross(playerForward, cameraForwardFlat);
+            float sign = Mathf.Sign(Vector3.Dot(cross, Vector3.up));
+            
+            // Calculate and store rotation mismatch
+            RotationMismatch = sign * Vector3.Angle(playerForward, cameraForwardFlat);
+            _lastCameraForward = cameraForwardFlat;
+        }
+        
+        // If aiming, use aim rotation
         if (IsAiming && parameters.UseAimRotation)
         {
             // Get aim direction from camera
@@ -449,43 +496,68 @@ public class PlayerStateMachine : MonoBehaviour
             // Flatten the aim direction to prevent tilting up or down
             Vector3 flattenedAimDirection = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
             
-            // Calculate angle difference between current aim direction and last rotation direction
-            float angleChange = Vector3.Angle(_lastRotationDirection, flattenedAimDirection);
+            // Calculate target rotation and apply it
+            Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation,
+                targetRotation,
+                aimRotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 100f
+            );
             
-            // Check if mouse movement exceeds our threshold
-            if (InputHandler.MouseDelta.magnitude > _cameraManager.AimRotationThreshold || angleChange > 1.0f)
-            {
-                // There's significant mouse movement, so update the character rotation
-                Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
-                
-                // Rotate player to face aim direction
-                float rotationSpeed = aimRotationSpeed * parameters.RotationMultiplier;
-                transform.rotation = Quaternion.RotateTowards(
-                    transform.rotation,
-                    targetRotation,
-                    rotationSpeed * Time.fixedDeltaTime * 100f
-                );
-                
-                // Store this as the last direction we rotated to
-                _lastRotationDirection = flattenedAimDirection;
-            }
+            IsRotatingToTarget = true;
         }
-        // Standard non-aiming rotation
-        else if (!IsAiming && ActiveMoveDirection.sqrMagnitude > PlayerInputHandler.RotationInputThreshold)
+        // Regular movement-based rotation
+        else if (_isMovingLaterally && !IsAiming)
         {
             // Calculate target rotation based on movement direction
             Quaternion targetRotation = Quaternion.LookRotation(ActiveMoveDirection);
             
-            // Calculate rotation speed based on parameters and movement
-            float baseSpeed = parameters.IsAirborne ? airRotationSpeed : rotationSpeed;
-            float speedMultiplier = ActiveHorizontalVelocity > 0.1f ? 1.5f : 1f;
-            
-            // Apply rotation
+            // Apply rotation with custom multiplier
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                baseSpeed * parameters.RotationMultiplier * speedMultiplier * Time.fixedDeltaTime * 100f
+                rotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 100f
             );
+            
+            IsRotatingToTarget = true;
+        }
+        // Handle idle rotation alignment with camera
+        else if (!_isMovingLaterally && parameters.AlignWithCameraWhenIdle)
+        {
+            // Check if we need to align with camera
+            bool needsAlignment = Mathf.Abs(RotationMismatch) > rotationMismatchThreshold;
+            
+            // Start timer if needed
+            if (needsAlignment && _rotatingToTargetTimer <= 0)
+            {
+                _rotatingToTargetTimer = idleRotationDuration;
+                IsRotatingToTarget = true;
+            }
+            
+            // Update timer
+            if (_rotatingToTargetTimer > 0)
+            {
+                _rotatingToTargetTimer -= Time.fixedDeltaTime;
+                
+                // Calculate target rotation based on camera
+                Quaternion targetRotation = Quaternion.LookRotation(_lastCameraForward);
+                
+                // Apply rotation with custom speed
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    parameters.IdleAlignmentSpeed * idleAlignmentSpeed * Time.fixedDeltaTime * 100f
+                );
+                
+                if (_rotatingToTargetTimer <= 0)
+                {
+                    IsRotatingToTarget = false;
+                }
+            }
+        }
+        else
+        {
+            IsRotatingToTarget = false;
         }
     }
     
@@ -494,17 +566,29 @@ public class PlayerStateMachine : MonoBehaviour
     {
         if (isGrounded)
         {
-            // Apply constant grounded gravity
-            ActiveVerticalVelocity = groundedGravity;
+            // Apply anti-bump when grounded to prevent sticking to slopes
+            if (ActiveVerticalVelocity < 0)
+            {
+                ActiveVerticalVelocity = -antiBumpForce;
+            }
         }
         else
         {
             // Calculate new vertical velocity with gravity applied
             ActiveVerticalVelocity += gravity * Time.fixedDeltaTime;
-        
+    
             // Limit to terminal velocity
             ActiveVerticalVelocity = Mathf.Max(ActiveVerticalVelocity, maxVerticalVelocity);
         }
+    
+        // Special case for going from grounded to airborne
+        if (_lastGroundedState && !isGrounded && ActiveVerticalVelocity < 0)
+        {
+            // Apply small upward push to prevent immediately falling
+            ActiveVerticalVelocity += antiBumpForce;
+        }
+    
+        _lastGroundedState = isGrounded;
     }
 
     public void ResetGravity()
@@ -527,7 +611,6 @@ public class PlayerStateMachine : MonoBehaviour
                 Vector3 flattenedAimDirection = new Vector3(initialAimDirection.x, 0, initialAimDirection.z).normalized;
                 Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
                 transform.rotation = targetRotation;
-                _lastRotationDirection = flattenedAimDirection;
             }
         }
         else if (IsAiming)
@@ -598,12 +681,12 @@ public class PlayerStateMachine : MonoBehaviour
     {
         _lockSprinting = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
     
-        if (movementIntensity < PlayerInputHandler.MovementInputThreshold)
+        if (movementIntensity < InputHandler.MovementInputThreshold)
             return 0f;
 
         if (!_lockSprinting)
         {
-            if (InputHandler.SprintInput && movementIntensity > PlayerInputHandler.SprintInputThreshold)
+            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
                 return sprintSpeed;
             else
                 return runSpeed;
@@ -611,7 +694,7 @@ public class PlayerStateMachine : MonoBehaviour
         else
         {
 
-            if (InputHandler.SprintInput && movementIntensity > PlayerInputHandler.SprintInputThreshold)
+            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
                 return runSpeed;
             else
                 return walkSpeed;
@@ -633,21 +716,20 @@ public class PlayerStateMachine : MonoBehaviour
 
     private void MoveCharacter()
     {
-        // Create movement vector using the active properties
-        Vector3 movement = Vector3.zero;
+        // Get horizontal velocity from direction and speed
+        Vector3 horizontalMovement = ActiveMoveDirection * ActiveHorizontalVelocity;
     
-        // Only apply horizontal movement if we have both direction and speed
-        if (ActiveMoveDirection.sqrMagnitude > 0.001f && ActiveHorizontalVelocity > 0.01f)
-        {
-            movement = ActiveMoveDirection * ActiveHorizontalVelocity;
-        }
-    
-        // Always apply vertical movement
-        movement.y = ActiveVerticalVelocity;
+        // Create full movement vector with vertical component
+        Vector3 movement = new Vector3(
+            horizontalMovement.x,
+            ActiveVerticalVelocity,
+            horizontalMovement.z
+        );
     
         // Apply movement
         _controller.Move(movement * Time.fixedDeltaTime);
     }
+    
     private void UpdateFallTime()
     {
         // Only increment fall time when moving downward

@@ -1311,10 +1311,12 @@ MonoBehaviour:
   toggleAimInput: 0
   jumpBufferTime: 0.2
   interactBufferTime: 0.15
-  toggleMenuBufferTime: 0.2
+  toggleMenuBufferTime: 0.15
   mouseSensitivity: 1
   freeCameraSensitivity: 1
   aimCameraSensitivity: 1
+  sprintInputThreshold: 0.01
+  movementInputThreshold: 0.01
 --- !u!114 &4320568683722358497
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1349,20 +1351,19 @@ MonoBehaviour:
   runSpeed: 8
   sprintSpeed: 12
   acceleration: 10
+  groundDrag: 1
+  antiBumpForce: 4
   rotationSpeed: 2
-  aimRotationSpeed: 4
-  airMoveSpeed: 4
-  airRotationSpeed: 1
+  idleAlignmentSpeed: 2
+  rotationMismatchThreshold: 90
+  idleRotationDuration: 0.67
   airAcceleration: 3
-  airFriction: 2
-  jumpForce: 8
-  gravity: -15
-  groundedGravity: -5
-  maxVerticalVelocity: -50
+  airDrag: 5
+  aimRotationSpeed: 4
+  jumpForce: 2
   fallThreshold: 0.1
-  maxFallTime: 2
-  recoveryDuration: 1
-  minMovementControl: 0.1
+  gravity: -15
+  maxVerticalVelocity: -50
   environmentCheckRadius: 0.3
   groundCheckOffset: {x: 0, y: -0.7, z: 0}
   ceilingCheckOffset: {x: 0, y: 0.63, z: 0}

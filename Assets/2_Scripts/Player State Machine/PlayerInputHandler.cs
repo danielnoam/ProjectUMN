@@ -13,13 +13,14 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField] private bool toggleAimInput = false;
     [SerializeField, Min(0f)] private float jumpBufferTime = 0.2f;
     [SerializeField, Min(0f)] private float interactBufferTime = 0.15f;
-    [SerializeField, Min(0f)] private float toggleMenuBufferTime = 0.2f; // Added buffer time for toggle menu
+    [SerializeField, Min(0f)] private float toggleMenuBufferTime = 0.15f;
     [SerializeField, Range(0.1f, 2f)] private float mouseSensitivity = 1f;
     [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
     [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 1f;
-    public const float RotationInputThreshold = 0.01f;
-    public const float SprintInputThreshold = 0.5f;
-    public const float MovementInputThreshold = 0.1f;
+    [Tooltip("Minimum movement input to register sprint")]
+    [SerializeField, Range(0f, 1f)] private float sprintInputThreshold = 0.01f;
+    [Tooltip("Minimum movement input to register movement")]
+    [SerializeField, Range(0f, 1f)] private float movementInputThreshold = 0.01f;
     
     public Vector2 MovementInput { get; private set; }
     public Vector2 MouseDelta { get; private set; }
@@ -31,6 +32,8 @@ public class PlayerInputHandler : MonoBehaviour
     public bool RobotInteractInput { get; private set; }
     public bool AimInput { get; private set; }
     public bool ToggleMenuInput { get; private set; }
+    public float MovementInputThreshold => movementInputThreshold;
+    public float SprintInputThreshold => sprintInputThreshold;
     public float MouseSensitivity => mouseSensitivity;
     public float AimCameraSensitivity => aimCameraSensitivity;
     public float FreeCameraSensitivity => freeCameraSensitivity;
