@@ -41,7 +41,7 @@ public class SOTest : ScriptableObject
         return prefab;
     }
     
-    public Vector3 GetSpawnPoint()
+    public Vector3 GetPlayerSpawnPoint()
     {
         if (!prefab)
         {
@@ -49,14 +49,36 @@ public class SOTest : ScriptableObject
             return Vector3.up;
         }
 
-        TestSpawnPlatform spawnPlatform = prefab.GetComponentInChildren<TestSpawnPlatform>();
+        SpawnPlatform spawnPlatform = prefab.GetComponentInChildren<SpawnPlatform>();
         if (!spawnPlatform)
         {
             Debug.Log("No TestSpawnPosition in " + name);
             return Vector3.up;
         }
 
+
         return spawnPlatform.transform.position;
+    }
+    
+    public Vector3 GetRobotSpawnPoint()
+    {
+        Vector3 offset = new Vector3(0, 1f, 1);
+        
+        if (!prefab)
+        {
+            Debug.Log("No prefab set for " + name);
+            return Vector3.up;
+        }
+
+        SpawnPlatform spawnPlatform = prefab.GetComponentInChildren<SpawnPlatform>();
+        if (!spawnPlatform)
+        {
+            Debug.Log("No TestSpawnPosition in " + name);
+            return Vector3.up;
+        }
+
+
+        return spawnPlatform.transform.position + offset;
     }
 
     public bool HasRobot()
@@ -70,7 +92,6 @@ public class SOTest : ScriptableObject
         RobotCompanion robot = prefab.GetComponentInChildren<RobotCompanion>();
         if (!robot)
         {
-            Debug.Log("No RobotCompanion in " + name);
             return false;
         }
 

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -9,6 +10,9 @@ using UnityEngine;
 public class PlayerStateMachine : MonoBehaviour
 {
     public static  PlayerStateMachine Instance { get; private set; }
+    
+    
+    
     public PlayerBaseState CurrentState { get; private set; }
     public PlayerGroundedState GroundedState { get; private set; }
     public PlayerCrouchingState CrouchingState { get; private set; }
@@ -189,11 +193,19 @@ public class PlayerStateMachine : MonoBehaviour
         if (!_robot) _robot = FindFirstObjectByType<RobotCompanion>();
         if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
         _cameraManager.Initialize(this);
+        TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
     }
+    
+    
+    private void OnDisable()
+    {
+        TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+    }
+    
 
     private void Update()
     {
-        if (!IsAiming && CurrentInteractable == null && _robot && _robot.CanCommend() && InputHandler.RobotInteractInput)
+        if (!IsAiming && _robot && _robot.CanCommend() && InputHandler.RobotInteractInput)
         {
             _robot.FollowPlayer();
         }
@@ -209,6 +221,12 @@ public class PlayerStateMachine : MonoBehaviour
     {
         CurrentState.FixedUpdateState();
         MoveCharacter(); 
+    }
+    
+    private void OnTestLoaded(SOTest test)
+    {
+        _robot = TestManager.Instance.GetRobot();
+        transform.position = test.GetPlayerSpawnPoint();
     }
     
     
@@ -236,15 +254,8 @@ public class PlayerStateMachine : MonoBehaviour
     {
         if (other.TryGetComponent(out IInteractable interactable) && interactable == CurrentInteractable)
         {
-            // Allow player interaction
+
             CanInteract = CurrentInteractable.PlayerCanInteract && (CurrentState == GroundedState || CurrentState == CrouchingState) && (CurrentInteractable != CurrentAimedInteractable);
-        
-            // Allow robot interaction
-            if (_robot && CurrentInteractable.RobotCanInteract && InputHandler.RobotInteractInput)
-            {
-                InputHandler.ConsumeRobotInteractBuffer();
-                _robot.InteractWith(CurrentInteractable);
-            }
 
             if (CanInteract && !CurrentInteractable.IsHighlighted())
             {
@@ -717,6 +728,7 @@ public class PlayerStateMachine : MonoBehaviour
                          $"IsAiming: {IsAiming}\n" +
                          $"AirTime: {AirTime}\n" +
                          $"FallTime: {FallTime}\n" +
+                         $"Robot: {_robot}\n" +
                          $"LandingIntensity: {LandingIntensity}\n" +
                          $"MoveDirection: {ActiveMoveDirection}\n" +
                          $"Interactable: {CurrentInteractable}\n" +

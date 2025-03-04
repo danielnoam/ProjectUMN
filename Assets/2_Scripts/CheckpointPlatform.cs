@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class TestCheckpointPlatform : MonoBehaviour
+public class CheckpointPlatform : MonoBehaviour
 {
     private bool _hasReached;
     private TestManager _testManager;
