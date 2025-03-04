@@ -9,6 +9,7 @@ public enum PlayerAnimationState
     Landing = 3,
     Interact = 4,
     Crouch = 5,
+    Telepoting = 6,
 }
 
 [RequireComponent(typeof(Animator))]
@@ -85,6 +86,7 @@ public class PlayerAnimationHandler : MonoBehaviour
             PlayerLandingState => PlayerAnimationState.Landing,
             PlayerInteractingState => PlayerAnimationState.Interact,
             PlayerCrouchingState => PlayerAnimationState.Crouch,
+            PlayerTeleportingState => PlayerAnimationState.Telepoting,
             _ => PlayerAnimationState.Grounded
         };
 

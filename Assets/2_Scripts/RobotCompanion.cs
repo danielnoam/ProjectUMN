@@ -140,7 +140,7 @@ public class RobotCompanion : MonoBehaviour
     private float _fullEyeLightIntensity;
     
     private IInteractable _currentInteractable;
-    private float _interactDistance = 0f; 
+    private float _interactDistance = 0.5f; 
 
    private void Awake()
    {
@@ -168,7 +168,11 @@ public class RobotCompanion : MonoBehaviour
 
    private void OnDisable()
    {
-       TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+       if (TestManager.Instance)
+       {
+           TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+       }
+       
    }
 
 
@@ -859,8 +863,8 @@ private void OnDrawGizmos()
    {
        if (!_target) return;
     
-       // Calculate distance to target (horizontal only)
-       Vector3 targetPosition = new Vector3(_target.position.x, transform.position.y, _target.position.z);
+       // Calculate distance to target
+       Vector3 targetPosition = new Vector3(_target.position.x, _target.position.y, _target.position.z);
        float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
     
        // If we're close enough to the target

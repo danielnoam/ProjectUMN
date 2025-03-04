@@ -12,7 +12,6 @@ public class PlayerStateMachine : MonoBehaviour
     public static  PlayerStateMachine Instance { get; private set; }
     
     
-    
     public PlayerBaseState CurrentState { get; private set; }
     public PlayerGroundedState GroundedState { get; private set; }
     public PlayerCrouchingState CrouchingState { get; private set; }
@@ -20,7 +19,8 @@ public class PlayerStateMachine : MonoBehaviour
     public PlayerFallingState FallingState { get; private set; }
     public PlayerLandingState LandingState { get; private set; }
     public PlayerInteractingState InteractingState { get; private set; }
-    public PlayerInMenuState InMenuState { get; private set; }
+    public PlayerInMenuState InMenuState { get; private set; } 
+    public PlayerTeleportingState TeleportingState { get; private set; }
 
     [Header("Movement")]
     [Tooltip("Walking speed when holding the walk button")]
@@ -180,6 +180,7 @@ public class PlayerStateMachine : MonoBehaviour
         InteractingState = new PlayerInteractingState(this);
         CrouchingState = new PlayerCrouchingState(this);
         InMenuState = new PlayerInMenuState(this);
+        TeleportingState = new PlayerTeleportingState(this);
         _defaultCharacterHeight = _controller.height;
         _defaultCharacterCenter = _controller.center;
         
@@ -193,13 +194,21 @@ public class PlayerStateMachine : MonoBehaviour
         if (!_robot) _robot = FindFirstObjectByType<RobotCompanion>();
         if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
         _cameraManager.Initialize(this);
-        TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+
+        if (TestManager.Instance)
+        {
+            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+        }
+        
     }
     
     
     private void OnDisable()
     {
-        TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+        if (TestManager.Instance)
+        {
+            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+        }
     }
     
 
@@ -220,10 +229,11 @@ public class PlayerStateMachine : MonoBehaviour
     private void OnTestLoaded(SOTest test)
     {
         _robot = TestManager.Instance.GetRobot();
+        Teleport(test.GetPlayerSpawnPoint(), Quaternion.Euler(0, 0, 0));
         SwitchState(GroundedState);
-        transform.rotation = Quaternion.Euler(0, 0, 0);
-        transform.position = test.GetPlayerSpawnPoint();
+        
     }
+    
     
     
     #region Collisions ---------------------------------------------------------------
@@ -243,6 +253,10 @@ public class PlayerStateMachine : MonoBehaviour
         if (other.TryGetComponent(out IInteractable interactable))
         {
             CurrentInteractable = interactable;
+        } 
+        else if (other.TryGetComponent(out LaserGround laserGround))
+        {
+            SwitchState(TeleportingState);
         }
     }
 
@@ -310,12 +324,18 @@ public class PlayerStateMachine : MonoBehaviour
     {
         InteractingState.OnInteractionComplete(interactable);
     }
-
+    
 
     #endregion State Control ---------------------------------------------------------------
     
     
     #region State modules ---------------------------------------------------------------
+    
+    public void Teleport(Vector3 position, Quaternion rotation)
+    {
+        transform.position = position;
+        transform.rotation = rotation;
+    }
     
     public void HandleMovement(MovementParams parameters)
     {
@@ -485,6 +505,11 @@ public class PlayerStateMachine : MonoBehaviour
             // Limit to terminal velocity
             ActiveVerticalVelocity = Mathf.Max(ActiveVerticalVelocity, maxVerticalVelocity);
         }
+    }
+
+    public void ResetGravity()
+    {
+        ActiveVerticalVelocity = 0f;
     }
     
     public void HandleAiming()

@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class SpawnPlatform : MonoBehaviour
 {
+    [SerializeField] private Transform spawnPosition;
     private bool _hasReached;
     private TestManager _testManager;
     
@@ -24,7 +25,12 @@ public class SpawnPlatform : MonoBehaviour
         if (other.TryGetComponent(out PlayerStateMachine player))
         {
             _hasReached = true;
-            _testManager.SetCheckpointPosition(transform);
+            _testManager.SetCheckpointPosition(spawnPosition);
         }
+    }
+    
+    public Vector3 GetSpawnPosition()
+    {
+        return spawnPosition.position;
     }
 }

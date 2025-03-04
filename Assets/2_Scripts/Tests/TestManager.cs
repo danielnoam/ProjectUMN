@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using VInspector;
 
 public class TestManager : MonoBehaviour
@@ -153,6 +152,12 @@ public class TestManager : MonoBehaviour
     public PlayerStateMachine GetPlayer()
     {
         return currentPlayer;
+    }
+    
+    public Vector3 GetCheckpointPosition()
+    {
+        if (!currentCheckpoint) return Vector3.zero;
+        return currentCheckpoint.position;
     }
     
     #endregion Public methods ----------------------------------------------------------------------------

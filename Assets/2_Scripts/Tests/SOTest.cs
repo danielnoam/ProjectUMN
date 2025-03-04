@@ -57,7 +57,7 @@ public class SOTest : ScriptableObject
         }
 
 
-        return spawnPlatform.transform.position;
+        return spawnPlatform.GetSpawnPosition();
     }
     
     public Vector3 GetRobotSpawnPoint()
@@ -78,7 +78,7 @@ public class SOTest : ScriptableObject
         }
 
 
-        return spawnPlatform.transform.position + offset;
+        return spawnPlatform.GetSpawnPosition() + offset;
     }
 
     public bool HasRobot()

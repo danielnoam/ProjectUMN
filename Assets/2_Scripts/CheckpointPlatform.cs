@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class CheckpointPlatform : MonoBehaviour
 {
+    [SerializeField] private Transform spawnPosition;
     private bool _hasReached;
     private TestManager _testManager;
     
@@ -26,5 +27,10 @@ public class CheckpointPlatform : MonoBehaviour
             _hasReached = true;
             _testManager.SetCheckpointPosition(transform);
         }
+    }
+    
+    public Vector3 GetSpawnPosition()
+    {
+        return spawnPosition.position;
     }
 }

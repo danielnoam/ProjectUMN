@@ -1,31 +1,36 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Serialization;
 using VInspector;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-public class LaserBridge : MonoBehaviour
+public class PowerPlane : MonoBehaviour
 {
-    [Header("Bridge Points")]
+    [Header("Plane Points")]
     public Transform startPoint;
     public Transform endPoint;
     
-    [Header("Bridge Settings")]
-    public float bridgeWidth = 2f;
-    public float bridgeHeight = 0.2f;
+    [Header("Plane Settings")]
+    public float planeWidth = 2f;
+    public float planeHeight = 0.2f;
     public float activationTime = 1.0f;
-    public Material bridgeMaterial;
+    public Material planeMaterial;
+    
+    [Header("Orientation Settings")]
+    [Tooltip("When enabled, the plane will be oriented vertically like a wall")]
+    public bool isVertical = false;
     
     [Header("Runtime")]
-    [Tooltip("Toggle to activate/deactivate the bridge (works in editor and play mode)")]
+    [Tooltip("Toggle to activate/deactivate the plane (works in editor and play mode)")]
     public bool isActive = false;
     
     // Components
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
     private MeshCollider _meshCollider;
-    private Mesh _bridgeMesh;
+    private Mesh _planeMesh;
     
     private Coroutine _activationCoroutine;
     private float _currentAnimationProgress = 0f; // 0 = fully inactive, 1 = fully active
@@ -47,50 +52,50 @@ public class LaserBridge : MonoBehaviour
             _meshCollider = gameObject.AddComponent<MeshCollider>();
         
         // Create new mesh
-        _bridgeMesh = new Mesh();
-        _bridgeMesh.name = "BridgeMesh";
-        _meshFilter.mesh = _bridgeMesh;
+        _planeMesh = new Mesh();
+        _planeMesh.name = "PlaneMesh";
+        _meshFilter.mesh = _planeMesh;
         
         // Set material
-        if (bridgeMaterial != null)
-            _meshRenderer.material = bridgeMaterial;
+        if (planeMaterial != null)
+            _meshRenderer.material = planeMaterial;
             
         // Initialize mesh collider
-        _meshCollider.sharedMesh = _bridgeMesh;
+        _meshCollider.sharedMesh = _planeMesh;
         _meshCollider.convex = true;
     }
     
     private void Start()
     {
         // Set initial state
-        CreateBridgeMesh(1.0f); // Create full-size mesh first
-        SetBridgeActive(isActive, false);
+        CreatePlaneMesh(1.0f); // Create full-size mesh first
+        SetPlaneActive(isActive, false);
         
         // Initialize animation progress based on current state
         _currentAnimationProgress = isActive ? 1f : 0f;
         _targetState = isActive;
     }
     
-    // Update the bridge if points are moved at runtime
+    // Update the plane if points are moved at runtime
     private void Update()
     {
         // Only update if active and if positions have changed
         if (isActive && startPoint != null && endPoint != null && 
            (startPoint.hasChanged || endPoint.hasChanged))
         {
-            CreateBridgeMesh(1.0f);
+            CreatePlaneMesh(1.0f);
             startPoint.hasChanged = false;
             endPoint.hasChanged = false;
         }
     }
     
-    // Create bridge mesh based on points
-    private void CreateBridgeMesh(float lengthMultiplier = 1.0f, float startOffset = 0.0f)
+    // Create plane mesh based on points
+    private void CreatePlaneMesh(float lengthMultiplier = 1.0f, float startOffset = 0.0f)
     {
-        if (startPoint == null || endPoint == null || _bridgeMesh == null)
+        if (startPoint == null || endPoint == null || _planeMesh == null)
             return;
             
-        // Calculate bridge parameters
+        // Calculate plane parameters
         Vector3 direction = endPoint.position - startPoint.position;
         float fullLength = direction.magnitude;
         direction.Normalize();
@@ -101,15 +106,28 @@ public class LaserBridge : MonoBehaviour
         // Calculate start position with offset
         Vector3 startPos = startPoint.position + direction * (fullLength * startOffset);
         
-        // Calculate half width and height for vertex positions
-        float halfWidth = bridgeWidth * 0.5f;
-        float halfHeight = bridgeHeight * 0.5f;
-        
-        // Create local axes for the bridge orientation
+        // Create local axes for the plane orientation
         Vector3 forward = direction;
-        Vector3 up = Vector3.up;
-        Vector3 right = Vector3.Cross(up, forward).normalized;
-        up = Vector3.Cross(forward, right).normalized;
+        
+        Vector3 up, right;
+        
+        if (isVertical)
+        {
+            // For a vertical plane, the "up" direction is actually the world up
+            up = Vector3.up;
+            right = Vector3.Cross(up, forward).normalized;
+        }
+        else
+        {
+            // For a horizontal plane, the "up" direction is perpendicular to the plane direction
+            up = Vector3.up;
+            right = Vector3.Cross(up, forward).normalized;
+            up = Vector3.Cross(forward, right).normalized;
+        }
+        
+        // Calculate half width and height for vertex positions
+        float halfWidth = planeWidth * 0.5f;
+        float halfHeight = planeHeight * 0.5f;
         
         // Create vertices
         Vector3[] vertices = new Vector3[8];
@@ -170,68 +188,78 @@ public class LaserBridge : MonoBehaviour
         uvs[7] = new Vector2(1, 1);
         
         // Clear and set mesh data
-        _bridgeMesh.Clear();
-        _bridgeMesh.vertices = vertices;
-        _bridgeMesh.triangles = triangles;
-        _bridgeMesh.uv = uvs;
+        _planeMesh.Clear();
+        _planeMesh.vertices = vertices;
+        _planeMesh.triangles = triangles;
+        _planeMesh.uv = uvs;
         
         // Recalculate normals and bounds
-        _bridgeMesh.RecalculateNormals();
-        _bridgeMesh.RecalculateBounds();
+        _planeMesh.RecalculateNormals();
+        _planeMesh.RecalculateBounds();
         
         // Update mesh collider
         if (_meshCollider != null)
         {
             _meshCollider.sharedMesh = null; // Necessary to force update
-            _meshCollider.sharedMesh = _bridgeMesh;
+            _meshCollider.sharedMesh = _planeMesh;
         }
     }
     
     [Button]
-    public void ToggleBridge()
+    public void TogglePlane()
     {
         // Check if the GameObject is active before starting a coroutine
         if (!gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("Cannot toggle bridge on inactive GameObject. Please activate the GameObject first.");
+            Debug.LogWarning("Cannot toggle plane on inactive GameObject. Please activate the GameObject first.");
             return;
         }
         
-        SetBridgeActive(!isActive);
+        SetPlaneActive(!isActive);
     }
     
     [Button]
-    public void ActivateBridge()
+    public void ActivatePlane()
     {
         if (isActive) return;
         
         // Check if the GameObject is active before starting a coroutine
         if (!gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("Cannot activate bridge on inactive GameObject. Please activate the GameObject first.");
+            Debug.LogWarning("Cannot activate plane on inactive GameObject. Please activate the GameObject first.");
             return;
         }
         
-        SetBridgeActive(true);
+        SetPlaneActive(true);
     }
     
     [Button]
-    public void DeactivateBridge()
+    public void DeactivatePlane()
     {
         if (!isActive) return;
         
         // Check if the GameObject is active before starting a coroutine
         if (!gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("Cannot deactivate bridge on inactive GameObject. Please activate the GameObject first.");
+            Debug.LogWarning("Cannot deactivate plane on inactive GameObject. Please activate the GameObject first.");
             return;
         }
         
-        SetBridgeActive(false);
+        SetPlaneActive(false);
     }
     
-    // Activate or deactivate the bridge
-    private void SetBridgeActive(bool active, bool animate = true)
+    [Button]
+    public void ToggleOrientation()
+    {
+        isVertical = !isVertical;
+        if (isActive)
+        {
+            CreatePlaneMesh(1.0f);
+        }
+    }
+    
+    // Activate or deactivate the plane
+    private void SetPlaneActive(bool active, bool animate = true)
     {
         // Update the target state
         _targetState = active;
@@ -242,7 +270,7 @@ public class LaserBridge : MonoBehaviour
             // If there's no active animation, start a new one
             if (_activationCoroutine == null)
             {
-                _activationCoroutine = StartCoroutine(AnimateBridge());
+                _activationCoroutine = StartCoroutine(AnimatePlane());
             }
             // Otherwise, the existing animation will continue but with the new target state
         }
@@ -258,12 +286,12 @@ public class LaserBridge : MonoBehaviour
                 _meshCollider.enabled = active;
                 
             // Update mesh to show the correct state
-            CreateBridgeMesh(active ? 1.0f : 0.0f);
+            CreatePlaneMesh(active ? 1.0f : 0.0f);
         }
     }
     
-    // Animate the bridge activation/deactivation
-    private IEnumerator AnimateBridge()
+    // Animate the plane activation/deactivation
+    private IEnumerator AnimatePlane()
     {
         // Show the renderer during animation
         _meshRenderer.enabled = true;
@@ -286,7 +314,7 @@ public class LaserBridge : MonoBehaviour
             _currentAnimationProgress = Mathf.Clamp01(_currentAnimationProgress + step);
             
             // Update mesh
-            CreateBridgeMesh(_currentAnimationProgress);
+            CreatePlaneMesh(_currentAnimationProgress);
             
             yield return null;
             
@@ -298,7 +326,7 @@ public class LaserBridge : MonoBehaviour
         if (_targetState)
         {
             // Final full-size mesh
-            CreateBridgeMesh(1.0f);
+            CreatePlaneMesh(1.0f);
         }
         else
         {
@@ -341,24 +369,24 @@ public class LaserBridge : MonoBehaviour
                 _meshCollider = GetComponent<MeshCollider>();
                 
                 // Create mesh if it doesn't exist
-                if (_bridgeMesh == null)
+                if (_planeMesh == null)
                 {
-                    _bridgeMesh = new Mesh();
-                    _bridgeMesh.name = "BridgeMesh";
+                    _planeMesh = new Mesh();
+                    _planeMesh.name = "PlaneMesh";
                     
                     // We use delayCall, so setting sharedMesh should be safe now
                     if (_meshFilter != null)
-                        _meshFilter.sharedMesh = _bridgeMesh;
+                        _meshFilter.sharedMesh = _planeMesh;
                 }
                 
                 // Update the mesh
-                if (_bridgeMesh != null && startPoint != null && endPoint != null)
+                if (_planeMesh != null && startPoint != null && endPoint != null)
                 {
                     // Update current animation progress based on isActive for editor
                     _currentAnimationProgress = isActive ? 1f : 0f;
                     _targetState = isActive;
                     
-                    CreateBridgeMesh(isActive ? 1.0f : 0.0f);
+                    CreatePlaneMesh(isActive ? 1.0f : 0.0f);
                 }
                 
                 // Visual representation in editor
@@ -366,13 +394,13 @@ public class LaserBridge : MonoBehaviour
                 {
                     _meshRenderer.enabled = isActive;
                     
-                    if (bridgeMaterial != null)
-                        _meshRenderer.sharedMaterial = bridgeMaterial;
+                    if (planeMaterial != null)
+                        _meshRenderer.sharedMaterial = planeMaterial;
                     
                     // Make sure the mesh collider has the current mesh
-                    if (_meshCollider != null && _bridgeMesh != null)
+                    if (_meshCollider != null && _planeMesh != null)
                     {
-                        _meshCollider.sharedMesh = _bridgeMesh;
+                        _meshCollider.sharedMesh = _planeMesh;
                         _meshCollider.enabled = isActive;
                     }
                 }
@@ -380,13 +408,13 @@ public class LaserBridge : MonoBehaviour
         };
     }
     
-    // Draw gizmos to show the bridge in Scene view
+    // Draw gizmos to show the plane in Scene view
     private void OnDrawGizmos()
     {
         if (startPoint == null || endPoint == null)
             return;
             
-        // Draw a line showing the bridge path
+        // Draw a line showing the plane path
         Gizmos.color = isActive ? Color.green : Color.red;
         Gizmos.DrawLine(startPoint.position, endPoint.position);
         
@@ -394,17 +422,19 @@ public class LaserBridge : MonoBehaviour
         Gizmos.DrawSphere(startPoint.position, 0.2f);
         Gizmos.DrawSphere(endPoint.position, 0.2f);
         
-        // Draw the bridge bounds if active
+        // Draw the plane bounds if active
         if (isActive)
         {
-            // Draw wireframe of the bridge
+            // Draw wireframe
             Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
             Vector3 direction = endPoint.position - startPoint.position;
             float distance = direction.magnitude;
             Vector3 center = startPoint.position + direction * 0.5f;
-            Vector3 size = new Vector3(bridgeWidth, bridgeHeight, distance);
             
-            // Draw the bridge bounds
+            // Choose dimensions based on orientation
+            Vector3 size = new Vector3(planeWidth, planeHeight, distance);
+            
+            // Draw the plane bounds
             Matrix4x4 originalMatrix = Gizmos.matrix;
             Gizmos.matrix = Matrix4x4.TRS(
                 center,
