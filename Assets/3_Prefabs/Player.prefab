@@ -1328,9 +1328,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSmoothTime: 0.1
-  walkBlendMax: 0.5
-  runBlendMax: 1
-  sprintBlendMax: 2
   maxFallTime: 2
 --- !u!114 &7928860610601458710
 MonoBehaviour:
@@ -1347,6 +1344,8 @@ MonoBehaviour:
   walkSpeed: 4
   runSpeed: 8
   sprintSpeed: 12
+  strafeSpeedMultiplier: 0.8
+  backwardSpeedMultiplier: 0.7
   acceleration: 10
   groundDrag: 10
   antiBumpForce: 4
@@ -1366,7 +1365,7 @@ MonoBehaviour:
   environmentLayer:
     serializedVersion: 2
     m_Bits: 1
-  aimRayMaxDistance: 20
+  aimRayMaxDistance: 25
   aimRayHitMask:
     serializedVersion: 2
     m_Bits: 256

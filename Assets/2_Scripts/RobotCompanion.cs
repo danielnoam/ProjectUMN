@@ -176,7 +176,6 @@ public class RobotCompanion : MonoBehaviour
    }
 
 
-
    private void Update()
    {
        UpdateEye();
@@ -225,12 +224,19 @@ public class RobotCompanion : MonoBehaviour
        _player = TestManager.Instance.GetPlayer();
        _playerFollowPosition = _player.transform.GetChild(2);
        
-       if (!test.HasRobot()) transform.position = test.GetRobotSpawnPoint();
+       if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
    }
 
 
    #region Commends ------------------------------------------------------------------------------
 
+   public void Teleport(Vector3 position, Quaternion rotation)
+   {
+       rigidBody.isKinematic = true;
+       transform.position = position;
+       transform.rotation = rotation;
+       rigidBody.isKinematic = false;
+   }
 
    public void InteractWith(IInteractable interactable)
    {
@@ -771,6 +777,7 @@ private void OnDrawGizmos()
 
 
    #region Utility ------------------------------------------------------------------------
+   
    
     private void UpdateEarRotation()
     {

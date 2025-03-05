@@ -1,7 +1,7 @@
 using System;
 using TMPro;
 using UnityEngine;
-
+using VInspector;
 
 
 [RequireComponent(typeof(LineRenderer))]
@@ -298,8 +298,10 @@ public class PlayerStateMachine : MonoBehaviour
     
     public void Teleport(Vector3 position, Quaternion rotation)
     {
+        _controller.enabled = false;
         transform.position = position;
         transform.rotation = rotation;
+        _controller.enabled = true;
     }
     
     public void HandleMovement(bool allowMovement, bool isAirborne)
@@ -676,7 +678,7 @@ public class PlayerStateMachine : MonoBehaviour
     {
         if (!_robot || !_robot.CanCommend()) return;
             
-        if (!IsAiming && InputHandler.RobotInteractInput)
+        if (CurrentAimedInteractable == null && InputHandler.RobotInteractInput)
         {
             _robot.FollowPlayer();
         }

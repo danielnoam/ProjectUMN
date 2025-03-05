@@ -25,7 +25,7 @@ public class CheckpointPlatform : MonoBehaviour
         if (other.TryGetComponent(out PlayerStateMachine player))
         {
             _hasReached = true;
-            _testManager.SetCheckpointPosition(transform);
+            _testManager.SetCheckpointPosition(spawnPosition);
         }
     }
     

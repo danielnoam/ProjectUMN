@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 using VInspector;
@@ -250,8 +251,8 @@ public class TestManager : MonoBehaviour
         {
             GameObject newRobot = Instantiate(robotPrefab);
             currentRobot = newRobot.GetComponent<RobotCompanion>();
-            newRobot.transform.position = currentTest.GetRobotSpawnPoint();
             currentRobot.TurnOn();
+            currentRobot.Teleport(currentTest.GetRobotSpawnPoint(), quaternion.identity);
         }
         
         onTestLoaded.Invoke(currentTest);

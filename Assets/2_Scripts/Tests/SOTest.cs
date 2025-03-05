@@ -62,7 +62,7 @@ public class SOTest : ScriptableObject
     
     public Vector3 GetRobotSpawnPoint()
     {
-        Vector3 offset = new Vector3(0, 1f, 1);
+        Vector3 offset = new Vector3(1, 1f, 2);
         
         if (!prefab)
         {

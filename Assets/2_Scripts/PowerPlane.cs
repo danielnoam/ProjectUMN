@@ -423,7 +423,7 @@ public class PowerPlane : MonoBehaviour
         Gizmos.DrawSphere(endPoint.position, 0.2f);
         
         // Draw the plane bounds if active
-        if (isActive)
+        if (!isActive)
         {
             // Draw wireframe
             Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
