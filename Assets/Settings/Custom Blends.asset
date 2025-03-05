@@ -20,10 +20,28 @@ MonoBehaviour:
       Time: 1
       CustomCurve:
         serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 0
-        m_PostInfinity: 0
-        m_RotationOrder: 0
+        m_Curve:
+        - serializedVersion: 3
+          time: -0.10178757
+          value: 0.0077819824
+          inSlope: 2
+          outSlope: 2
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1.2931864
+          value: 1.0089049
+          inSlope: -0.8894869
+          outSlope: -0.8894869
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.07291669
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   - From: 'MenuCamera '
     To: '**ANY CAMERA**'
     Blend:
@@ -31,7 +49,83 @@ MonoBehaviour:
       Time: 1
       CustomCurve:
         serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 0
-        m_PostInfinity: 0
-        m_RotationOrder: 0
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 2
+          outSlope: 2
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: -0.8894869
+          outSlope: -0.8894869
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.07291669
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  - From: AimCameraThirdPerson
+    To: FreeCameraOrbital
+    Blend:
+      Style: 1
+      Time: 0.7
+      CustomCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 2
+          outSlope: 2
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: -0.8894869
+          outSlope: -0.8894869
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.07291669
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  - From: FreeCameraOrbital
+    To: AimCameraThirdPerson
+    Blend:
+      Style: 1
+      Time: 0.3
+      CustomCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 2
+          outSlope: 2
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: -0.8894869
+          outSlope: -0.8894869
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.07291669
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4

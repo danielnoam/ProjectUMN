@@ -16,8 +16,6 @@ public class PlayerLandingState : PlayerBaseState
     {
         StateMachine.FallTime = 0f;
         StateMachine.AirTime = 0f;
-        
-
     }
 
     public override void UpdateState()
@@ -28,21 +26,9 @@ public class PlayerLandingState : PlayerBaseState
     public override void FixedUpdateState()
     {
         StateMachine.ApplyGravity(true);
-        
-        // Apply movement with landing-specific parameters
-        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
-            isAirborne: false,
-            speedMultiplier: 0.8f, // Reduced speed during recovery
-            accelMultiplier: 0.7f, // Slower acceleration during recovery
-            controlMultiplier: 1 // Limited control based on recovery
-        ));
-        
-        // Apply rotation with landing-specific parameters
-        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
-            useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 1, // Limited rotation control during recovery
-            allowRotation: true
-        ));
+        StateMachine.ApplyGravity(true);
+        StateMachine.HandleMovement(allowMovement: true, isAirborne: false);
+        StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
     }
 
     private void CheckStateTransitions()

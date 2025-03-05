@@ -14,36 +14,22 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void ExitState()
     {
+
     }
 
     public override void UpdateState()
     {
+        StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
-        StateMachine.HandleAiming();
         StateMachine.AirTime += Time.deltaTime;
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
-        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
-            isAirborne: true,
-            speedMultiplier: 1.0f,
-            accelMultiplier: 1.0f,
-            controlMultiplier: 1.0f,
-            dragMultiplier: 0.5f,
-            handleSteepSurfaces: true
-        ));
-    
         StateMachine.ApplyGravity(false);
-    
-        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
-            useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 0.5f,
-            allowRotation: true,
-            alignWithCameraWhenIdle: false,
-            idleAlignmentSpeed: 0.5f
-        ));
+        StateMachine.HandleMovement(allowMovement: true, isAirborne: true);
+        StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: false);
     }
 
     private void CheckStateTransitions()

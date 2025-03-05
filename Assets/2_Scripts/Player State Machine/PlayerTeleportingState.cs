@@ -15,7 +15,6 @@ public class PlayerTeleportingState : PlayerBaseState
     public override void EnterState()
     {
         StateMachine.ResetGravity();
-        StateMachine.DisableAiming();
         if (TestManager.Instance)
         {
             _teleportationDestination = TestManager.Instance.GetCheckpointPosition();
@@ -39,23 +38,14 @@ public class PlayerTeleportingState : PlayerBaseState
             }
         }
         
+        StateMachine.HandleAiming(false);
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
-        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
-            isAirborne: false,
-            speedMultiplier: 0f,
-            accelMultiplier: 3f,  
-            controlMultiplier: 1.0f
-        ));
-        
-        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
-            useAimRotation: false,
-            rotationMultiplier: 0f,
-            allowRotation: false
-        ));
+        StateMachine.HandleMovement(allowMovement: false, isAirborne: false);
+        StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
     }
     
     private void CheckStateTransitions()

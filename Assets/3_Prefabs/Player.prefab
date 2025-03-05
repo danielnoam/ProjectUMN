@@ -1327,8 +1327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 719a9bc8b10c0434587008f17fec18f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  verticalSmoothTime: 0.1
-  horizontalSmoothTime: 0.15
+  animationSmoothTime: 0.1
   walkBlendMax: 0.5
   runBlendMax: 1
   sprintBlendMax: 2
@@ -1349,11 +1348,10 @@ MonoBehaviour:
   runSpeed: 8
   sprintSpeed: 12
   acceleration: 10
-  groundDrag: 1
+  groundDrag: 10
   antiBumpForce: 4
   rotationSpeed: 2
   idleAlignmentSpeed: 2
-  rotationMismatchThreshold: 90
   idleRotationDuration: 0.67
   airAcceleration: 5
   airDrag: 5

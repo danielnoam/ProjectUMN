@@ -17,32 +17,17 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.HandleAiming();
-        StateMachine.CommandRobot();
         StateMachine.AirTime += Time.deltaTime;
+        StateMachine.HandleAiming(true);
+        StateMachine.CommandRobot();
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
-        StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
-            isAirborne: true,
-            speedMultiplier: 1.0f,
-            accelMultiplier: 1.0f,
-            controlMultiplier: 1.0f,
-            dragMultiplier: 0.5f,
-            handleSteepSurfaces: false
-        ));
-    
         StateMachine.ApplyGravity(false);
-    
-        StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
-            useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 0.5f,
-            allowRotation: true,
-            alignWithCameraWhenIdle: false,
-            idleAlignmentSpeed: 0.5f
-        ));
+        StateMachine.HandleMovement(allowMovement: true, isAirborne: true);
+        StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: false);
     }
 
     private void CheckStateTransitions()

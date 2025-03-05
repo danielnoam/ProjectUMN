@@ -29,6 +29,10 @@ public class PlayerStateMachine : MonoBehaviour
     public float runSpeed = 8f;
     [Tooltip("Maximum speed when sprinting with sufficient input")]
     public float sprintSpeed = 12f;
+    [Tooltip("Speed multiplier when strafing (moving sideways)")]
+    public float strafeSpeedMultiplier = 0.8f;
+    [Tooltip("Speed multiplier when moving backward")]
+    public float backwardSpeedMultiplier = 0.7f;
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
     [Tooltip("Drag force applied to movement on ground")]
@@ -118,56 +122,6 @@ public class PlayerStateMachine : MonoBehaviour
     private Quaternion _targetIdleRotation = Quaternion.identity;
     private float _rotationProgress = 1.0f; 
     
-    
-    public struct MovementParams
-    {
-        public readonly bool IsAirborne;        
-        public readonly float SpeedMultiplier;  
-        public readonly float AccelMultiplier;  
-        public readonly float ControlMultiplier;
-        public readonly float DragMultiplier; 
-        public readonly bool HandleSteepSurfaces; 
-    
-        public MovementParams(
-            bool isAirborne = false, 
-            float speedMultiplier = 1f, 
-            float accelMultiplier = 1f, 
-            float controlMultiplier = 1f,
-            float dragMultiplier = 1f,
-            bool handleSteepSurfaces = false)
-        {
-            this.IsAirborne = isAirborne;
-            this.SpeedMultiplier = speedMultiplier;
-            this.AccelMultiplier = accelMultiplier;
-            this.ControlMultiplier = controlMultiplier;
-            this.DragMultiplier = dragMultiplier;
-            this.HandleSteepSurfaces = handleSteepSurfaces;
-        }
-    }
-
-
-    public struct RotationParams
-    {
-        public readonly bool UseAimRotation;
-        public readonly float RotationMultiplier;
-        public readonly bool AllowRotation;
-        public readonly bool AlignWithCameraWhenIdle;
-        public readonly float IdleAlignmentSpeed;
-    
-        public RotationParams(
-            bool useAimRotation = false, 
-            float rotationMultiplier = 1f, 
-            bool allowRotation = true,
-            bool alignWithCameraWhenIdle = false,
-            float idleAlignmentSpeed = 1f)
-        {
-            this.UseAimRotation = useAimRotation;
-            this.RotationMultiplier = rotationMultiplier;
-            this.AllowRotation = allowRotation;
-            this.AlignWithCameraWhenIdle = alignWithCameraWhenIdle;
-            this.IdleAlignmentSpeed = idleAlignmentSpeed;
-        }
-    }
 
 
     private void Awake()
@@ -348,21 +302,32 @@ public class PlayerStateMachine : MonoBehaviour
         transform.rotation = rotation;
     }
     
-    public void HandleMovement(MovementParams parameters)
+    public void HandleMovement(bool allowMovement, bool isAirborne)
     {
-        // Calculate movement intensity (0-1)
+        // Current velocity excluding vertical component
+        Vector3 currentHorizontalVelocity = new Vector3(
+            _controller.velocity.x, 
+            0, 
+            _controller.velocity.z
+        );
+        
+        // Initialize the new velocity to current (will be modified below)
+        Vector3 newHorizontalVelocity = currentHorizontalVelocity;
+        
+        // Calculate movement input magnitude
         float movementIntensity = Mathf.Clamp01(
             Mathf.Abs(InputHandler.MovementInput.x) + 
             Mathf.Abs(InputHandler.MovementInput.y)
         );
-
+        
         // Check if input is above threshold
         bool hasMovementInput = movementIntensity > InputHandler.MovementInputThreshold;
         
-        // Determine movement direction
-        Vector3 inputDirection = Vector3.zero;
-        if (hasMovementInput)
+        // Process movement if allowed
+        if (allowMovement && hasMovementInput)
         {
+            // Determine movement direction
+            Vector3 inputDirection;
             if (IsAiming)
             {
                 // When aiming, calculate strafe movement
@@ -371,288 +336,249 @@ public class PlayerStateMachine : MonoBehaviour
                 Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
                 
                 inputDirection = (forward * InputHandler.MovementInput.y + 
-                                right * InputHandler.MovementInput.x).normalized;
+                               right * InputHandler.MovementInput.x).normalized;
             }
             else
             {
                 // Standard camera-relative movement
                 inputDirection = CalculateMoveDirection();
             }
-        }
-        
-        // Calculate target speed based on state
-        float targetSpeed = hasMovementInput ? 
-            CalculateTargetSpeed(movementIntensity) * parameters.SpeedMultiplier : 0f;
-        
-        // Current velocity excluding vertical component
-        Vector3 currentHorizontalVelocity = new Vector3(
-            _controller.velocity.x, 
-            0, 
-            _controller.velocity.z
-        );
-        
-        // Calculate acceleration based on params
-        float accelerationToUse = parameters.IsAirborne ? 
-            airAcceleration * parameters.AccelMultiplier : 
-            acceleration * parameters.AccelMultiplier;
-        
-        // Calculate new velocity with acceleration applied
-        Vector3 targetVelocity = hasMovementInput ? inputDirection * targetSpeed : Vector3.zero;
-        Vector3 velocityChange = targetVelocity - currentHorizontalVelocity;
-        
-        // Apply acceleration limit
-        velocityChange = Vector3.ClampMagnitude(velocityChange, accelerationToUse * Time.fixedDeltaTime);
-        Vector3 newHorizontalVelocity = currentHorizontalVelocity + velocityChange;
-        
-        // Apply drag
-        float dragToUse = parameters.IsAirborne ? 
-            airDrag * parameters.DragMultiplier : 
-            groundDrag * parameters.DragMultiplier;
             
-        if (newHorizontalVelocity.magnitude > 0.01f)
+            // Calculate target speed
+            float targetSpeed = CalculateTargetSpeed(movementIntensity);
+            Vector3 targetVelocity = inputDirection * targetSpeed;
+            
+            // Apply appropriate acceleration
+            float accelRate = isAirborne ? airAcceleration : acceleration;
+            Vector3 velocityChange = targetVelocity - currentHorizontalVelocity;
+            velocityChange = Vector3.ClampMagnitude(velocityChange, accelRate * Time.fixedDeltaTime);
+            
+            newHorizontalVelocity = currentHorizontalVelocity + velocityChange;
+        }
+        else
         {
-            Vector3 dragForce = newHorizontalVelocity.normalized * (dragToUse * Time.fixedDeltaTime);
+            // No movement input or movement not allowed - apply greater drag to slow down
+            float dragMultiplier = allowMovement ? 1.0f : 2.0f; // Extra drag when movement disabled
             
-            // Only apply drag up to current speed
-            if (dragForce.magnitude > newHorizontalVelocity.magnitude)
+            // Apply drag to slow down if there's velocity
+            if (newHorizontalVelocity.magnitude > 0.01f)
             {
-                newHorizontalVelocity = Vector3.zero;
-            }
-            else
-            {
-                newHorizontalVelocity -= dragForce;
+                float dragToUse = isAirborne ? airDrag : groundDrag;
+                Vector3 dragForce = newHorizontalVelocity.normalized * (dragToUse * dragMultiplier * Time.fixedDeltaTime);
+                
+                // Only apply drag up to current speed
+                if (dragForce.magnitude > newHorizontalVelocity.magnitude)
+                {
+                    newHorizontalVelocity = Vector3.zero;
+                }
+                else
+                {
+                    newHorizontalVelocity -= dragForce;
+                }
             }
         }
         
-        // Apply steep surface handling for airborne movement
-        if (parameters is { IsAirborne: true, HandleSteepSurfaces: true })
+        // Handle steep surfaces in air
+        if (isAirborne)
         {
             newHorizontalVelocity = HandleSteepSurfaces(newHorizontalVelocity);
         }
         
-        // Apply control multiplier (for landing, etc.)
-        newHorizontalVelocity *= parameters.ControlMultiplier;
-        
         // Update state machine values
         ActiveHorizontalVelocity = newHorizontalVelocity.magnitude;
-        ActiveMoveDirection = newHorizontalVelocity.magnitude > 0.01f ? 
-            newHorizontalVelocity.normalized : ActiveMoveDirection;
+        if (newHorizontalVelocity.magnitude > 0.01f)
+        {
+            ActiveMoveDirection = newHorizontalVelocity.normalized;
+        }
         
         // Track if we're moving laterally for animation/rotation purposes
         _isMovingLaterally = ActiveHorizontalVelocity > InputHandler.MovementInputThreshold;
     }
 
-    private Vector3 HandleSteepSurfaces(Vector3 velocity)
+
+    public void HandleRotation(bool allowRotation, bool alignWithCameraWhenIdle)
     {
-        // Don't apply when moving upward
-        if (ActiveVerticalVelocity >= 0) return velocity;
+        // Skip rotation if not allowed
+        if (!allowRotation)
+            return;
         
-        // Cast a sphere to detect surface normal
-        Vector3 origin = transform.position + Vector3.up * _controller.radius;
-        float distance = _controller.height * 0.5f + 0.1f;
-        
-        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
-                out RaycastHit hitInfo, distance, environmentLayer))
+        // Calculate camera-to-player rotation mismatch
+        if (_cameraManager)
         {
-            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
+            Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
+            Vector3 playerForward = transform.forward;
             
-            // Only apply for steep slopes beyond character controller's slope limit
-            if (angle > _controller.slopeLimit)
-            {
-                // Project movement onto the surface to slide
-                return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
-            }
+            // Calculate cross product to determine direction
+            Vector3 cross = Vector3.Cross(playerForward, cameraForwardFlat);
+            float sign = Mathf.Sign(Vector3.Dot(cross, Vector3.up));
+            
+            // Calculate and store rotation mismatch
+            RotationMismatch = sign * Vector3.Angle(playerForward, cameraForwardFlat);
+            _lastCameraForward = cameraForwardFlat;
         }
         
-        return velocity;
-    }
-    
-public void HandleRotation(RotationParams parameters)
-{
-    // Skip rotation if not allowed
-    if (!parameters.AllowRotation)
-        return;
-    
-    // Calculate camera-to-player rotation mismatch
-    if (_cameraManager)
-    {
-        Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
-        Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
-        Vector3 playerForward = transform.forward;
-        
-        // Calculate cross product to determine direction
-        Vector3 cross = Vector3.Cross(playerForward, cameraForwardFlat);
-        float sign = Mathf.Sign(Vector3.Dot(cross, Vector3.up));
-        
-        // Calculate and store rotation mismatch
-        RotationMismatch = sign * Vector3.Angle(playerForward, cameraForwardFlat);
-        _lastCameraForward = cameraForwardFlat;
-    }
-    
-    // AIMING MODE ROTATION 
-    if (IsAiming)
-    {
-        // When aiming while idle, use the original idle alignment behavior
-        if (!_isMovingLaterally && parameters.AlignWithCameraWhenIdle)
+        // AIMING MODE ROTATION 
+        if (IsAiming)
         {
-            // Start timer if needed
-            if ( _rotatingToTargetTimer <= 0)
+            // When aiming while idle, align with camera
+            if (!_isMovingLaterally)
             {
-                _rotatingToTargetTimer = idleRotationDuration;
-                IsRotatingToTarget = true;
+                // Start timer if needed
+                if (_rotatingToTargetTimer <= 0)
+                {
+                    _rotatingToTargetTimer = idleRotationDuration;
+                    IsRotatingToTarget = true;
+                }
+                
+                // Update timer
+                if (_rotatingToTargetTimer > 0)
+                {
+                    _rotatingToTargetTimer -= Time.fixedDeltaTime;
+                    
+                    // Calculate target rotation based on camera
+                    Quaternion targetRotation = Quaternion.LookRotation(_lastCameraForward);
+                    
+                    // Apply rotation with Lerp for smoother transitions
+                    transform.rotation = Quaternion.Lerp(
+                        transform.rotation,
+                        targetRotation,
+                        idleAlignmentSpeed * Time.fixedDeltaTime * 3f
+                    );
+                    
+                    if (_rotatingToTargetTimer <= 0)
+                    {
+                        IsRotatingToTarget = false;
+                    }
+                }
             }
-            
-            // Update timer
-            if (_rotatingToTargetTimer > 0)
+            // When aiming while moving, use smoother rotation to face aim direction
+            else if (_isMovingLaterally)
             {
-                _rotatingToTargetTimer -= Time.fixedDeltaTime;
+                // Get aim direction from camera
+                Vector3 aimDirection = GetCameraAimDirection();
                 
-                // Calculate target rotation based on camera
-                Quaternion targetRotation = Quaternion.LookRotation(_lastCameraForward);
+                // Flatten the aim direction to prevent tilting
+                Vector3 flattenedAimDirection = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
                 
-                // Apply rotation with Lerp for smoother transitions
+                // Calculate target rotation and apply it using Lerp for smoothness
+                Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
+                
+                // Use Lerp for smoother transitions
                 transform.rotation = Quaternion.Lerp(
                     transform.rotation,
                     targetRotation,
-                    parameters.IdleAlignmentSpeed * idleAlignmentSpeed * Time.fixedDeltaTime * 3f
+                    aimRotationSpeed * Time.fixedDeltaTime * 3f
                 );
                 
-                if (_rotatingToTargetTimer <= 0)
-                {
-                    IsRotatingToTarget = false;
-                }
+                IsRotatingToTarget = true;
+            }
+            else
+            {
+                IsRotatingToTarget = false;
             }
         }
-        // When aiming while moving, use smoother rotation to face aim direction
-        else if (_isMovingLaterally)
-        {
-            // Get aim direction from camera
-            Vector3 aimDirection = GetCameraAimDirection();
-            
-            // Flatten the aim direction to prevent tilting up or down
-            Vector3 flattenedAimDirection = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
-            
-            // Calculate target rotation and apply it using Lerp for smoothness
-            Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
-            
-            // Use Lerp instead of RotateTowards for smoother transitions
-            transform.rotation = Quaternion.Lerp(
-                transform.rotation,
-                targetRotation,
-                aimRotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 3f
-            );
-            
-            IsRotatingToTarget = true;
-        }
+        // NON-AIMING MODE ROTATION
         else
         {
-            IsRotatingToTarget = false;
-        }
-    }
-    // NON-AIMING MODE ROTATION
-    else
-    {
-        // Check if we just started moving from idle
-        if (!_wasMovingLastFrame && _isMovingLaterally)
-        {
-            // Check if we're moving primarily forward
-            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
-
-            // Calculate target rotation based on movement
-            // When moving forward, rotate to face camera direction
-            // When moving in other directions, rotate to face movement direction
-            var targetDirection = isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection;
-
-            // Start the idle-to-movement rotation
-            _isRotatingFromIdle = true;
-            _targetIdleRotation = Quaternion.LookRotation(targetDirection);
-            
-            // Calculate initial rotation progress (how far we are from target rotation)
-            float angleDifference = Quaternion.Angle(transform.rotation, _targetIdleRotation);
-            _rotationProgress = Mathf.Clamp01(1f - (angleDifference / 180f));
-            
-            // Always set rotating to target when starting from idle
-            IsRotatingToTarget = true;
-        }
-        // If we're already moving, handle normal movement rotation
-        else if (_isMovingLaterally)
-        {
-            // Check if we're changing direction significantly while moving
-            bool isChangingDirection = false;
-            if (_lastMoveDirection.sqrMagnitude > 0.01f && ActiveMoveDirection.sqrMagnitude > 0.01f)
+            // Check if we just started moving from idle
+            if (!_wasMovingLastFrame && _isMovingLaterally)
             {
-                float directionChangeAngle = Vector3.Angle(_lastMoveDirection, ActiveMoveDirection);
-                isChangingDirection = directionChangeAngle > 30f;
-            }
-            
-            
+                // Check if we're moving primarily forward
+                bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
+                                                Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
 
-            // Check if we're moving primarily forward
-            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+                // Calculate target rotation based on movement direction
+                var targetDirection = isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection;
 
-            // Calculate new target rotation
-            // When moving forward, rotate to face camera direction
-            // When moving in other directions, rotate to face movement direction
-            var targetRotation = Quaternion.LookRotation(isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection);
-
-            // If we're still in the idle-to-movement rotation, continue that rotation
-            if (_isRotatingFromIdle)
-            {
-                // Apply rotation with enhanced speed for the initial rotation
-                transform.rotation = Quaternion.RotateTowards(
-                    transform.rotation,
-                    _targetIdleRotation,
-                    rotationSpeed * parameters.RotationMultiplier * 1f * Time.fixedDeltaTime * 100f
-                );
+                // Start the idle-to-movement rotation
+                _isRotatingFromIdle = true;
+                _targetIdleRotation = Quaternion.LookRotation(targetDirection);
                 
-                // Update rotation progress
+                // Calculate initial rotation progress
                 float angleDifference = Quaternion.Angle(transform.rotation, _targetIdleRotation);
                 _rotationProgress = Mathf.Clamp01(1f - (angleDifference / 180f));
                 
-                // If rotation is nearly complete or target has changed, end the idle rotation state
-                if (_rotationProgress > 0.95f || isChangingDirection)
-                {
-                    _isRotatingFromIdle = false;
-                    IsRotatingToTarget = false;
-                }
+                IsRotatingToTarget = true;
             }
-            // Otherwise, handle normal movement rotation
-            else
+            // If we're already moving, handle normal movement rotation
+            else if (_isMovingLaterally)
             {
-                // Apply rotation with custom multiplier
-                float rotationFactor = parameters.RotationMultiplier;
-                
-                // Increase rotation speed when changing direction significantly
-                if (isChangingDirection)
+                // Check if we're changing direction significantly while moving
+                bool isChangingDirection = false;
+                if (_lastMoveDirection.sqrMagnitude > 0.01f && ActiveMoveDirection.sqrMagnitude > 0.01f)
                 {
-                    rotationFactor *= 1.0f;
-                    IsRotatingToTarget = true;
+                    float directionChangeAngle = Vector3.Angle(_lastMoveDirection, ActiveMoveDirection);
+                    isChangingDirection = directionChangeAngle > 30f;
                 }
+                
+                // Check if we're moving primarily forward
+                bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
+                                               Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+
+                // Calculate new target rotation
+                var targetRotation = Quaternion.LookRotation(
+                    isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection
+                );
+
+                // If we're still in the idle-to-movement rotation, continue that rotation
+                if (_isRotatingFromIdle)
+                {
+                    // Apply rotation with enhanced speed for the initial rotation
+                    transform.rotation = Quaternion.RotateTowards(
+                        transform.rotation,
+                        _targetIdleRotation,
+                        rotationSpeed * Time.fixedDeltaTime * 100f
+                    );
+                    
+                    // Update rotation progress
+                    float angleDifference = Quaternion.Angle(transform.rotation, _targetIdleRotation);
+                    _rotationProgress = Mathf.Clamp01(1f - (angleDifference / 180f));
+                    
+                    // If rotation is nearly complete or target has changed, end the idle rotation state
+                    if (_rotationProgress > 0.95f || isChangingDirection)
+                    {
+                        _isRotatingFromIdle = false;
+                        IsRotatingToTarget = false;
+                    }
+                }
+                // Otherwise, handle normal movement rotation
                 else
                 {
-                    IsRotatingToTarget = false;
+                    // Increase rotation speed when changing direction significantly
+                    float rotationFactor = isChangingDirection ? 1.5f : 1.0f;
+                    IsRotatingToTarget = isChangingDirection;
+                    
+                    // Apply rotation
+                    transform.rotation = Quaternion.RotateTowards(
+                        transform.rotation,
+                        targetRotation,
+                        rotationSpeed * rotationFactor * Time.fixedDeltaTime * 100f
+                    );
                 }
-                
-                // Apply rotation
-                transform.rotation = Quaternion.RotateTowards(
+            }
+            else if (alignWithCameraWhenIdle && !_isMovingLaterally)
+            {
+                // Gradually align with camera when idle if the parameter is set
+                Quaternion targetRotation = Quaternion.LookRotation(_lastCameraForward);
+                transform.rotation = Quaternion.Lerp(
                     transform.rotation,
                     targetRotation,
-                    rotationSpeed * rotationFactor * Time.fixedDeltaTime * 100f
+                    idleAlignmentSpeed * Time.fixedDeltaTime
                 );
             }
+            else
+            {
+                // Reset idle rotation state when stopping
+                _isRotatingFromIdle = false;
+                IsRotatingToTarget = false;
+            }
         }
-        else
-        {
-            // Reset idle rotation state when stopping
-            _isRotatingFromIdle = false;
-            IsRotatingToTarget = false;
-        }
+        
+        // Store current movement state for next frame
+        _wasMovingLastFrame = _isMovingLaterally;
+        _lastMoveDirection = ActiveMoveDirection;
     }
-    
-    // Store current movement state for next frame
-    _wasMovingLastFrame = _isMovingLaterally;
-    _lastMoveDirection = ActiveMoveDirection;
-}
     
     public void ApplyGravity(bool isGrounded)
     {
@@ -688,31 +614,48 @@ public void HandleRotation(RotationParams parameters)
         ActiveVerticalVelocity = 0f;
     }
     
-    public void HandleAiming()
+    public void HandleAiming(bool allowAiming)
     {
+        // If aiming isn't allowed, disable it
+        if (!allowAiming)
+        {
+            if (IsAiming)
+            {
+                IsAiming = false;
+                _lineRenderer.enabled = false;
+            
+                if (CurrentAimedInteractable != null)
+                {
+                    OnAimExit(CurrentAimedInteractable);
+                    CurrentAimedInteractable = null;
+                }
+            }
+            return;
+        }
+
         // Toggle aim mode based on input
         if (InputHandler.AimInput)
         {
             if (!IsAiming)
             {
                 IsAiming = true;
-                
             }
         }
         else if (IsAiming)
         {
             IsAiming = false;
+            _lineRenderer.enabled = false;
+            
+            if (CurrentAimedInteractable != null)
+            {
+                OnAimExit(CurrentAimedInteractable);
+                CurrentAimedInteractable = null;
+            }
         }
-        
+    
         UpdateAimRay();
     }
-
-    public void DisableAiming()
-    {
-        if (!IsAiming) return;
-        IsAiming = false;
-        UpdateAimRay();
-    }
+    
 
     
     public void SetCharacterHeight(bool crouching)
@@ -766,25 +709,48 @@ public void HandleRotation(RotationParams parameters)
     private float CalculateTargetSpeed(float movementIntensity)
     {
         _lockSprinting = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
-    
+
         if (movementIntensity < InputHandler.MovementInputThreshold)
             return 0f;
 
+        // Determine base speed based on input and state
+        float baseSpeed;
         if (!_lockSprinting)
         {
             if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
-                return sprintSpeed;
+                baseSpeed = sprintSpeed;
             else
-                return runSpeed;
+                baseSpeed = runSpeed;
         }
         else
         {
-
             if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
-                return runSpeed;
+                baseSpeed = runSpeed;
             else
-                return walkSpeed;
+                baseSpeed = walkSpeed;
         }
+    
+        // Apply direction multipliers based on movement input
+        float directionMultiplier = 1.0f;
+    
+        // Check for backward movement (negative Y input)
+        if (InputHandler.MovementInput.y < -0.3f)
+        {
+            // More negative Y = more backward movement effect
+            float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
+            directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
+        }
+    
+        // Check for strafing movement (X input)
+        if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
+        {
+            // Stronger X input = more strafe effect
+            float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
+            directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
+        }
+    
+        // Return the modified speed
+        return baseSpeed * directionMultiplier;
     }
     
     
@@ -792,6 +758,32 @@ public void HandleRotation(RotationParams parameters)
     {
         if (!_cameraManager) return transform.forward;
         return _cameraManager.GetCameraAimDirection(true);
+    }
+    
+        
+    private Vector3 HandleSteepSurfaces(Vector3 velocity)
+    {
+        // Don't apply when moving upward
+        if (ActiveVerticalVelocity >= 0) return velocity;
+        
+        // Cast a sphere to detect surface normal
+        Vector3 origin = transform.position + Vector3.up * _controller.radius;
+        float distance = _controller.height * 0.5f + 0.1f;
+        
+        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
+                out RaycastHit hitInfo, distance, environmentLayer))
+        {
+            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            
+            // Only apply for steep slopes beyond character controller's slope limit
+            if (angle > _controller.slopeLimit)
+            {
+                // Project movement onto the surface to slide
+                return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
+            }
+        }
+        
+        return velocity;
     }
     
 

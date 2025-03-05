@@ -212,7 +212,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 036bc0a5ef54c4e41b8f3a216808fcca, type: 2}
     m_Threshold: 0.125
-    m_Position: {x: 0, y: 0.5}
+    m_Position: {x: 0, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -220,7 +220,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 303c27d9cbbc63a4fba3248943e0a3fa, type: 2}
     m_Threshold: 0.25
-    m_Position: {x: -0.5, y: 0.5}
+    m_Position: {x: -1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -228,7 +228,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: cf0fdb1536ce2e440a88e72950972ac0, type: 2}
     m_Threshold: 0.375
-    m_Position: {x: 0.5, y: 0.5}
+    m_Position: {x: 1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -236,7 +236,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 213b2cf7263ab89499e3507a9e048e90, type: 2}
     m_Threshold: 0.5
-    m_Position: {x: -0.5, y: 0}
+    m_Position: {x: -1, y: 0}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -244,7 +244,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 24b2a7f05d803c945b62532b538e1414, type: 2}
     m_Threshold: 0.625
-    m_Position: {x: 0.5, y: 0}
+    m_Position: {x: 1, y: 0}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -252,7 +252,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 5f8c1e5ad6d9edd4085b4f2779279325, type: 2}
     m_Threshold: 0.75
-    m_Position: {x: 0, y: -0.5}
+    m_Position: {x: 0, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -260,7 +260,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: e189dc76c3bdc4345be4cbd3c6154437, type: 2}
     m_Threshold: 0.875
-    m_Position: {x: -0.5, y: -0.5}
+    m_Position: {x: -1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -268,13 +268,13 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 180fed2c37fcbab4f91310462d27c710, type: 2}
     m_Threshold: 1
-    m_Position: {x: 0.5, y: -0.5}
+    m_Position: {x: 1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputHorizontal
-  m_BlendParameterY: InputVertical
+  m_BlendParameter: HorizontalValue
+  m_BlendParameterY: VerticalValue
   m_MinThreshold: 0
   m_MaxThreshold: 1
   m_UseAutomaticThresholds: 1
@@ -414,8 +414,8 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputHorizontal
-  m_BlendParameterY: InputVertical
+  m_BlendParameter: HorizontalValue
+  m_BlendParameterY: VerticalValue
   m_MinThreshold: 0
   m_MaxThreshold: 1
   m_UseAutomaticThresholds: 1
@@ -713,13 +713,13 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputHorizontal
-  m_BlendParameterY: InputVertical
+  m_BlendParameter: VerticalValue
+  m_BlendParameterY: VerticalValue
   m_MinThreshold: 0
   m_MaxThreshold: 1
-  m_UseAutomaticThresholds: 1
+  m_UseAutomaticThresholds: 0
   m_NormalizedBlendValues: 0
-  m_BlendType: 2
+  m_BlendType: 0
 --- !u!206 &-2276558722057767027
 BlendTree:
   m_ObjectHideFlags: 1
@@ -819,7 +819,7 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputVertical
+  m_BlendParameter: VerticalValue
   m_BlendParameterY: Vertical
   m_MinThreshold: 1
   m_MaxThreshold: 1
@@ -893,19 +893,19 @@ AnimatorController:
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: InputHorizontal
+  - m_Name: HorizontalValue
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: InputVertical
+  - m_Name: VerticalValue
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: InputMagnitude
+  - m_Name: MoveTypeValue
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
@@ -1041,7 +1041,7 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputMagnitude
+  m_BlendParameter: MoveTypeValue
   m_BlendParameterY: Horizontal
   m_MinThreshold: 0
   m_MaxThreshold: 2
@@ -1695,8 +1695,8 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputHorizontal
-  m_BlendParameterY: InputVertical
+  m_BlendParameter: HorizontalValue
+  m_BlendParameterY: VerticalValue
   m_MinThreshold: 0
   m_MaxThreshold: 0.85714287
   m_UseAutomaticThresholds: 1
@@ -1998,8 +1998,8 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
-  m_BlendParameter: InputHorizontal
-  m_BlendParameterY: InputVertical
+  m_BlendParameter: HorizontalValue
+  m_BlendParameterY: VerticalValue
   m_MinThreshold: 0
   m_MaxThreshold: 1
   m_UseAutomaticThresholds: 1
