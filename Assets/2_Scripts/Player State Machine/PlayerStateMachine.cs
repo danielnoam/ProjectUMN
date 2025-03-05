@@ -115,6 +115,11 @@ public class PlayerStateMachine : MonoBehaviour
     private Vector3 _lastCameraForward;
     private bool _isMovingLaterally = false;
     private bool _lastGroundedState = false;
+    private Vector3 _lastMoveDirection = Vector3.zero;
+    private bool _wasMovingLastFrame = false;
+    private bool _isRotatingFromIdle = false;
+    private Quaternion _targetIdleRotation = Quaternion.identity;
+    private float _rotationProgress = 1.0f; 
     
     
     public struct MovementParams
@@ -295,7 +300,7 @@ public class PlayerStateMachine : MonoBehaviour
     
     private void OnAimInteractableEnter(IInteractable interactable)
     {
-        if (_robot && CurrentAimedInteractable is { RobotCanInteract: true })
+        if (_robot && _robot.CanCommend() && CurrentAimedInteractable is { RobotCanInteract: true })
         {
             interactable.OnAimEnter(this);
         }
@@ -305,7 +310,7 @@ public class PlayerStateMachine : MonoBehaviour
     {
         interactable.OnAimInteractableStay(this);
         
-        if (_robot && CurrentAimedInteractable is { RobotCanInteract: true } && InputHandler.RobotInteractInput)
+        if (_robot && _robot.CanCommend() && CurrentAimedInteractable is { RobotCanInteract: true } && InputHandler.RobotInteractInput)
         {
             InputHandler.ConsumeRobotInteractBuffer();
             _robot.InteractWith(CurrentAimedInteractable);
@@ -465,64 +470,33 @@ public class PlayerStateMachine : MonoBehaviour
         return velocity;
     }
     
-    public void HandleRotation(RotationParams parameters)
+public void HandleRotation(RotationParams parameters)
+{
+    // Skip rotation if not allowed
+    if (!parameters.AllowRotation)
+        return;
+    
+    // Calculate camera-to-player rotation mismatch
+    if (_cameraManager != null)
     {
-        // Skip rotation if not allowed
-        if (!parameters.AllowRotation)
-            return;
+        Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
+        Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
+        Vector3 playerForward = transform.forward;
         
-        // Calculate camera-to-player rotation mismatch
-        if (_cameraManager != null)
-        {
-            Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
-            Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
-            Vector3 playerForward = transform.forward;
-            
-            // Calculate cross product to determine direction
-            Vector3 cross = Vector3.Cross(playerForward, cameraForwardFlat);
-            float sign = Mathf.Sign(Vector3.Dot(cross, Vector3.up));
-            
-            // Calculate and store rotation mismatch
-            RotationMismatch = sign * Vector3.Angle(playerForward, cameraForwardFlat);
-            _lastCameraForward = cameraForwardFlat;
-        }
+        // Calculate cross product to determine direction
+        Vector3 cross = Vector3.Cross(playerForward, cameraForwardFlat);
+        float sign = Mathf.Sign(Vector3.Dot(cross, Vector3.up));
         
-        // If aiming, use aim rotation
-        if (IsAiming && parameters.UseAimRotation)
-        {
-            // Get aim direction from camera
-            Vector3 aimDirection = GetCameraAimDirection();
-            
-            // Flatten the aim direction to prevent tilting up or down
-            Vector3 flattenedAimDirection = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
-            
-            // Calculate target rotation and apply it
-            Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                aimRotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 100f
-            );
-            
-            IsRotatingToTarget = true;
-        }
-        // Regular movement-based rotation
-        else if (_isMovingLaterally && !IsAiming)
-        {
-            // Calculate target rotation based on movement direction
-            Quaternion targetRotation = Quaternion.LookRotation(ActiveMoveDirection);
-            
-            // Apply rotation with custom multiplier
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 100f
-            );
-            
-            IsRotatingToTarget = true;
-        }
-        // Handle idle rotation alignment with camera
-        else if (!_isMovingLaterally && parameters.AlignWithCameraWhenIdle)
+        // Calculate and store rotation mismatch
+        RotationMismatch = sign * Vector3.Angle(playerForward, cameraForwardFlat);
+        _lastCameraForward = cameraForwardFlat;
+    }
+    
+    // AIMING MODE ROTATION - Now using smoother Lerp similar to GinjaGaming
+    if (IsAiming)
+    {
+        // When aiming while idle, use the original idle alignment behavior
+        if (!_isMovingLaterally && parameters.AlignWithCameraWhenIdle)
         {
             // Check if we need to align with camera
             bool needsAlignment = Mathf.Abs(RotationMismatch) > rotationMismatchThreshold;
@@ -542,11 +516,11 @@ public class PlayerStateMachine : MonoBehaviour
                 // Calculate target rotation based on camera
                 Quaternion targetRotation = Quaternion.LookRotation(_lastCameraForward);
                 
-                // Apply rotation with custom speed
-                transform.rotation = Quaternion.RotateTowards(
+                // Apply rotation with Lerp for smoother transitions
+                transform.rotation = Quaternion.Lerp(
                     transform.rotation,
                     targetRotation,
-                    parameters.IdleAlignmentSpeed * idleAlignmentSpeed * Time.fixedDeltaTime * 100f
+                    parameters.IdleAlignmentSpeed * idleAlignmentSpeed * Time.fixedDeltaTime * 3f
                 );
                 
                 if (_rotatingToTargetTimer <= 0)
@@ -555,12 +529,154 @@ public class PlayerStateMachine : MonoBehaviour
                 }
             }
         }
+        // When aiming while moving, use smoother rotation to face aim direction
+        else if (_isMovingLaterally)
+        {
+            // Get aim direction from camera
+            Vector3 aimDirection = GetCameraAimDirection();
+            
+            // Flatten the aim direction to prevent tilting up or down
+            Vector3 flattenedAimDirection = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
+            
+            // Calculate target rotation and apply it using Lerp for smoothness
+            Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
+            
+            // Use Lerp instead of RotateTowards for smoother transitions
+            transform.rotation = Quaternion.Lerp(
+                transform.rotation,
+                targetRotation,
+                aimRotationSpeed * parameters.RotationMultiplier * Time.fixedDeltaTime * 3f
+            );
+            
+            IsRotatingToTarget = true;
+        }
         else
         {
             IsRotatingToTarget = false;
         }
     }
+    // NON-AIMING MODE ROTATION
+    else
+    {
+        // Check if we just started moving from idle
+        if (!_wasMovingLastFrame && _isMovingLaterally)
+        {
+            // Calculate target rotation based on movement
+            Vector3 targetDirection;
+            
+            // Check if we're moving primarily forward
+            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
+                                           Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+            
+            if (isMovingPrimarilyForward)
+            {
+                // When moving forward, rotate to face camera direction
+                targetDirection = _lastCameraForward;
+            }
+            else
+            {
+                // When moving in other directions, rotate to face movement direction
+                targetDirection = ActiveMoveDirection;
+            }
+            
+            // Start the idle-to-movement rotation
+            _isRotatingFromIdle = true;
+            _targetIdleRotation = Quaternion.LookRotation(targetDirection);
+            
+            // Calculate initial rotation progress (how far we are from target rotation)
+            float angleDifference = Quaternion.Angle(transform.rotation, _targetIdleRotation);
+            _rotationProgress = Mathf.Clamp01(1f - (angleDifference / 180f));
+            
+            // Always set rotating to target when starting from idle
+            IsRotatingToTarget = true;
+        }
+        // If we're already moving, handle normal movement rotation
+        else if (_isMovingLaterally)
+        {
+            // Check if we're changing direction significantly while moving
+            bool isChangingDirection = false;
+            if (_lastMoveDirection.sqrMagnitude > 0.01f && ActiveMoveDirection.sqrMagnitude > 0.01f)
+            {
+                float directionChangeAngle = Vector3.Angle(_lastMoveDirection, ActiveMoveDirection);
+                isChangingDirection = directionChangeAngle > 30f;
+            }
+            
+            // Calculate new target rotation
+            Quaternion targetRotation;
+            
+            // Check if we're moving primarily forward
+            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
+                                           Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+            
+            if (isMovingPrimarilyForward)
+            {
+                // When moving forward, rotate to face camera direction
+                targetRotation = Quaternion.LookRotation(_lastCameraForward);
+            }
+            else
+            {
+                // When moving in other directions, rotate to face movement direction
+                targetRotation = Quaternion.LookRotation(ActiveMoveDirection);
+            }
+            
+            // If we're still in the idle-to-movement rotation, continue that rotation
+            if (_isRotatingFromIdle)
+            {
+                // Apply rotation with enhanced speed for the initial rotation
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    _targetIdleRotation,
+                    rotationSpeed * parameters.RotationMultiplier * 1f * Time.fixedDeltaTime * 100f
+                );
+                
+                // Update rotation progress
+                float angleDifference = Quaternion.Angle(transform.rotation, _targetIdleRotation);
+                _rotationProgress = Mathf.Clamp01(1f - (angleDifference / 180f));
+                
+                // If rotation is nearly complete or target has changed, end the idle rotation state
+                if (_rotationProgress > 0.95f || isChangingDirection)
+                {
+                    _isRotatingFromIdle = false;
+                    IsRotatingToTarget = false;
+                }
+            }
+            // Otherwise, handle normal movement rotation
+            else
+            {
+                // Apply rotation with custom multiplier
+                float rotationFactor = parameters.RotationMultiplier;
+                
+                // Increase rotation speed when changing direction significantly
+                if (isChangingDirection)
+                {
+                    rotationFactor *= 1.0f;
+                    IsRotatingToTarget = true;
+                }
+                else
+                {
+                    IsRotatingToTarget = false;
+                }
+                
+                // Apply rotation
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    rotationSpeed * rotationFactor * Time.fixedDeltaTime * 100f
+                );
+            }
+        }
+        else
+        {
+            // Reset idle rotation state when stopping
+            _isRotatingFromIdle = false;
+            IsRotatingToTarget = false;
+        }
+    }
     
+    // Store current movement state for next frame
+    _wasMovingLastFrame = _isMovingLaterally;
+    _lastMoveDirection = ActiveMoveDirection;
+}
     
     public void ApplyGravity(bool isGrounded)
     {
@@ -604,13 +720,7 @@ public class PlayerStateMachine : MonoBehaviour
             if (!IsAiming)
             {
                 IsAiming = true;
-            
-                // When first entering aiming mode, immediately align character with camera
-                Vector3 initialAimDirection = GetCameraAimDirection();
-                // Flatten the direction to prevent tilting
-                Vector3 flattenedAimDirection = new Vector3(initialAimDirection.x, 0, initialAimDirection.z).normalized;
-                Quaternion targetRotation = Quaternion.LookRotation(flattenedAimDirection);
-                transform.rotation = targetRotation;
+                
             }
         }
         else if (IsAiming)
@@ -759,7 +869,7 @@ public class PlayerStateMachine : MonoBehaviour
         // Show line renderer when aiming
         if (!_lineRenderer.enabled)
         {
-            _lineRenderer.enabled = true;
+            _lineRenderer.enabled = false;
         }
 
         // Set ray origin (player position, slightly adjusted to match camera view)

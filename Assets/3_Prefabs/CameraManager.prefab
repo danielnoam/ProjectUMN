@@ -107,7 +107,7 @@ MonoBehaviour:
       Curvature: {x: 2, y: 11}
       BarrelClipping: 0.25
       Anamorphism: 0
-  BlendHint: 8
+  BlendHint: 0
 --- !u!114 &432415048053787396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,8 +132,8 @@ MonoBehaviour:
       m_Bits: 1
     IgnoreTag: Player
     CameraRadius: 0.2
-    DampingIntoCollision: 0
-    DampingFromCollision: 0.5
+    DampingIntoCollision: 0.5
+    DampingFromCollision: 1
 --- !u!114 &6708880831181876942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,7 +180,7 @@ Transform:
   m_GameObject: {fileID: 5278370329878019030}
   serializedVersion: 2
   m_LocalRotation: {x: 0.09853762, y: 0, z: 0, w: 0.99513334}
-  m_LocalPosition: {x: -0.16600001, y: 2.54, z: -1.8}
+  m_LocalPosition: {x: -0.16600001, y: 2.19, z: -1.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -206,7 +206,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 0}
+    TrackingTarget: {fileID: 7284159154342728571}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -297,8 +297,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7572823565956892122}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.09853762, y: 0, z: 0, w: 0.99513334}
-  m_LocalPosition: {x: -0.16600001, y: 2.54, z: -1.8}
+  m_LocalRotation: {x: -0.12915383, y: 0, z: 0, w: 0.9916246}
+  m_LocalPosition: {x: -0.666, y: 0.9415214, z: -4.2906837}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -324,7 +324,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 0}
+    TrackingTarget: {fileID: 7284159154342728571}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -346,7 +346,7 @@ MonoBehaviour:
       Curvature: {x: 2, y: 11}
       BarrelClipping: 0.25
       Anamorphism: 0
-  BlendHint: 8
+  BlendHint: 4
 --- !u!114 &1443527037989428333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -548,8 +548,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7702849316814007445}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.09853762, y: 0, z: 0, w: 0.99513334}
-  m_LocalPosition: {x: -0.16600001, y: 2.54, z: -1.8}
+  m_LocalRotation: {x: -0.12915383, y: 0, z: 0, w: 0.9916246}
+  m_LocalPosition: {x: -0.666, y: 0.9415214, z: -4.2906837}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -742,6 +742,8 @@ MonoBehaviour:
   freeLookCameraPriority: 10
   aimCameraPriority: 15
   menuCameraPriority: 20
+  freeCameraSensitivity: 1
+  aimCameraSensitivity: 0.5
   aimRotationThreshold: 0.1
   aimMaxPitch: 80
   freeLookCamera: {fileID: 1702355851979379484}

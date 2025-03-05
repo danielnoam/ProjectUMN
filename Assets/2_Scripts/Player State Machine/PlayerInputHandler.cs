@@ -15,8 +15,6 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField, Min(0f)] private float interactBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float toggleMenuBufferTime = 0.15f;
     [SerializeField, Range(0.1f, 2f)] private float mouseSensitivity = 1f;
-    [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
-    [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 1f;
     [Tooltip("Minimum movement input to register sprint")]
     [SerializeField, Range(0f, 1f)] private float sprintInputThreshold = 0.01f;
     [Tooltip("Minimum movement input to register movement")]
@@ -35,8 +33,6 @@ public class PlayerInputHandler : MonoBehaviour
     public float MovementInputThreshold => movementInputThreshold;
     public float SprintInputThreshold => sprintInputThreshold;
     public float MouseSensitivity => mouseSensitivity;
-    public float AimCameraSensitivity => aimCameraSensitivity;
-    public float FreeCameraSensitivity => freeCameraSensitivity;
     public bool IsCrouchToggle => toggleCrouch;
     
     // Buffer timers

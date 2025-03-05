@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 public enum PlayerAnimationState
@@ -18,10 +19,9 @@ public class PlayerAnimationHandler : MonoBehaviour
 {
     private Animator _animator;
     private PlayerStateMachine _stateMachine;
-
+    
     [Header("Animation Smoothing")]
-    [SerializeField, Range(0.01f, 1f)] private float verticalSmoothTime = 0.1f;
-    [SerializeField, Range(0.01f, 1f)] private float horizontalSmoothTime = 0.15f;
+    [SerializeField, Range(0.01f, 1f)] private float animationSmoothTime = 0.1f;
     
     [Header("Animation Blend Ranges")]
     [Tooltip("Value in the blend tree for walk animations")]
@@ -30,17 +30,15 @@ public class PlayerAnimationHandler : MonoBehaviour
     [SerializeField] private float runBlendMax = 1.0f;
     [Tooltip("Value in the blend tree for sprint animations")]
     [SerializeField] private float sprintBlendMax = 2f;
-    
-    [Header("Fall Animation")]
     [Tooltip("Maximum fall time used for animation blending")]
     [SerializeField] private float maxFallTime = 2.0f;
 
 
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
-    private readonly int _verticalHash = Animator.StringToHash("Vertical");
-    private readonly int _horizontalHash = Animator.StringToHash("Horizontal");
+    private readonly int _verticalHash = Animator.StringToHash("InputVertical");
+    private readonly int _horizontalHash = Animator.StringToHash("InputHorizontal");
+    private readonly int _inputMagnitudeHash = Animator.StringToHash("InputMagnitude");
     private readonly int _fallTimeHash = Animator.StringToHash("FallTime");
-    private readonly int _isAimingHash = Animator.StringToHash("IsAiming");
     private readonly int _rotationMismatchHash = Animator.StringToHash("RotationMismatch");
     private readonly int _isRotatingToTargetHash = Animator.StringToHash("IsRotatingToTarget");
 
@@ -105,9 +103,18 @@ public class PlayerAnimationHandler : MonoBehaviour
         // Get current movement speed and direction from state machine
         bool aiming = _stateMachine.IsAiming;
         float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
-        Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
         float speedBlendValue = CalculateSpeedBlend(activeSpeed);
+        Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
 
+        // Calculate the rotation mismatch between movement and facing direction
+        float movementRotationMismatch = 0f;
+        if (moveDirection.sqrMagnitude > 0.01f)
+        {
+            // Calculate angle between movement direction and forward direction
+            movementRotationMismatch = Vector3.SignedAngle(transform.forward, moveDirection, Vector3.up);
+        }
+
+        // Handle animation based on whether the player is aiming or not
         if (aiming && moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
         {
             // When aiming, map movement direction to the animation blend tree
@@ -145,14 +152,55 @@ public class PlayerAnimationHandler : MonoBehaviour
         }
         else if (activeSpeed > 0.01f)
         {
-            // Non-aiming movement just uses forward speed
-            verticalValue = speedBlendValue;
-            horizontalValue = 0f;
+            // For non-aiming movement, check if we're moving in a direction different from where we're facing
+            bool isMovingPrimarilyForward = _stateMachine.InputHandler.MovementInput.y > 0.7f && 
+                                            Mathf.Abs(_stateMachine.InputHandler.MovementInput.x) < 0.3f;
+                                            
+            // If we're moving forward but following camera (not directly forward relative to character)
+            if (isMovingPrimarilyForward && Mathf.Abs(movementRotationMismatch) > 10f)
+            {
+                // Convert movement rotation mismatch to horizontal value for the animation blend tree
+                // This creates a slight strafe animation effect when following camera while "moving forward"
+                horizontalValue = Mathf.Clamp(movementRotationMismatch / 90f, -1f, 1f) * 0.5f; // Scale down for subtle effect
+                verticalValue = speedBlendValue * 0.85f; // Slightly reduce forward component for natural look
+            }
+            else if (!isMovingPrimarilyForward && Mathf.Abs(movementRotationMismatch) > 30f)
+            {
+                // For more significant directional changes, calculate better blend values
+                float absAngle = Mathf.Abs(movementRotationMismatch);
+                
+                // As angle approaches 90 degrees, increase horizontal component
+                if (absAngle > 80f)
+                {
+                    // Close to perpendicular movement - strong sideways component
+                    horizontalValue = Mathf.Sign(movementRotationMismatch) * speedBlendValue * 0.8f;
+                    verticalValue = speedBlendValue * 0.3f; // Still some forward component
+                }
+                else if (absAngle > 45f)
+                {
+                    // Diagonal movement
+                    horizontalValue = Mathf.Sign(movementRotationMismatch) * speedBlendValue * 0.5f;
+                    verticalValue = speedBlendValue * 0.7f;
+                }
+                else
+                {
+                    // Slight angle difference
+                    horizontalValue = Mathf.Sign(movementRotationMismatch) * speedBlendValue * 0.3f;
+                    verticalValue = speedBlendValue * 0.9f;
+                }
+            }
+            else
+            {
+                // Standard forward movement
+                verticalValue = speedBlendValue;
+                horizontalValue = 0f;
+            }
         }
 
         // Apply with smoothing
-        _animator.SetFloat(_verticalHash, verticalValue, verticalSmoothTime, Time.deltaTime);
-        _animator.SetFloat(_horizontalHash, horizontalValue, horizontalSmoothTime, Time.deltaTime);
+        _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
+        _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
+        _animator.SetFloat(_inputMagnitudeHash, speedBlendValue, animationSmoothTime, Time.deltaTime);
     }
 
     private void UpdateRotationAnimation()

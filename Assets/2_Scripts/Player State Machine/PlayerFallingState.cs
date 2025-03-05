@@ -9,7 +9,6 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void EnterState()
     {
-        StateMachine.DisableAiming();
         StateMachine.FallTime = 0f;
     }
 
@@ -20,6 +19,7 @@ public class PlayerFallingState : PlayerBaseState
     public override void UpdateState()
     {
         StateMachine.CommandRobot();
+        StateMachine.HandleAiming();
         StateMachine.AirTime += Time.deltaTime;
         CheckStateTransitions();
     }

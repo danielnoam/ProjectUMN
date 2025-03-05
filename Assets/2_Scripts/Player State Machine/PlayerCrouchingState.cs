@@ -26,21 +26,22 @@ public class PlayerCrouchingState : PlayerBaseState
     public override void FixedUpdateState()
     {
         StateMachine.ApplyGravity(true);
-        
-        // Use the centralized movement system with crouch-specific parameters
-        // Typically crouching has reduced movement speed
+    
         StateMachine.HandleMovement(new PlayerStateMachine.MovementParams(
             isAirborne: false,
-            speedMultiplier: 1f, // Reduced speed while crouching  0.6f,
-            accelMultiplier: 1f, // Potentially slower acceleration 0.8f,
-            controlMultiplier: 1.0f
+            speedMultiplier: 1.0f,
+            accelMultiplier: 1.0f,
+            controlMultiplier: 1.0f,
+            dragMultiplier: 1.0f,
+            handleSteepSurfaces: false
         ));
-        
-        // Use the centralized rotation system with crouch-specific parameters
+    
         StateMachine.HandleRotation(new PlayerStateMachine.RotationParams(
             useAimRotation: StateMachine.IsAiming,
-            rotationMultiplier: 0.8f, // Slightly slower rotation while crouched 
-            allowRotation: true
+            rotationMultiplier: 0.8f,
+            allowRotation: true,
+            alignWithCameraWhenIdle: true,
+            idleAlignmentSpeed: 1.0f
         ));
     }
     

@@ -1269,7 +1269,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.83
-  m_Radius: 0.35
+  m_Radius: 0.3
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.0001
@@ -1289,7 +1289,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pushLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 129
   canPush: 1
   strength: 1.1
 --- !u!114 &5104919376805049993
@@ -1313,8 +1313,6 @@ MonoBehaviour:
   interactBufferTime: 0.15
   toggleMenuBufferTime: 0.15
   mouseSensitivity: 1
-  freeCameraSensitivity: 1
-  aimCameraSensitivity: 1
   sprintInputThreshold: 0.01
   movementInputThreshold: 0.01
 --- !u!114 &4320568683722358497
@@ -1357,7 +1355,7 @@ MonoBehaviour:
   idleAlignmentSpeed: 2
   rotationMismatchThreshold: 90
   idleRotationDuration: 0.67
-  airAcceleration: 3
+  airAcceleration: 5
   airDrag: 5
   aimRotationSpeed: 4
   jumpForce: 2
