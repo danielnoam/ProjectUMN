@@ -32,28 +32,26 @@ public class PlayerStateMachine : MonoBehaviour
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
     [Tooltip("Drag force applied to movement on ground")]
-    public float groundDrag = 20f;
+    public float groundDrag = 1f;
     [Tooltip("Anti-bump force to prevent sticking to slopes")]
     public float antiBumpForce = 4f;
     [Tooltip("Base rotation speed when turning on the ground")]
     public float rotationSpeed = 2f;
     [Tooltip("How quickly player rotates to align with camera when idle")]
     public float idleAlignmentSpeed = 2f;
-    [Tooltip("Angle beyond which idle alignment triggers")]
-    public float rotationMismatchThreshold = 90f;
     [Tooltip("Time to complete an idle rotation")]
     public float idleRotationDuration = 0.67f;
 
     
     [Header("Air")]
     [Tooltip("How quickly the character reaches target speed in air")]
-    public float airAcceleration = 3f;
+    public float airAcceleration = 5f;
     [Tooltip("Drag force applied to movement in air")]
     public float airDrag = 5f;
     [Tooltip("Rotation speed when turning while aiming")]
     public float aimRotationSpeed = 4f;
     [Tooltip("Initial upward velocity applied when jumping")]
-    public float jumpForce = 8f;
+    public float jumpForce = 2f;
     [Tooltip("Minimum time falling before impact animations trigger")]
     public float fallThreshold = 0.1f;
 
@@ -89,7 +87,6 @@ public class PlayerStateMachine : MonoBehaviour
     
     public float AirTime { get;  set; }
     public float FallTime { get;  set; }
-    public float LandingIntensity { get; set; }
     public float ActiveHorizontalVelocity { get; private set; }
     public float ActiveVerticalVelocity { get; set; }
     public Vector3 ActiveMoveDirection { get; private set; } = Vector3.zero;
@@ -477,7 +474,7 @@ public void HandleRotation(RotationParams parameters)
         return;
     
     // Calculate camera-to-player rotation mismatch
-    if (_cameraManager != null)
+    if (_cameraManager)
     {
         Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
         Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
@@ -492,17 +489,14 @@ public void HandleRotation(RotationParams parameters)
         _lastCameraForward = cameraForwardFlat;
     }
     
-    // AIMING MODE ROTATION - Now using smoother Lerp similar to GinjaGaming
+    // AIMING MODE ROTATION 
     if (IsAiming)
     {
         // When aiming while idle, use the original idle alignment behavior
         if (!_isMovingLaterally && parameters.AlignWithCameraWhenIdle)
         {
-            // Check if we need to align with camera
-            bool needsAlignment = Mathf.Abs(RotationMismatch) > rotationMismatchThreshold;
-            
             // Start timer if needed
-            if (needsAlignment && _rotatingToTargetTimer <= 0)
+            if ( _rotatingToTargetTimer <= 0)
             {
                 _rotatingToTargetTimer = idleRotationDuration;
                 IsRotatingToTarget = true;
@@ -561,24 +555,14 @@ public void HandleRotation(RotationParams parameters)
         // Check if we just started moving from idle
         if (!_wasMovingLastFrame && _isMovingLaterally)
         {
-            // Calculate target rotation based on movement
-            Vector3 targetDirection;
-            
             // Check if we're moving primarily forward
-            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
-                                           Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
-            
-            if (isMovingPrimarilyForward)
-            {
-                // When moving forward, rotate to face camera direction
-                targetDirection = _lastCameraForward;
-            }
-            else
-            {
-                // When moving in other directions, rotate to face movement direction
-                targetDirection = ActiveMoveDirection;
-            }
-            
+            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+
+            // Calculate target rotation based on movement
+            // When moving forward, rotate to face camera direction
+            // When moving in other directions, rotate to face movement direction
+            var targetDirection = isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection;
+
             // Start the idle-to-movement rotation
             _isRotatingFromIdle = true;
             _targetIdleRotation = Quaternion.LookRotation(targetDirection);
@@ -601,24 +585,16 @@ public void HandleRotation(RotationParams parameters)
                 isChangingDirection = directionChangeAngle > 30f;
             }
             
-            // Calculate new target rotation
-            Quaternion targetRotation;
             
+
             // Check if we're moving primarily forward
-            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
-                                           Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
-            
-            if (isMovingPrimarilyForward)
-            {
-                // When moving forward, rotate to face camera direction
-                targetRotation = Quaternion.LookRotation(_lastCameraForward);
-            }
-            else
-            {
-                // When moving in other directions, rotate to face movement direction
-                targetRotation = Quaternion.LookRotation(ActiveMoveDirection);
-            }
-            
+            bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+
+            // Calculate new target rotation
+            // When moving forward, rotate to face camera direction
+            // When moving in other directions, rotate to face movement direction
+            var targetRotation = Quaternion.LookRotation(isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection);
+
             // If we're still in the idle-to-movement rotation, continue that rotation
             if (_isRotatingFromIdle)
             {
@@ -954,7 +930,6 @@ public void HandleRotation(RotationParams parameters)
                          $"AirTime: {AirTime}\n" +
                          $"FallTime: {FallTime}\n" +
                          $"Robot: {_robot}\n" +
-                         $"LandingIntensity: {LandingIntensity}\n" +
                          $"MoveDirection: {ActiveMoveDirection}\n" +
                          $"Interactable: {CurrentInteractable}\n" +
                          $"AimedInteractable: {CurrentAimedInteractable}\n" +

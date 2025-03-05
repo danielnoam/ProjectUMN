@@ -361,7 +361,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 2ffc29f34c592c54a985812ddb85d658, type: 2}
     m_Threshold: 0.25
-    m_Position: {x: -0.5, y: 1}
+    m_Position: {x: -1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -369,7 +369,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 755057d0c07a10a4b9b971a9fa9f1ba4, type: 2}
     m_Threshold: 0.375
-    m_Position: {x: 0.5, y: 1}
+    m_Position: {x: 1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -401,7 +401,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 79adfd5d41ab88d43b7ee06242076cd7, type: 2}
     m_Threshold: 0.875
-    m_Position: {x: -0.5, y: -1}
+    m_Position: {x: -1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -409,7 +409,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 47830ca87e254774ab11d770c1217780, type: 2}
     m_Threshold: 1
-    m_Position: {x: 0.5, y: -1}
+    m_Position: {x: 1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -501,7 +501,7 @@ AnimatorStateTransition:
     m_EventTreshold: 0
   - m_ConditionMode: 4
     m_ConditionEvent: RotationMismatch
-    m_EventTreshold: -90
+    m_EventTreshold: -60
   - m_ConditionMode: 3
     m_ConditionEvent: RotationMismatch
     m_EventTreshold: -140
@@ -1634,15 +1634,15 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 14853d33319a90e48bc2f3a16ec989b2, type: 2}
     m_Threshold: 0.5042017
-    m_Position: {x: 0.5, y: 1}
+    m_Position: {x: 1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: bffc60e0404b4d044ad31f4c818112d4, type: 2}
+    m_Motion: {fileID: 7400000, guid: ec2c6f6677a816c4f886c597ea515918, type: 2}
     m_Threshold: 0.5546219
-    m_Position: {x: -0.5, y: 1}
+    m_Position: {x: -1, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -1674,7 +1674,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: bffc60e0404b4d044ad31f4c818112d4, type: 2}
     m_Threshold: 0.75630254
-    m_Position: {x: -0.5, y: -1}
+    m_Position: {x: -1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -1682,7 +1682,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 276ceb3f9290d3b428081836eb2758c8, type: 2}
     m_Threshold: 0.8067227
-    m_Position: {x: 0.5, y: -1}
+    m_Position: {x: 1, y: -1}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: Horizontal
@@ -1964,7 +1964,7 @@ AnimatorStateTransition:
     m_EventTreshold: 0
   - m_ConditionMode: 3
     m_ConditionEvent: RotationMismatch
-    m_EventTreshold: 90
+    m_EventTreshold: 60
   - m_ConditionMode: 4
     m_ConditionEvent: RotationMismatch
     m_EventTreshold: 140

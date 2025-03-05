@@ -212,20 +212,7 @@ public class PlayerAnimationHandler : MonoBehaviour
 
     private void UpdateFallAnimation()
     {
-        // Calculate fall intensity for animation blending
-        float fallBlend;
-        
-        if (_stateMachine.CurrentState is PlayerLandingState)
-        {
-            // Use landing intensity when in landing state
-            fallBlend = _stateMachine.LandingIntensity;
-        }
-        else
-        {
-            // Otherwise use normalized fall time
-            fallBlend = Mathf.Clamp01(_stateMachine.FallTime / maxFallTime);
-        }
-        
+        float fallBlend = Mathf.Clamp01(_stateMachine.FallTime / maxFallTime);
         _animator.SetFloat(_fallTimeHash, fallBlend);
     }
 
