@@ -71,14 +71,13 @@ public class PlayerAnimationHandler : MonoBehaviour
 
     private void Update()
     {
-        UpdateAnimationState();
+        UpdateStateIndex();
         UpdateMovementAnimation();
-        UpdateAimingAnimation();
         UpdateFallAnimation();
         UpdateRotationAnimation();
     }
 
-    private void UpdateAnimationState()
+    private void UpdateStateIndex()
     {
         // Convert current state to animation state enum
         PlayerAnimationState currentAnimState = _stateMachine.CurrentState switch
@@ -104,13 +103,12 @@ public class PlayerAnimationHandler : MonoBehaviour
         float horizontalValue = 0f;
         
         // Get current movement speed and direction from state machine
+        bool aiming = _stateMachine.IsAiming;
         float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
         Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
-
-        // Calculate the speed blend value for animation
         float speedBlendValue = CalculateSpeedBlend(activeSpeed);
 
-        if (_stateMachine.IsAiming && moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
+        if (aiming && moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
         {
             // When aiming, map movement direction to the animation blend tree
             Vector3 localMoveDir = transform.InverseTransformDirection(moveDirection);
@@ -162,11 +160,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         _animator.SetFloat(_rotationMismatchHash, _stateMachine.RotationMismatch);
         _animator.SetBool(_isRotatingToTargetHash, _stateMachine.IsRotatingToTarget);
     }
-
-    private void UpdateAimingAnimation()
-    {
-        _animator.SetBool(_isAimingHash, _stateMachine.IsAiming);
-    }
+    
 
     private void UpdateFallAnimation()
     {
