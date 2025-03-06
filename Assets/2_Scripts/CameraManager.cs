@@ -138,7 +138,7 @@ public class CameraManager : MonoBehaviour
     private void UpdateAimCore()
     {
         // Update aim core position to follow the player
-        if (!aimCore || !_playerInputHandler) return;
+        if (!aimCore || !_playerInputHandler || _player.CurrentState == _player.InMenuState) return;
     
         aimCore.transform.position = _playerInputHandler.transform.position;
     

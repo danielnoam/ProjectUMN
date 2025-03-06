@@ -4,6 +4,12 @@ using UnityEngine;
 using VInspector;
 
 
+public enum AimMode
+{
+    AimOnly,            // Player can only use aim mode
+    ExplorationAndAim        // Player can toggle between aim and non-aim modes (default)
+}
+
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(PlayerInputHandler))]
 [RequireComponent(typeof(CharacterController))]
@@ -23,6 +29,8 @@ public class PlayerStateMachine : MonoBehaviour
     public PlayerTeleportingState TeleportingState { get; private set; }
 
     [Header("Movement")]
+    [Tooltip("Controls whether the player can only aim or can toggle between aim and non-aim modes")]
+    [SerializeField] private AimMode aimMode = AimMode.ExplorationAndAim;
     [Tooltip("Walking speed when holding the walk button")]
     public float walkSpeed = 4f;
     [Tooltip("Default running speed")]
@@ -89,6 +97,7 @@ public class PlayerStateMachine : MonoBehaviour
     public GameObject menu;
     
     
+    public AimMode CurrentAimMode => aimMode;
     public float AirTime { get;  set; }
     public float FallTime { get;  set; }
     public float ActiveHorizontalVelocity { get; private set; }
@@ -151,6 +160,7 @@ public class PlayerStateMachine : MonoBehaviour
         
         _lineRenderer.positionCount = 2;
         _lineRenderer.enabled = false;
+        IsAiming = aimMode == AimMode.AimOnly;
         SwitchState(GroundedState);
     }
 
@@ -618,14 +628,14 @@ public class PlayerStateMachine : MonoBehaviour
     
     public void HandleAiming(bool allowAiming)
     {
-        // If aiming isn't allowed, disable it
+        // If aiming isn't allowed, disable it regardless of the aim mode setting
         if (!allowAiming)
         {
             if (IsAiming)
             {
                 IsAiming = false;
                 _lineRenderer.enabled = false;
-            
+        
                 if (CurrentAimedInteractable != null)
                 {
                     OnAimExit(CurrentAimedInteractable);
@@ -635,26 +645,40 @@ public class PlayerStateMachine : MonoBehaviour
             return;
         }
 
-        // Toggle aim mode based on input
-        if (InputHandler.AimInput)
+        // Handle aim mode based on the selected AimMode
+        switch (aimMode)
         {
-            if (!IsAiming)
-            {
-                IsAiming = true;
-            }
-        }
-        else if (IsAiming)
-        {
-            IsAiming = false;
-            _lineRenderer.enabled = false;
+            case AimMode.AimOnly:
+                // In AimOnly mode, always enable aiming when it's allowed
+                if (!IsAiming)
+                {
+                    IsAiming = true;
+                }
+                break;
             
-            if (CurrentAimedInteractable != null)
-            {
-                OnAimExit(CurrentAimedInteractable);
-                CurrentAimedInteractable = null;
-            }
+            case AimMode.ExplorationAndAim:
+                // Toggle aim mode based on input (original behavior)
+                if (InputHandler.AimInput)
+                {
+                    if (!IsAiming)
+                    {
+                        IsAiming = true;
+                    }
+                }
+                else if (IsAiming)
+                {
+                    IsAiming = false;
+                    _lineRenderer.enabled = false;
+                
+                    if (CurrentAimedInteractable != null)
+                    {
+                        OnAimExit(CurrentAimedInteractable);
+                        CurrentAimedInteractable = null;
+                    }
+                }
+                break;
         }
-    
+
         UpdateAimRay();
     }
     
@@ -689,6 +713,7 @@ public class PlayerStateMachine : MonoBehaviour
                 _robot.Idle();
             }
             
+            InputHandler.ConsumeRobotInteractBuffer();
         }
     }
     

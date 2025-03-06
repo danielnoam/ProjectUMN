@@ -618,7 +618,7 @@ private void OnDrawGizmos()
        if (rigidBody.isKinematic) return;
        
        // Only apply friction when there's no target
-       if (_target)
+       if (!_target)
        {
            // Get current velocity
            Vector3 currentVelocity = rigidBody.linearVelocity;
