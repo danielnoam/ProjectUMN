@@ -1360,7 +1360,7 @@ MonoBehaviour:
   gravity: -15
   maxVerticalVelocity: -50
   environmentCheckRadius: 0.3
-  groundCheckOffset: {x: 0, y: -0.7, z: 0}
+  groundCheckOffset: {x: 0, y: -0.67, z: 0}
   ceilingCheckOffset: {x: 0, y: 0.63, z: 0}
   environmentLayer:
     serializedVersion: 2
@@ -1829,10 +1829,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7813590141776298306, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 40f8e17a87bf08d4ca72164fe9f8ab0d, type: 2}
     - target: {fileID: 919132149155446097, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
       propertyPath: m_Name
       value: YBotHuman
       objectReference: {fileID: 0}
+    - target: {fileID: 5822821947120931875, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 477469cdc8cdbf74ebd956664f1db36a, type: 2}
     m_RemovedComponents:
     - {fileID: 5866666021909216657, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
     m_RemovedGameObjects: []
