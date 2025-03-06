@@ -140,7 +140,8 @@ public class RobotCompanion : MonoBehaviour
     private float _fullEyeLightIntensity;
     
     private IInteractable _currentInteractable;
-    private float _interactDistance = 0.5f; 
+    private float _interactDistance = 0.5f;
+    public RobotState CurrentState => currentState;
 
    private void Awake()
    {

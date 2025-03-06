@@ -680,7 +680,15 @@ public class PlayerStateMachine : MonoBehaviour
             
         if (CurrentAimedInteractable == null && InputHandler.RobotInteractInput)
         {
-            _robot.FollowPlayer();
+            if (_robot.CurrentState != RobotState.FollowingPlayer)
+            {
+                _robot.FollowPlayer();
+            }
+            else
+            {
+                _robot.Idle();
+            }
+            
         }
     }
     
