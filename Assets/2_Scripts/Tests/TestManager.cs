@@ -8,9 +8,9 @@ using VInspector;
 public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
-    
 
-    public SOTest[] tests;
+    [SerializeField] private bool debugMode = true;
+    [SerializeField] private SOTest[] tests;
     
     [Header("Current test")]
     [SerializeField] private GameObject playerPrefab;
@@ -26,9 +26,19 @@ public class TestManager : MonoBehaviour
     public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
     
     
+    
+    public bool DebugMode => debugMode;
+    public PlayerStateMachine Player => currentPlayer;
+    public RobotCompanion Robot => currentRobot;
+    public Vector3 CheckpointPosition => currentCheckpoint.position;
+    public SOTest CurrentTest => currentTest;
+    
+    
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
+    
+    
     
     private void Awake()
     {
@@ -145,21 +155,7 @@ public class TestManager : MonoBehaviour
         currentCheckpoint = checkpoint;
     }
     
-    public RobotCompanion GetRobot()
-    {
-        return currentRobot;
-    }
-    
-    public PlayerStateMachine GetPlayer()
-    {
-        return currentPlayer;
-    }
-    
-    public Vector3 GetCheckpointPosition()
-    {
-        if (!currentCheckpoint) return Vector3.zero;
-        return currentCheckpoint.position;
-    }
+
     
     #endregion Public methods ----------------------------------------------------------------------------
     
@@ -252,7 +248,6 @@ public class TestManager : MonoBehaviour
             GameObject newRobot = Instantiate(robotPrefab);
             currentRobot = newRobot.GetComponent<RobotCompanion>();
             currentRobot.TurnOn();
-            currentRobot.Teleport(currentTest.GetRobotSpawnPoint(), quaternion.identity);
         }
         
         onTestLoaded.Invoke(currentTest);

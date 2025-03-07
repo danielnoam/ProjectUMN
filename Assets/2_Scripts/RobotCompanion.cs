@@ -1,13 +1,14 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VInspector;
 
 
 public enum RobotState
 {
     Idle = 0,
-    GoToTarget = 1,
+    GoingToTarget = 1,
     FollowingPlayer = 2,
     Sitting = 3,
     Interacting = 4,
@@ -16,7 +17,7 @@ public enum RobotState
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(SphereCollider))]
-public class RobotCompanion : MonoBehaviour
+public class RobotCompanion : MonoBehaviour, Iinteractor
 {
     [Header("State")]
     [SerializeField, Min(0)] private int fullBattery = 100;
@@ -28,6 +29,9 @@ public class RobotCompanion : MonoBehaviour
     [Foldout("Horizontal Movement")]
     [Tooltip("Base movement speed of the robot")]
     [SerializeField] private float horizontalMoveSpeed = 25f;
+    
+    [Tooltip("Distance at which the robot stops moving towards the target")]
+    [SerializeField] private float interactDistance = 0.5f;
     
     [Tooltip("Minimum distance to maintain from target")]
     [SerializeField] private float minFollowDistance = 2f;
@@ -119,29 +123,27 @@ public class RobotCompanion : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private Rigidbody rigidBody;
+    [SerializeField] private SphereCollider sphereCollider;
     
     
     private PlayerStateMachine _player;
     private Transform _playerFollowPosition;
     private Transform _target;
-    
     private float _lastHeightAdjustmentTime;
     private float _lastTargetHeight;
     private float _currentHoverOffset;
     private float _hoverTime;
     private float _targetSitHeight;
-    
     private Vector3 _leftEarRotation;
     private Vector3 _rightEarRotation;
     private Quaternion _leftEarBaseRotation;
     private Quaternion _rightEarBaseRotation;
-
     private Color _defaultEyeLightColor;
     private float _fullEyeLightIntensity;
     
-    private IInteractable _currentInteractable;
-    private float _interactDistance = 0.5f;
     public RobotState CurrentState => currentState;
+    public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
+    public Interactable CurrentInteractable { get; private set;}
 
    private void Awake()
    {
@@ -198,14 +200,13 @@ public class RobotCompanion : MonoBehaviour
         
            switch (currentState)
            {
-               case RobotState.GoToTarget:
+               case RobotState.GoingToTarget:
                    AdjustHeight();
-                   Move(_target);
-                   CheckIfReachedTarget(); 
+                   MoveToTarget(_target); 
                    break;
                case RobotState.FollowingPlayer:
                    AdjustHeight();
-                   Move(_playerFollowPosition);
+                   FollowPlayer();
                    break;
                case RobotState.Idle:
                    AdjustHeight();
@@ -222,91 +223,13 @@ public class RobotCompanion : MonoBehaviour
 
    private void OnTestLoaded(SOTest test)
    {
-       _player = TestManager.Instance.GetPlayer();
+       _player = TestManager.Instance.Player;
        _playerFollowPosition = _player.transform.GetChild(2);
        
        if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
    }
-
-
-   #region Commends ------------------------------------------------------------------------------
-
-   public void Teleport(Vector3 position, Quaternion rotation)
-   {
-       rigidBody.isKinematic = true;
-       transform.position = position;
-       transform.rotation = rotation;
-       rigidBody.isKinematic = false;
-   }
-
-   public void InteractWith(IInteractable interactable)
-   {
-       if (!CanCommend()) return;
-
-       if (currentState == RobotState.Sitting)
-       {
-           Idle();
-       }
-    
-       // Store the current interactable
-       _currentInteractable = interactable;
-    
-       // Go to the interactable objects position
-       GoToTarget(interactable.InteractPosition);
-   }
    
-   private void GoToTarget(Transform targetToGoTo)
-   {
-       if (!targetToGoTo || !IsOn()) return;
-    
-       _target = targetToGoTo;
-    
-       // If going to a target that's not related to an interaction
-       if (_currentInteractable == null || _currentInteractable.InteractPosition != targetToGoTo)
-       {
-           // Clear current interactable if this is a different target
-           _currentInteractable = null;
-       }
-       
-       currentState = RobotState.GoToTarget;
-   }
-   
-   [Button]
-   public void FollowPlayer()
-   {
-       if (!_player || !IsOn()) return;
-       rigidBody.isKinematic = false;
-       rigidBody.useGravity = false;
-       currentState = RobotState.FollowingPlayer;
-   }
-   
-   [Button]
-   public void Idle()
-   {
-       if (!CanCommend()) return;
-       
-       _target = null;
-       currentState = RobotState.Idle;
-       rigidBody.useGravity = false;
-       rigidBody.isKinematic = false;
-   }
-   
-   [Button]
-   public void SitDown()
-   {
-       if (!CanCommend()) return;
-
-       currentState = RobotState.Sitting;
-       rigidBody.useGravity = false;
-       rigidBody.isKinematic = false;
-
-       // Find the ground position
-       if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, Mathf.Infinity, environmentLayer))
-       {
-           _targetSitHeight = hit.point.y + minEnvironmentClearance;
-       }
-   }
-   
+      
    [Button]
    public void TurnOff()
    {
@@ -326,7 +249,101 @@ public class RobotCompanion : MonoBehaviour
        eye.gameObject.SetActive(true);
    }
 
+
+   #region Commends ------------------------------------------------------------------------------
+
+
+
+   public void CommandInteractWith(Interactable interactable)
+   {
+       if (!CanCommend()) return;
+
+       CurrentInteractable = interactable;
+       _target = interactable.GetInteractPosition();
+       currentState = RobotState.GoingToTarget;
+   }
+   
+   
+   [Button]
+   public void CommandFollowPlayer()
+   {
+       if (!_player || !IsOn()) return;
+       rigidBody.isKinematic = false;
+       rigidBody.useGravity = false;
+       currentState = RobotState.FollowingPlayer;
+   }
+   
+   [Button]
+   public void CommandIdle()
+   {
+       if (!CanCommend()) return;
+       
+       _target = null;
+       currentState = RobotState.Idle;
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
+   }
+   
+   [Button]
+   public void CommandSitDown()
+   {
+       if (!CanCommend()) return;
+
+       currentState = RobotState.Sitting;
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
+
+       // Find the ground position
+       if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, Mathf.Infinity, environmentLayer))
+       {
+           _targetSitHeight = hit.point.y + minEnvironmentClearance/2;
+       }
+   }
+
    #endregion Commends ------------------------------------------------------------------------------
+
+   
+   #region Interaction ---------------------------------------------------------------
+   
+   public void InteractWith()
+   {
+       if (CurrentInteractable)
+       {
+           CurrentInteractable.Interact(this);
+       }
+   }
+
+   public void OnInteractionStart(Interactable interactable)
+   {
+       currentState = RobotState.Interacting;
+       rigidBody.linearVelocity = Vector3.zero;
+   }
+
+   public void OnInteractionEnd(Interactable interactable)
+   {
+       CurrentInteractable = null;
+       if (currentState != RobotState.Sitting)
+       {
+           if (_player)
+           {
+               CommandFollowPlayer();
+           }
+           else
+           {
+               CommandIdle();
+           }
+       }
+
+   }
+
+   public void CancelInteraction(Interactable interactable)
+   {
+       interactable.CancelInteraction();
+       OnInteractionEnd(interactable);
+   }
+   
+   
+   #endregion Interaction ---------------------------------------------------------------
 
 
    #region Vertical movement -------------------------------------------------------------------------------
@@ -435,7 +452,7 @@ private float GetStateBasedTargetHeight()
         case RobotState.FollowingPlayer:
             return GetFollowPlayerTargetHeight();
             
-        case RobotState.GoToTarget:
+        case RobotState.GoingToTarget:
             return GetGoToTargetHeight();
             
         case RobotState.Interacting:
@@ -446,7 +463,7 @@ private float GetStateBasedTargetHeight()
     }
 }
 
-// Height calculation for Idle state
+// Height calculation for CommandIdle state
 private float GetIdleTargetHeight()
 {
     // In idle state, just maintain minimum clearance from the ground
@@ -491,7 +508,7 @@ private float GetFollowPlayerTargetHeight()
     return playerHeight; // Default to player height if no terrain data available
 }
 
-// Height calculation for GoToTarget state
+// Height calculation for GoToInteractable state
 private float GetGoToTargetHeight()
 {
     if (!_target) return GetIdleTargetHeight();
@@ -594,7 +611,7 @@ private void OnDrawGizmos()
             }
             break;
             
-        case RobotState.GoToTarget:
+        case RobotState.GoingToTarget:
             if (_target)
             {
                 // Draw line to target
@@ -639,62 +656,114 @@ private void OnDrawGizmos()
        }
    }
    
-    private void Move(Transform target)
-    {
+   private void FollowPlayer()
+   {
+       if (!_playerFollowPosition) return;
+       
+        // Calculate the direction to the target in the horizontal plane only
+        Vector3 targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
+        Vector3 directionToTarget = (targetPosition - transform.position);
 
-       // Calculate the direction to the target in the horizontal plane only
-       Vector3 targetPosition = new Vector3(target.position.x, transform.position.y, target.position.z);
-       Vector3 directionToTarget = (targetPosition - transform.position);
-       
-       // Calculate distance to target
-       float distanceToTarget = directionToTarget.magnitude;
-       
-       // Get current horizontal velocity
-       Vector3 currentHorizontalVelocity = new Vector3(
-           rigidBody.linearVelocity.x,
-           0f,
-           rigidBody.linearVelocity.z
-       );
-       
-       // Calculate desired velocity
-       Vector3 desiredVelocity = Vector3.zero;
-       
-       if (distanceToTarget > minFollowDistance)
-       {
-           // Normalize the distance between min and max follow distance
-           float normalizedDistance = Mathf.Clamp01(
-               (distanceToTarget - minFollowDistance) / (maxFollowDistance - minFollowDistance)
-           );
-           
-           // Apply the curve to get the speed multiplier
-           float speedMultiplier = followCurve.Evaluate(normalizedDistance);
-           
-           // Calculate base desired velocity
-           Vector3 moveDirection = directionToTarget.normalized;
-           desiredVelocity = moveDirection * (horizontalMoveSpeed * speedMultiplier);
-       }
-       
-       // Calculate damping force
-       Vector3 dampingForce = -currentHorizontalVelocity * followSmoothness;
-       
-       // Calculate acceleration needed to reach desired velocity
-       Vector3 acceleration = (desiredVelocity - currentHorizontalVelocity) * (1f - followSmoothness);
-       
-       // Combine forces
-       Vector3 totalForce = acceleration + dampingForce;
-       
-       // Apply forces over time
-       Vector3 velocityChange = totalForce * Time.fixedDeltaTime;
-       
-       // Create new velocity vector, preserving Y component (handled by hover)
-       Vector3 newVelocity = new Vector3(
-           currentHorizontalVelocity.x + velocityChange.x,
-           rigidBody.linearVelocity.y,
-           currentHorizontalVelocity.z + velocityChange.z
-       );
-       
-       // Apply final velocity
-       rigidBody.linearVelocity = newVelocity;
+        // Calculate distance to target
+        float distanceToTarget = directionToTarget.magnitude;
+
+        // Get current horizontal velocity
+        Vector3 currentHorizontalVelocity = new Vector3(
+            rigidBody.linearVelocity.x,
+            0f,
+            rigidBody.linearVelocity.z
+        );
+
+        // Calculate desired velocity
+        Vector3 desiredVelocity = Vector3.zero;
+
+        if (distanceToTarget > minFollowDistance)
+        {
+            // Normalize the distance between min and max follow distance
+            float normalizedDistance = Mathf.Clamp01(
+                (distanceToTarget - minFollowDistance) / (maxFollowDistance - minFollowDistance)
+            );
+            
+            // Apply the curve to get the speed multiplier
+            float speedMultiplier = followCurve.Evaluate(normalizedDistance);
+            
+            // Calculate base desired velocity
+            Vector3 moveDirection = directionToTarget.normalized;
+            
+            // IMPROVEMENT 1: Calculate stopping distance based on current speed
+            float currentSpeed = currentHorizontalVelocity.magnitude;
+            // Estimate deceleration time (how long it would take to stop at current friction)
+            float decelerationTime = currentSpeed / (friction * horizontalMoveSpeed);
+            // Estimate stopping distance (simplified)
+            float stoppingDistance = currentSpeed * decelerationTime * 0.5f;
+            
+            // IMPROVEMENT 2: Adjust speed based on stopping distance
+            if (distanceToTarget < stoppingDistance * 1.2f) // Add 20% safety margin
+            {
+                // Reduce speed as we approach stopping distance
+                float brakeMultiplier = Mathf.Clamp01(distanceToTarget / (stoppingDistance * 1.2f));
+                speedMultiplier *= brakeMultiplier;
+            }
+            
+            // IMPROVEMENT 3: Additional speed reduction when very close
+            if (distanceToTarget < minFollowDistance * 2f)
+            {
+                speedMultiplier *= distanceToTarget / (minFollowDistance * 2f);
+            }
+            
+            desiredVelocity = moveDirection * (horizontalMoveSpeed * speedMultiplier);
+        }
+
+        // IMPROVEMENT 4: Check if we're moving away from target instead of towards it
+        // Calculate damping force
+        Vector3 dampingForce = -currentHorizontalVelocity * followSmoothness;
+
+        float dotProduct = Vector3.Dot(currentHorizontalVelocity.normalized, directionToTarget.normalized);
+        if (dotProduct < -0.2f && distanceToTarget < maxFollowDistance)
+        {
+            // We're moving away from target - apply stronger deceleration
+            dampingForce = -currentHorizontalVelocity * (followSmoothness * 3f);
+            rigidBody.AddForce(dampingForce, ForceMode.Acceleration);
+        }
+
+
+
+        // Calculate acceleration needed to reach desired velocity
+        Vector3 acceleration = (desiredVelocity - currentHorizontalVelocity) * (1f - followSmoothness);
+
+        // Combine forces
+        Vector3 totalForce = acceleration + dampingForce;
+
+        // Apply forces over time
+        Vector3 velocityChange = totalForce * Time.fixedDeltaTime;
+
+        // Create new velocity vector, preserving Y component (handled by hover)
+        Vector3 newVelocity = new Vector3(
+            currentHorizontalVelocity.x + velocityChange.x,
+            rigidBody.linearVelocity.y,
+            currentHorizontalVelocity.z + velocityChange.z
+        );
+
+        // IMPROVEMENT 5: Limit maximum horizontal speed based on distance
+        float maxSpeed = horizontalMoveSpeed;
+        if (distanceToTarget < maxFollowDistance)
+        {
+            // Gradually reduce max speed as we get closer
+            maxSpeed = Mathf.Lerp(horizontalMoveSpeed * 0.3f, horizontalMoveSpeed, 
+                distanceToTarget / maxFollowDistance);
+        }
+
+        // Clamp horizontal speed
+        float horizontalSpeed = new Vector3(newVelocity.x, 0, newVelocity.z).magnitude;
+        if (horizontalSpeed > maxSpeed)
+        {
+            float scale = maxSpeed / horizontalSpeed;
+            newVelocity.x *= scale;
+            newVelocity.z *= scale;
+        }
+
+        // Apply final velocity
+        rigidBody.linearVelocity = newVelocity;
    }
 
    #endregion Horizontal movement -------------------------------------------------------------------------------
@@ -715,7 +784,7 @@ private void OnDrawGizmos()
            targetRotation = Quaternion.LookRotation(directionToTarget);
            
        }
-       else if (currentState == RobotState.GoToTarget && _target)
+       else if (currentState == RobotState.GoingToTarget && _target)
        {
            Vector3 directionToTarget = (_target.position - transform.position).normalized;
            targetRotation = Quaternion.LookRotation(directionToTarget);
@@ -780,15 +849,56 @@ private void OnDrawGizmos()
    #region Utility ------------------------------------------------------------------------
    
    
-    private void UpdateEarRotation()
-    {
+   private void MoveToTarget(Transform target)
+   {
+       // Calculate distance to target
+       Vector3 targetPosition = new Vector3(target.position.x, target.position.y, target.position.z);
+       float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+    
+       // If we're close enough to the target
+       if (distanceToTarget <= interactDistance)
+       {
+           // If we have an interactable object, interact with it
+           if (CurrentInteractable)
+           {
+               // Perform the interaction
+               InteractWith();
+           }
+       }
+       else
+       {
+           // If we're not close enough, move towards the target
+           Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+           Vector3 moveDirection = new Vector3(directionToTarget.x, 0f, directionToTarget.z);
+           
+           Vector3 newVelocity = new Vector3(
+               moveDirection.x * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime),
+               rigidBody.linearVelocity.y,
+               moveDirection.z * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime)
+           );
+           
+           // Apply the movement
+           rigidBody.linearVelocity = newVelocity;
+       }
+   }
+   
+   private void Teleport(Vector3 position, Quaternion rotation)
+   {
+       sphereCollider.enabled = false;
+       transform.position = position;
+       transform.rotation = rotation;
+       sphereCollider.enabled = true;
+   }
+   
+   private void UpdateEarRotation() 
+   {
         if (!leftEarPivot || !rightEarPivot) return;
         if (!rotateEars) return;
 
         // Get the movement direction in local space
         Vector3 localVelocity = transform.InverseTransformDirection(rigidBody.linearVelocity);
         Vector3 localAngularVelocity = transform.InverseTransformDirection(rigidBody.angularVelocity);
-        
+
         float movementSpeed = rigidBody.linearVelocity.magnitude;
         float rotationSpeed = rigidBody.angularVelocity.magnitude;
 
@@ -834,7 +944,7 @@ private void OnDrawGizmos()
             rightTargetRotation * _rightEarBaseRotation,
             1f - Mathf.Pow(earRotationSmoothness, Time.deltaTime)
         );
-    }
+   }
    
    private void CheckBattery()
    {
@@ -867,38 +977,8 @@ private void OnDrawGizmos()
        }
    }
    
-   private void CheckIfReachedTarget()
-   {
-       if (!_target) return;
-    
-       // Calculate distance to target
-       Vector3 targetPosition = new Vector3(_target.position.x, _target.position.y, _target.position.z);
-       float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
-    
-       // If we're close enough to the target
-       if (distanceToTarget <= _interactDistance)
-       {
-           // If we have an interactable object, interact with it
-           if (_currentInteractable != null)
-           {
-               // Change state to interacting
-               currentState = RobotState.Interacting;
-            
-               // Stop movement
-               rigidBody.linearVelocity = Vector3.zero;
-            
-               // Perform the interaction
-               _currentInteractable.OnInteractionStart(gameObject);
-           }
-           else
-           {
-               // No interactable, just go to idle
-               Idle();
-           }
-       }
-   }
 
-   private bool IsOn()
+   public bool IsOn()
    {
        return  currentState != RobotState.Off && currentBattery > 0;
    }
@@ -907,14 +987,8 @@ private void OnDrawGizmos()
    {
        return IsOn();
    }
-
-   public void OnInteractionComplete(IInteractable interactable)
-   {
-       _currentInteractable = null;
-       FollowPlayer();
-   }
+   
 
    #endregion Utility ------------------------------------------------------------------------
-
-
+   
 }

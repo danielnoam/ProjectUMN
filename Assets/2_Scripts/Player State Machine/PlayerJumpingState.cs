@@ -6,6 +6,7 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void EnterState()
     {
+        StateMachine.ClearCurrentInteractable();
         StateMachine.InputHandler.ConsumeJumpBuffer();
         StateMachine.ActiveVerticalVelocity = Mathf.Sqrt(StateMachine.jumpForce * 3 * Mathf.Abs(StateMachine.gravity));
         StateMachine.AirTime = 0f;
@@ -17,7 +18,9 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void UpdateState()
     {
+
         StateMachine.AirTime += Time.deltaTime;
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
         CheckStateTransitions();

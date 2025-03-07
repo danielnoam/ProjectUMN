@@ -26,8 +26,8 @@ public class PlayerInputHandler : MonoBehaviour
     public bool SprintInput { get; private set; }
     public bool CrouchInput { get; private set; }
     public bool MoveSpeedInput { get; private set; }
-    public bool PlayerInteractInput { get; private set; }
-    public bool RobotInteractInput { get; private set; }
+    public bool InteractInput { get; private set; }
+    public bool CommandRobotInput { get; private set; }
     public bool AimInput { get; private set; }
     public bool ToggleMenuInput { get; private set; }
     public float MovementInputThreshold => movementInputThreshold;
@@ -37,8 +37,8 @@ public class PlayerInputHandler : MonoBehaviour
     
     // Buffer timers
     private float _jumpBufferCounter;
-    private float _playerInteractBufferCounter;
-    private float _robotInteractBufferCounter;
+    private float _interactBufferCounter;
+    private float _commandRobotBufferCounter;
     private float _toggleMenuBufferCounter; // Added buffer counter for toggle menu
 
     private void OnEnable()
@@ -46,8 +46,8 @@ public class PlayerInputHandler : MonoBehaviour
         inputReader.MoveEvent += OnMovementInput;
         inputReader.LookEvent += OnMouseInput;
         inputReader.JumpEvent += OnJumpInput;
-        inputReader.PlayerInteractEvent += OnPlayerInteractInput;
-        inputReader.RobotInteractEvent += OnRobotInteractInput;
+        inputReader.PlayerInteractEvent += OnInteractInput;
+        inputReader.RobotInteractEvent += OnCommandRobotInput;
         inputReader.CrouchEvent += OnCrouchInput;
         inputReader.SprintEvent += OnSprintInput;
         inputReader.MoveSpeedEvent += OnMoveSpeedInput;
@@ -60,8 +60,8 @@ public class PlayerInputHandler : MonoBehaviour
         inputReader.MoveEvent -= OnMovementInput;
         inputReader.LookEvent -= OnMouseInput;
         inputReader.JumpEvent -= OnJumpInput;
-        inputReader.PlayerInteractEvent -= OnPlayerInteractInput;
-        inputReader.RobotInteractEvent -= OnRobotInteractInput;
+        inputReader.PlayerInteractEvent -= OnInteractInput;
+        inputReader.RobotInteractEvent -= OnCommandRobotInput;
         inputReader.CrouchEvent -= OnCrouchInput;
         inputReader.SprintEvent -= OnSprintInput;
         inputReader.MoveSpeedEvent -= OnMoveSpeedInput;
@@ -119,21 +119,21 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    private void OnPlayerInteractInput(InputAction.CallbackContext context)
+    private void OnInteractInput(InputAction.CallbackContext context)
     {
         if (context.started)
         {
-            _playerInteractBufferCounter = interactBufferTime;
+            _interactBufferCounter = interactBufferTime;
         }
         
     }
     
-    private void OnRobotInteractInput(InputAction.CallbackContext context)
+    private void OnCommandRobotInput(InputAction.CallbackContext context)
     {
         
         if (context.started)
         {
-            _robotInteractBufferCounter = interactBufferTime;
+            _commandRobotBufferCounter = interactBufferTime;
         }
     }
 
@@ -196,18 +196,18 @@ public class PlayerInputHandler : MonoBehaviour
             _jumpBufferCounter -= Time.deltaTime;
         }
         
-        // Player interact buffer
-        PlayerInteractInput = _playerInteractBufferCounter > 0;
-        if (_playerInteractBufferCounter > 0)
+        // Interact buffer
+        InteractInput = _interactBufferCounter > 0;
+        if (_interactBufferCounter > 0)
         {
-            _playerInteractBufferCounter -= Time.deltaTime;
+            _interactBufferCounter -= Time.deltaTime;
         }
         
-        // Robot interact buffer
-        RobotInteractInput = _robotInteractBufferCounter > 0;
-        if (_robotInteractBufferCounter > 0)
+        // Robot command buffer
+        CommandRobotInput = _commandRobotBufferCounter > 0;
+        if (_commandRobotBufferCounter > 0)
         {
-            _robotInteractBufferCounter -= Time.deltaTime;
+            _commandRobotBufferCounter -= Time.deltaTime;
         }
         
         // Toggle menu buffer
@@ -223,14 +223,14 @@ public class PlayerInputHandler : MonoBehaviour
         _jumpBufferCounter = 0;
     }
     
-    public void ConsumePlayerInteractBuffer()
+    public void ConsumeInteractBuffer()
     {
-        _playerInteractBufferCounter = 0;
+        _interactBufferCounter = 0;
     }
     
-    public void ConsumeRobotInteractBuffer()
+    public void ConsumeCommandRobotBuffer()
     {
-        _robotInteractBufferCounter = 0;
+        _commandRobotBufferCounter = 0;
     }
     
     public void ConsumeToggleMenuBuffer()

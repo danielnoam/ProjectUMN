@@ -837,6 +837,37 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!1 &4466238424696599447
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6612204555609660401}
+  m_Layer: 6
+  m_Name: InteractSphere
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6612204555609660401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4466238424696599447}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5159062420402600487}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5517273413630661149
 GameObject:
   m_ObjectHideFlags: 0
@@ -1118,6 +1149,7 @@ Transform:
   - {fileID: 2381188618167646215}
   - {fileID: 6232357240667778510}
   - {fileID: 6884127725147339731}
+  - {fileID: 6612204555609660401}
   - {fileID: 8675883868082035829}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1341,7 +1373,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e01ff8a09062e0b4980252c8945d3c2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aimMode: 0
+  cameraMode: 0
   walkSpeed: 4
   runSpeed: 8
   sprintSpeed: 12
@@ -1366,10 +1398,12 @@ MonoBehaviour:
   environmentLayer:
     serializedVersion: 2
     m_Bits: 1
-  aimRayMaxDistance: 25
-  aimRayHitMask:
+  interactableCheckRadius: 0.5
+  interactableCheckPosition: {fileID: 6612204555609660401}
+  interactableLayer:
     serializedVersion: 2
     m_Bits: 256
+  aimRayMaxDistance: 25
   aimRayStartPosition: {fileID: 7580408597919689472}
   debugText: {fileID: 0}
   menu: {fileID: 4000100949311149265}

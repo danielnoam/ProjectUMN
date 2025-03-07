@@ -12,7 +12,6 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private int menuCameraPriority = 20;
     [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
     [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 1f;
-    [SerializeField] private float aimRotationThreshold = 0.1f;
     [SerializeField] private float aimMaxPitch = 80f;
     
     
@@ -22,7 +21,9 @@ public class CameraManager : MonoBehaviour
     public CinemachineCamera menuCamera;
     public GameObject aimCore;
     
-    public float AimRotationThreshold => aimRotationThreshold;
+    
+    
+    
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
     private Vector3 _lastAimDirection = Vector3.forward;
@@ -30,6 +31,7 @@ public class CameraManager : MonoBehaviour
     private float _yawAccumulation = 0f;
     private bool IsMenuActive => _player != null && _player.CurrentState == _player.InMenuState;
     private bool IsPlayerAiming => _player != null && _player.IsAiming;
+    private bool IsAimOnlyMode => _player != null && _player.CurrentCameraMode == AimMode.AimOnly;
     
 
     private void Awake()
@@ -192,7 +194,7 @@ public class CameraManager : MonoBehaviour
         {
             SwitchToAimCamera();
         }
-        else if (!IsPlayerAiming &&!IsFreeLookCameraActive())
+        else if (!IsAimOnlyMode && !IsPlayerAiming &&!IsFreeLookCameraActive())
         {
             SwitchToFreeLookCamera();
         }
@@ -200,16 +202,18 @@ public class CameraManager : MonoBehaviour
     
     private void SwitchToAimCamera()
     {
+        // // When switching to aim camera, align it with the free look camera
+        // if (aimCamera && freeLookCamera && !IsAimOnlyMode)
+        // {
+        //     aimCamera.transform.rotation = freeLookCamera.transform.rotation;
+        // }
+        
         // Set camera priorities to switch to aim camera
         aimCamera.Priority = aimCameraPriority;
         freeLookCamera.Priority = freeLookCameraPriority;
         menuCamera.Priority = freeLookCameraPriority;
         
-        // When switching to aim camera, align it with the free look camera
-        if (aimCamera && freeLookCamera)
-        {
-            aimCamera.transform.rotation = freeLookCamera.transform.rotation;
-        }
+
         
         // Hide cursor
         Cursor.visible = false;
@@ -218,15 +222,11 @@ public class CameraManager : MonoBehaviour
 
     private void SwitchToFreeLookCamera()
     {
-        if (aimCamera && freeLookCamera)
-        {
-            // Extract rotation from aim camera/aim core
-            Quaternion aimRotation = aimCamera.transform.rotation;
-            
-            // Apply this rotation to the free look camera before switching
-            // This ensures rotation continuity when transitioning back
-            freeLookCamera.transform.rotation = aimRotation;
-        }
+        // if (aimCamera && freeLookCamera)
+        // {
+        //     // Apply this rotation to the free look camera before switching
+        //     freeLookCamera.transform.rotation = aimCamera.transform.rotation;
+        // }
         
         // Reset camera priorities
         freeLookCamera.Priority = aimCameraPriority;

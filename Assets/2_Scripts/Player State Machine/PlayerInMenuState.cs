@@ -6,6 +6,8 @@ public class PlayerInMenuState : PlayerBaseState
     
     public override void EnterState()
     {
+        StateMachine.ClearCurrentInteractable();
+        StateMachine.ClearCurrentAimedInteractable();
         StateMachine.InputHandler.ConsumeToggleMenuBuffer();
         StateMachine.menu.SetActive(true);
     }
@@ -18,6 +20,7 @@ public class PlayerInMenuState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.HandleAiming(false);
         CheckStateTransitions();
     }

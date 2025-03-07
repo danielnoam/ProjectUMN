@@ -5,26 +5,35 @@ using UnityEngine;
 
 public class PlayerTeleportingState : PlayerBaseState
 {
-    public PlayerTeleportingState(PlayerStateMachine stateMachine) : base(stateMachine) { }
+    
+    public PlayerTeleportingState(PlayerStateMachine stateMachine, Vector3 destination, Quaternion rotation, float teleportationTime) : base(stateMachine)
+    {
+        StateMachine.TeleportingState = this;
+        _teleportationDestination = destination;
+        _teleportationRotation = rotation;
+        _teleportationTime = teleportationTime;
+    }
 
+    private readonly float _teleportationTime;
+    private readonly Vector3 _teleportationDestination;
+    private readonly Quaternion _teleportationRotation;
     private bool _teleportationComplete = false;
-    private float _teleportationTime = 2f;
     private float _teleportationTimer = 0f;
-    private Vector3 _teleportationDestination = new Vector3(2,2,2);
+
     
     public override void EnterState()
     {
+        StateMachine.SetCharacterCollider(false);
         StateMachine.ResetGravity();
-        if (TestManager.Instance)
-        {
-            _teleportationDestination = TestManager.Instance.GetCheckpointPosition();
-        }
+        StateMachine.ClearCurrentAimedInteractable();
+        StateMachine.ClearCurrentInteractable();
     }
     
     public override void ExitState()
     {
         _teleportationComplete = false;
         _teleportationTimer = 0f;
+        StateMachine.SetCharacterCollider(true);
     }
 
     public override void UpdateState()
@@ -52,9 +61,12 @@ public class PlayerTeleportingState : PlayerBaseState
     {
         if (_teleportationComplete)
         {
-            StateMachine.Teleport(_teleportationDestination, quaternion.identity);
+            
+            StateMachine.transform.position = _teleportationDestination;
+            StateMachine.transform.rotation = _teleportationRotation;
             StateMachine.SwitchState(StateMachine.GroundedState);
         }
     }
+    
     
 }

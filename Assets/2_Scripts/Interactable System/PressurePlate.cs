@@ -1,26 +1,30 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections.Generic;
-public class PressurePlate : BaseInteractable
+
+[RequireComponent(typeof(Interactable))]
+public class PressurePlate : MonoBehaviour
 {
     [Header("Pressure Plate Settings")]
-    [SerializeField] private Transform plateTransform;               // Reference to the moving part of the plate
-    [SerializeField] private float plateHeight = 0.1f;               // How far the plate moves down when pressed
-    [SerializeField] private float plateAnimationSpeed = 5f;         // Speed of the plate movement animation
-    [SerializeField] private bool robotReturnsToPlayer = true;       // Whether the robot should return to player after interaction
+    [SerializeField] private Transform plateTransform;            
+    [SerializeField] private float plateHeight = 0.1f;            
+    [SerializeField] private float plateAnimationSpeed = 5f;         
 
     [Header("Pressure Plate Events")]
-    [SerializeField] private UnityEvent onPlateActivated;            // Event triggered when the plate is first activated
-    [SerializeField] private UnityEvent onPlateDeactivated;          // Event triggered when the plate is deactivated
+    [SerializeField] private UnityEvent onPlateActivated;           
+    [SerializeField] private UnityEvent onPlateDeactivated;         
     
-    private Vector3 _initialPlatePosition;                           // Starting position of the plate
-    private Vector3 _pressedPlatePosition;                           // Position when the plate is fully pressed
-    private bool _isActivated = false;                               // Current activation state
-    private HashSet<GameObject> _objectsOnPlate = new HashSet<GameObject>(); // Tracks objects currently on the plate
+    private Vector3 _initialPlatePosition;                    
+    private Vector3 _pressedPlatePosition;                     
+    private bool _isActivated = false;                            
+    private readonly HashSet<GameObject> _objectsOnPlate = new HashSet<GameObject>(); 
+    private RobotCompanion _robot;
+    private Interactable _interactable;
     
-    protected override void Awake()
+    private void Awake()
     {
-        base.Awake();
+        // Get the Interactable component
+        _interactable = GetComponent<Interactable>();
         
         // Find the moving plate part (first child by default)
         if (!plateTransform)
@@ -31,6 +35,20 @@ public class PressurePlate : BaseInteractable
         // Store initial positions
         _initialPlatePosition = plateTransform.localPosition;
         _pressedPlatePosition = _initialPlatePosition - new Vector3(0, plateHeight, 0);
+        
+        // Subscribe to Interactable events
+        _interactable.onInteractStartEvents.AddListener(OnInteractionStart);
+        _interactable.onInteractEndEvents.AddListener(OnInteractionEnd);
+    }
+    
+    private void OnDestroy()
+    {
+        // Unsubscribe from events to prevent memory leaks
+        if (_interactable != null)
+        {
+            _interactable.onInteractStartEvents.RemoveListener(OnInteractionStart);
+            _interactable.onInteractEndEvents.RemoveListener(OnInteractionEnd);
+        }
     }
     
     private void Update()
@@ -46,17 +64,18 @@ public class PressurePlate : BaseInteractable
     
     private void OnTriggerEnter(Collider other)
     {
-        // Check if this object can activate the plate
-        if (CanActivate(other.gameObject))
+        // Add to tracking set
+        _objectsOnPlate.Add(other.gameObject);
+        
+        if (other.TryGetComponent(out RobotCompanion robot))
         {
-            // Add to tracking set
-            _objectsOnPlate.Add(other.gameObject);
+            _robot = robot;
+        }
             
-            // Activate if not already activated
-            if (!_isActivated)
-            {
-                SetActivated(true);
-            }
+        // Activate if not already activated
+        if (!_isActivated)
+        {
+            Activate();
         }
     }
     
@@ -65,81 +84,49 @@ public class PressurePlate : BaseInteractable
         // Remove from tracking set
         _objectsOnPlate.Remove(other.gameObject);
         
+
+        if (other.TryGetComponent(out RobotCompanion robot) && robot == _robot)
+        {
+            _robot = null;
+        }
+        
         // If no objects left on plate, deactivate
         if (_objectsOnPlate.Count == 0 && _isActivated)
         {
-            SetActivated(false);
+            Deactivate();
         }
     }
-    
-    private bool CanActivate(GameObject obj)
+
+    private void Activate()
     {
-        // Check if it's player or robot
-        return obj.GetComponent<PlayerStateMachine>() != null || 
-               obj.GetComponent<RobotCompanion>() != null;
+        if (_isActivated) return;
+
+        _isActivated = true;
+        onPlateActivated?.Invoke();
     }
     
-    private void SetActivated(bool activated)
+    private void Deactivate()
     {
-        // Only process if state is changing
-        if (_isActivated == activated) return;
+        if (!_isActivated) return;
+
+        _isActivated = false;
+        onPlateDeactivated?.Invoke();
+    }
+
+
+    private void OnInteractionStart()
+    {
+
+    }
+    
+
+    private void OnInteractionEnd()
+    {
+        if (_robot)
+        {
+            _robot.CommandSitDown();
+            _robot = null;
+        }
         
-        _isActivated = activated;
-        
-        // Handle activation
-        if (_isActivated)
-        {
-            // Trigger activation events
-            onPlateActivated?.Invoke();
-        }
-        // Handle deactivation
-        else
-        {
-            // Trigger deactivation events
-            onPlateDeactivated?.Invoke();
-        }
-    }
-    
-    public override void OnInteractionStart(GameObject interactor = null)
-    {
-        // If robot is interacting, tell it to sit down on the plate
-        if (interactor != null && interactor.TryGetComponent(out RobotCompanion robot))
-        {
-            // The robot's SitDown() method will make it stay on the plate
-            robot.SitDown();
-            
-            // If we want the robot to stay on the plate, we need to cancel the interaction timer
-            if (!robotReturnsToPlayer)
-            {
-                // Call base implementation but then cancel the timer
-                base.OnInteractionStart(interactor);
-                CancelInteraction();
-            }
-            else
-            {
-                // Default behavior - let the base class handle the interaction timer
-                base.OnInteractionStart(interactor);
-            }
-        }
-        else
-        {
-            // Not a robot, use default behavior
-            base.OnInteractionStart(interactor);
-        }
-    }
-    
-    public override void OnAimEnter(PlayerStateMachine player)
-    {
-        
-        if (!_isActivated)
-        {
-            base.OnAimEnter(player);
-        }
-    }
-    
-    public override void OnAimExit(PlayerStateMachine player)
-    {
-        base.OnAimExit(player);
-        SetHighlight(false);
     }
 }

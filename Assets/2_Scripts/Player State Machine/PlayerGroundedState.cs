@@ -16,6 +16,8 @@ public class PlayerGroundedState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
+        StateMachine.CheckForInteractable();
         StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
         CheckStateTransitions();
@@ -45,10 +47,9 @@ public class PlayerGroundedState : PlayerBaseState
         }
         
         // Interact
-        if (StateMachine.CanInteract && StateMachine.InputHandler.PlayerInteractInput)
+        if (StateMachine.InputHandler.InteractInput)
         {
-            StateMachine.CurrentInteractable.OnInteractionStart(StateMachine.gameObject);
-            StateMachine.SwitchState(StateMachine.InteractingState);
+            StateMachine.InteractWith();
             return;
         }
         

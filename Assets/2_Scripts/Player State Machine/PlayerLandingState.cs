@@ -8,8 +8,8 @@ public class PlayerLandingState : PlayerBaseState
 
     public override void EnterState()
     {
-        
-
+        StateMachine.ClearCurrentInteractable();
+        StateMachine.ClearCurrentAimedInteractable();
     }
     
     public override void ExitState()
@@ -20,12 +20,12 @@ public class PlayerLandingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
-        StateMachine.ApplyGravity(true);
         StateMachine.ApplyGravity(true);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: false);
         StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);

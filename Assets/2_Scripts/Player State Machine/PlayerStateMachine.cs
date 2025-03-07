@@ -1,19 +1,18 @@
-using System;
+
 using TMPro;
 using UnityEngine;
-using VInspector;
 
 
 public enum AimMode
 {
-    AimOnly,            // Player can only use aim mode
-    ExplorationAndAim        // Player can toggle between aim and non-aim modes (default)
+    AimOnly,            
+    ExplorationAndAim   
 }
 
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(PlayerInputHandler))]
 [RequireComponent(typeof(CharacterController))]
-public class PlayerStateMachine : MonoBehaviour
+public class PlayerStateMachine : MonoBehaviour, Iinteractor
 {
     public static  PlayerStateMachine Instance { get; private set; }
     
@@ -26,11 +25,11 @@ public class PlayerStateMachine : MonoBehaviour
     public PlayerLandingState LandingState { get; private set; }
     public PlayerInteractingState InteractingState { get; private set; }
     public PlayerInMenuState InMenuState { get; private set; } 
-    public PlayerTeleportingState TeleportingState { get; private set; }
-
+    public PlayerTeleportingState TeleportingState { get;  set; }
+    
     [Header("Movement")]
     [Tooltip("Controls whether the player can only aim or can toggle between aim and non-aim modes")]
-    [SerializeField] private AimMode aimMode = AimMode.ExplorationAndAim;
+    [SerializeField] private AimMode cameraMode = AimMode.ExplorationAndAim;
     [Tooltip("Walking speed when holding the walk button")]
     public float walkSpeed = 4f;
     [Tooltip("Default running speed")]
@@ -85,10 +84,14 @@ public class PlayerStateMachine : MonoBehaviour
     [SerializeField] private Vector3 ceilingCheckOffset = new Vector3(0, 0.63f, 0);
     [Tooltip("Layer mask defining what objects count as environment")]
     [SerializeField] private LayerMask environmentLayer = 1;
+    [Tooltip("Radius of the sphere used to detect interactable")]
+    [SerializeField] private float interactableCheckRadius = 0.5f;
+    [Tooltip("Offset from character position for interactable detection")]
+    [SerializeField] private Transform interactableCheckPosition;
+    [Tooltip("Layer mask defining what objects count as interactable")]
+    [SerializeField] private LayerMask interactableLayer = 1;
     [Tooltip("Maximum distance the aim ray will travel")]
-    public float aimRayMaxDistance = 20f;
-    [Tooltip("Layer mask for objects that can be hit by the aim ray")]
-    public LayerMask aimRayHitMask= 1;
+    public float aimRayMaxDistance = 25f;
     [Tooltip("The start position of the aim ray")]
     public Transform aimRayStartPosition;
 
@@ -97,7 +100,7 @@ public class PlayerStateMachine : MonoBehaviour
     public GameObject menu;
     
     
-    public AimMode CurrentAimMode => aimMode;
+    public AimMode CurrentCameraMode => cameraMode;
     public float AirTime { get;  set; }
     public float FallTime { get;  set; }
     public float ActiveHorizontalVelocity { get; private set; }
@@ -105,11 +108,11 @@ public class PlayerStateMachine : MonoBehaviour
     public Vector3 ActiveMoveDirection { get; private set; } = Vector3.zero;
     public bool IsGrounded { get; private set; }
     public bool CanStand { get; private set; }
-    public bool CanInteract { get; private set; }
     public bool IsAiming { get; private set; }
     public PlayerInputHandler InputHandler { get; private set; }
-    public IInteractable CurrentInteractable { get; private set; }
-    public IInteractable CurrentAimedInteractable { get; private set; }
+    public Interactable CurrentInteractable { get; private set; }
+    public Interactable CurrentAimedInteractable { get; private set; }
+    public InteractorType InteractorType { get; } = InteractorType.Player;
     private CharacterController _controller;
     private RobotCompanion _robot;
     private CameraManager _cameraManager;
@@ -154,13 +157,12 @@ public class PlayerStateMachine : MonoBehaviour
         InteractingState = new PlayerInteractingState(this);
         CrouchingState = new PlayerCrouchingState(this);
         InMenuState = new PlayerInMenuState(this);
-        TeleportingState = new PlayerTeleportingState(this);
         _defaultCharacterHeight = _controller.height;
         _defaultCharacterCenter = _controller.center;
         
         _lineRenderer.positionCount = 2;
         _lineRenderer.enabled = false;
-        IsAiming = aimMode == AimMode.AimOnly;
+        IsAiming = cameraMode == AimMode.AimOnly;
         SwitchState(GroundedState);
     }
 
@@ -189,9 +191,8 @@ public class PlayerStateMachine : MonoBehaviour
 
     private void Update()
     {
-        CheckCollisions();
         UpdateFallTime();
-        UpdateDebugText();
+        UpdateDebugInformation();
         CurrentState.UpdateState();
     }
 
@@ -203,17 +204,277 @@ public class PlayerStateMachine : MonoBehaviour
     
     private void OnTestLoaded(SOTest test)
     {
-        _robot = TestManager.Instance.GetRobot();
-        Teleport(test.GetPlayerSpawnPoint(), Quaternion.Euler(0, 0, 0));
-        SwitchState(GroundedState);
+        _robot = TestManager.Instance.Robot;
+        SwitchState(new PlayerTeleportingState(this, test.GetPlayerSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f));
+    }
+    
+
+
+    
+    #region State machine ---------------------------------------------------------------
+
+    private void MoveCharacter()
+    {
+        if (!_controller || _controller.enabled == false) return;
         
+        // Get horizontal velocity from direction and speed
+        Vector3 horizontalMovement = ActiveMoveDirection * ActiveHorizontalVelocity;
+    
+        // Create full movement vector with vertical component
+        Vector3 movement = new Vector3(
+            horizontalMovement.x,
+            ActiveVerticalVelocity,
+            horizontalMovement.z
+        );
+    
+        // Apply movement
+        _controller.Move(movement * Time.fixedDeltaTime);
+    }
+    
+    private void UpdateFallTime()
+    {
+        // Only increment fall time when moving downward
+        if (!IsGrounded && CurrentState != JumpingState)
+        {
+            FallTime += Time.deltaTime;
+        }
+    }
+    
+    public void SwitchState(PlayerBaseState newState)
+    {
+        CurrentState?.ExitState();
+        CurrentState = newState;
+        CurrentState.EnterState();
+    }
+
+    
+    #endregion State machine ---------------------------------------------------------------
+    
+    
+    #region Calculations ---------------------------------------------------------------
+
+    private Vector3 CalculateMoveDirection()
+    {
+        if (!_cameraManager) return transform.forward;
+        
+        // Get camera forward and right
+        var forward = _cameraManager.freeLookCamera.transform.forward;
+        var right = _cameraManager.freeLookCamera.transform.right;
+    
+        // Project onto horizontal plane
+        forward.y = 0;
+        right.y = 0;
+        forward.Normalize();
+        right.Normalize();
+
+        // Calculate movement direction relative to camera
+        return (forward * InputHandler.MovementInput.y + 
+                right * InputHandler.MovementInput.x).normalized;
+    }
+    
+    private float CalculateTargetSpeed(float movementIntensity)
+    {
+        _lockSprinting = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
+
+        if (movementIntensity < InputHandler.MovementInputThreshold)
+            return 0f;
+
+        // Determine base speed based on input and state
+        float baseSpeed;
+        if (!_lockSprinting)
+        {
+            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+                baseSpeed = sprintSpeed;
+            else
+                baseSpeed = runSpeed;
+        }
+        else
+        {
+            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+                baseSpeed = runSpeed;
+            else
+                baseSpeed = walkSpeed;
+        }
+    
+        // Apply direction multipliers based on movement input
+        float directionMultiplier = 1.0f;
+    
+        // Check for backward movement (negative Y input)
+        if (InputHandler.MovementInput.y < -0.3f)
+        {
+            // More negative Y = more backward movement effect
+            float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
+            directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
+        }
+    
+        // Check for strafing movement (X input)
+        if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
+        {
+            // Stronger X input = more strafe effect
+            float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
+            directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
+        }
+    
+        // Return the modified speed
+        return baseSpeed * directionMultiplier;
     }
     
     
+    private Vector3 GetCameraAimDirection()
+    {
+        if (!_cameraManager) return transform.forward;
+        return _cameraManager.GetCameraAimDirection(true);
+    }
     
-    #region Collisions ---------------------------------------------------------------
+        
+    private Vector3 HandleSteepSurfaces(Vector3 velocity)
+    {
+        // Don't apply when moving upward
+        if (ActiveVerticalVelocity >= 0) return velocity;
+        
+        // Cast a sphere to detect surface normal
+        Vector3 origin = transform.position + Vector3.up * _controller.radius;
+        float distance = _controller.height * 0.5f + 0.1f;
+        
+        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
+                out RaycastHit hitInfo, distance, environmentLayer))
+        {
+            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            
+            // Only apply for steep slopes beyond character controller's slope limit
+            if (angle > _controller.slopeLimit)
+            {
+                // Project movement onto the surface to slide
+                return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
+            }
+        }
+        
+        return velocity;
+    }
+    
 
-    private void CheckCollisions()
+    #endregion Calculations ---------------------------------------------------------------
+    
+    
+    #region Interaction ---------------------------------------------------------------
+    
+    private void SelectInteractable(Collider collider3d)
+    {
+        CurrentInteractable = collider3d.GetComponent<Interactable>();
+        if (CurrentInteractable)
+        {
+            if (CurrentInteractable.OnlyRobotCanInteract) return;
+            
+            CurrentInteractable.MarkForPlayerInteraction(this);
+
+            if (CurrentInteractable == CurrentAimedInteractable)
+            {
+                CurrentAimedInteractable = null;
+            }
+        }
+    }
+    
+    public void ClearCurrentInteractable()
+    {
+        if (!CurrentInteractable) return;
+
+        CurrentInteractable.UnmarkForInteraction();
+        CurrentInteractable = null;
+    }
+
+    public void ClearCurrentAimedInteractable()
+    {
+        if (!CurrentAimedInteractable) return;
+        
+        CurrentAimedInteractable.UnmarkForInteraction();
+        CurrentAimedInteractable = null;
+    }
+    
+    public void OnInteractionStart(Interactable interactable)
+    {
+        SwitchState(InteractingState);
+    }
+
+    public void OnInteractionEnd(Interactable interactable)
+    {
+        
+        
+        InteractingState.OnInteractionComplete();
+        if (CurrentInteractable == interactable)
+        {
+            CurrentInteractable = null;
+        }
+        
+    }
+
+    public void CancelInteraction(Interactable interactable)
+    {
+        if (CurrentInteractable != interactable) return;
+        
+        interactable.CancelInteraction();
+        InteractingState.OnInteractionComplete();
+        CurrentInteractable = null;
+    }
+    
+        private void CheckForAimInteractable()
+    {
+        if (!_robot) return;
+        
+        // Set ray origin 
+        Vector3 rayOrigin = aimRayStartPosition.position;
+
+        // Get ray direction from camera
+        Vector3 rayDirection = _cameraManager.GetCameraAimDirection() + new Vector3(0, +0.1f,0);
+
+        // Set first point of line renderer
+        _lineRenderer.SetPosition(0, rayOrigin);
+
+        // Create the actual ray for Physics ray-casting
+        Ray aimRay = new Ray(rayOrigin, rayDirection);
+
+        // Perform raycast to see if we hit anything
+        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, interactableLayer))
+        {
+            // Set second point of line renderer to hit position
+            _lineRenderer.SetPosition(1, hitInfo.point);
+            
+            // Check if the hit object implements IInteractable
+            if (hitInfo.collider.TryGetComponent(out Interactable hitInteractable))
+            {
+                // Check if this interactable is different from CurrentInteractable
+                // Only set it as CurrentAimedInteractable if it's not already the CurrentInteractable
+                if (CurrentAimedInteractable != hitInteractable && CurrentInteractable != hitInteractable)
+                {
+                    // Exit previous target if there was one
+                    ClearCurrentAimedInteractable();
+        
+                    // Set new target and enter it
+                    CurrentAimedInteractable = hitInteractable;
+                    CurrentAimedInteractable.MarkForRobotInteraction(_robot);
+                }
+            }
+            else if (CurrentAimedInteractable)
+            {
+                // We're no longer aiming at an interactable
+                ClearCurrentAimedInteractable();
+            }
+        }
+        else
+        {
+            // No hit, set line end point to max distance
+            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
+            
+            // Clear current target if we had one
+            ClearCurrentAimedInteractable();
+        }
+    }
+
+    #endregion Interaction ---------------------------------------------------------------
+    
+    
+    #region States methods - Collisions ---------------------------------------------------------------
+
+    public void CheckEnvironmentCollisions()
     {
         Vector3 groundSpherePosition = transform.position + groundCheckOffset;
         IsGrounded = Physics.CheckSphere(groundSpherePosition, environmentCheckRadius, environmentLayer);
@@ -221,98 +482,28 @@ public class PlayerStateMachine : MonoBehaviour
         Vector3 ceilingSpherePosition = transform.position + ceilingCheckOffset;
         CanStand = !Physics.CheckSphere(ceilingSpherePosition, environmentCheckRadius, environmentLayer);
     }
-    
-    
-    private void OnTriggerEnter(Collider other)
+
+    public void CheckForInteractable()
     {
-        if (other.TryGetComponent(out IInteractable interactable))
+        Collider[] interactableColliders = Physics.OverlapSphere(interactableCheckPosition.position, interactableCheckRadius, interactableLayer);
+        if (interactableColliders == null || interactableColliders.Length == 0)
         {
-            CurrentInteractable = interactable;
-        } 
-        else if (other.TryGetComponent(out LaserGround laserGround))
-        {
-            SwitchState(TeleportingState);
+            ClearCurrentInteractable();
         }
-    }
-
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.TryGetComponent(out IInteractable interactable) && interactable == CurrentInteractable)
+        else
         {
-
-            CanInteract = CurrentInteractable.PlayerCanInteract && (CurrentState == GroundedState || CurrentState == CrouchingState) && (CurrentInteractable != CurrentAimedInteractable);
-
-            if (CanInteract && !CurrentInteractable.IsHighlighted())
-            {
-                CurrentInteractable.SetHighlight(true);
-            }
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.TryGetComponent(out IInteractable interactable) && interactable == CurrentInteractable)
-        {
-            CurrentInteractable.SetHighlight(false);
-            CurrentInteractable = null;
-            CanInteract = false;
+            Collider firstOverlap = interactableColliders[0];
+            SelectInteractable(firstOverlap);
         }
     }
     
-    private void OnAimInteractableEnter(IInteractable interactable)
-    {
-        if (_robot && _robot.CanCommend() && CurrentAimedInteractable is { RobotCanInteract: true })
-        {
-            interactable.OnAimEnter(this);
-        }
-    }
-
-    private void OnAimInteractableStay(IInteractable interactable)
-    {
-        interactable.OnAimInteractableStay(this);
-        
-        if (_robot && _robot.CanCommend() && CurrentAimedInteractable is { RobotCanInteract: true } && InputHandler.RobotInteractInput)
-        {
-            InputHandler.ConsumeRobotInteractBuffer();
-            _robot.InteractWith(CurrentAimedInteractable);
-        }
-    }
-
-    private void OnAimExit(IInteractable interactable)
-    {
-        interactable.OnAimExit(this);
-    }
-
-    #endregion Collisions ---------------------------------------------------------------
-    
-    
-    #region State Control ---------------------------------------------------------------
-
-    public void SwitchState(PlayerBaseState newState)
-    {
-        CurrentState?.ExitState();
-        CurrentState = newState;
-        CurrentState.EnterState();
-    }
-    
-    public void OnInteractionComplete(IInteractable interactable)
-    {
-        InteractingState.OnInteractionComplete(interactable);
-    }
     
 
-    #endregion State Control ---------------------------------------------------------------
+    #endregion States methods - Collisions ---------------------------------------------------------------
     
+
+    #region State methods - Movement ---------------------------------------------------------------
     
-    #region State modules ---------------------------------------------------------------
-    
-    public void Teleport(Vector3 position, Quaternion rotation)
-    {
-        _controller.enabled = false;
-        transform.position = position;
-        transform.rotation = rotation;
-        _controller.enabled = true;
-    }
     
     public void HandleMovement(bool allowMovement, bool isAirborne)
     {
@@ -626,6 +817,12 @@ public class PlayerStateMachine : MonoBehaviour
         ActiveVerticalVelocity = 0f;
     }
     
+    
+    #endregion State methods - Movement ---------------------------------------------------------------
+
+    
+    #region State methods - Actions ---------------------------------------------------------------
+
     public void HandleAiming(bool allowAiming)
     {
         // If aiming isn't allowed, disable it regardless of the aim mode setting
@@ -634,19 +831,12 @@ public class PlayerStateMachine : MonoBehaviour
             if (IsAiming)
             {
                 IsAiming = false;
-                _lineRenderer.enabled = false;
-        
-                if (CurrentAimedInteractable != null)
-                {
-                    OnAimExit(CurrentAimedInteractable);
-                    CurrentAimedInteractable = null;
-                }
             }
             return;
         }
 
         // Handle aim mode based on the selected AimMode
-        switch (aimMode)
+        switch (cameraMode)
         {
             case AimMode.AimOnly:
                 // In AimOnly mode, always enable aiming when it's allowed
@@ -668,22 +858,60 @@ public class PlayerStateMachine : MonoBehaviour
                 else if (IsAiming)
                 {
                     IsAiming = false;
-                    _lineRenderer.enabled = false;
-                
-                    if (CurrentAimedInteractable != null)
-                    {
-                        OnAimExit(CurrentAimedInteractable);
-                        CurrentAimedInteractable = null;
-                    }
                 }
                 break;
         }
 
-        UpdateAimRay();
+        CheckForAimInteractable();
+    }
+    
+    public void InteractWith()
+    {
+        if (CurrentInteractable)
+        {
+            CurrentInteractable.Interact(this);
+        }
     }
     
 
+    public void CommandRobot()
+    {
+        if (!_robot || !_robot.CanCommend()) return;
+            
+        if (InputHandler.CommandRobotInput)
+        {
+            InputHandler.ConsumeCommandRobotBuffer();
+
+            if (_robot.CurrentState != RobotState.FollowingPlayer)
+            {
+                _robot.CommandFollowPlayer();
+                return;
+            }
+            else
+            {
+                _robot.CommandIdle();
+                return;
+            }
+        }
+        
+        if (InputHandler.InteractInput)
+        {
+            InputHandler.ConsumeInteractBuffer();
+            
+            if (CurrentAimedInteractable)
+            {
+                _robot.CommandInteractWith(CurrentAimedInteractable);
+                return;
+            }
+        }
+    }
     
+
+    #endregion State methods - Actions ---------------------------------------------------------------
+
+    
+    #region State methods - Utility ---------------------------------------------------------------
+
     public void SetCharacterHeight(bool crouching)
     {
         if (crouching)
@@ -697,272 +925,62 @@ public class PlayerStateMachine : MonoBehaviour
             _controller.center = _defaultCharacterCenter;
         }
     }
-
-    public void CommandRobot()
+    
+    public void SetCharacterCollider(bool state)
     {
-        if (!_robot || !_robot.CanCommend()) return;
-            
-        if (CurrentAimedInteractable == null && InputHandler.RobotInteractInput)
-        {
-            if (_robot.CurrentState != RobotState.FollowingPlayer)
-            {
-                _robot.FollowPlayer();
-            }
-            else
-            {
-                _robot.Idle();
-            }
-            
-            InputHandler.ConsumeRobotInteractBuffer();
-        }
-    }
-    
-    #endregion State modules ---------------------------------------------------------------
-
-    
-    #region Calculations ---------------------------------------------------------------
-
-    private Vector3 CalculateMoveDirection()
-    {
-        if (!_cameraManager) return transform.forward;
-        
-        // Get camera forward and right
-        var forward = _cameraManager.freeLookCamera.transform.forward;
-        var right = _cameraManager.freeLookCamera.transform.right;
-    
-        // Project onto horizontal plane
-        forward.y = 0;
-        right.y = 0;
-        forward.Normalize();
-        right.Normalize();
-
-        // Calculate movement direction relative to camera
-        return (forward * InputHandler.MovementInput.y + 
-                right * InputHandler.MovementInput.x).normalized;
-    }
-    
-    private float CalculateTargetSpeed(float movementIntensity)
-    {
-        _lockSprinting = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
-
-        if (movementIntensity < InputHandler.MovementInputThreshold)
-            return 0f;
-
-        // Determine base speed based on input and state
-        float baseSpeed;
-        if (!_lockSprinting)
-        {
-            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
-                baseSpeed = sprintSpeed;
-            else
-                baseSpeed = runSpeed;
-        }
-        else
-        {
-            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
-                baseSpeed = runSpeed;
-            else
-                baseSpeed = walkSpeed;
-        }
-    
-        // Apply direction multipliers based on movement input
-        float directionMultiplier = 1.0f;
-    
-        // Check for backward movement (negative Y input)
-        if (InputHandler.MovementInput.y < -0.3f)
-        {
-            // More negative Y = more backward movement effect
-            float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
-            directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
-        }
-    
-        // Check for strafing movement (X input)
-        if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
-        {
-            // Stronger X input = more strafe effect
-            float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
-            directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
-        }
-    
-        // Return the modified speed
-        return baseSpeed * directionMultiplier;
-    }
-    
-    
-    private Vector3 GetCameraAimDirection()
-    {
-        if (!_cameraManager) return transform.forward;
-        return _cameraManager.GetCameraAimDirection(true);
-    }
-    
-        
-    private Vector3 HandleSteepSurfaces(Vector3 velocity)
-    {
-        // Don't apply when moving upward
-        if (ActiveVerticalVelocity >= 0) return velocity;
-        
-        // Cast a sphere to detect surface normal
-        Vector3 origin = transform.position + Vector3.up * _controller.radius;
-        float distance = _controller.height * 0.5f + 0.1f;
-        
-        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
-                out RaycastHit hitInfo, distance, environmentLayer))
-        {
-            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
-            
-            // Only apply for steep slopes beyond character controller's slope limit
-            if (angle > _controller.slopeLimit)
-            {
-                // Project movement onto the surface to slide
-                return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
-            }
-        }
-        
-        return velocity;
-    }
-    
-
-    #endregion Calculations ---------------------------------------------------------------
-    
-    
-    #region Utility ---------------------------------------------------------------
-
-    private void MoveCharacter()
-    {
-        // Get horizontal velocity from direction and speed
-        Vector3 horizontalMovement = ActiveMoveDirection * ActiveHorizontalVelocity;
-    
-        // Create full movement vector with vertical component
-        Vector3 movement = new Vector3(
-            horizontalMovement.x,
-            ActiveVerticalVelocity,
-            horizontalMovement.z
-        );
-    
-        // Apply movement
-        _controller.Move(movement * Time.fixedDeltaTime);
-    }
-    
-    private void UpdateFallTime()
-    {
-        // Only increment fall time when moving downward
-        if (!IsGrounded && CurrentState != JumpingState)
-        {
-            FallTime += Time.deltaTime;
-        }
-    }
-    
-    private void UpdateAimRay()
-    {
-        if (!IsAiming)
-        {
-            // Hide line renderer when not aiming
-            if (_lineRenderer.enabled)
-            {
-                _lineRenderer.enabled = false;
-                if (CurrentAimedInteractable != null)
-                {
-                    OnAimExit(CurrentAimedInteractable);
-                    CurrentAimedInteractable = null;
-                }
-            }
-            return;
-        }
-
-        // Show line renderer when aiming
-        if (!_lineRenderer.enabled)
-        {
-            _lineRenderer.enabled = false;
-        }
-
-        // Set ray origin (player position, slightly adjusted to match camera view)
-        Vector3 rayOrigin = transform.position;
-        if (aimRayStartPosition)
-        {
-            rayOrigin = aimRayStartPosition.position;
-        }
-        
-        // Get ray direction from camera
-        Vector3 rayDirection = _cameraManager.GetCameraAimDirection();
-        
-        // Set first point of line renderer
-        _lineRenderer.SetPosition(0, rayOrigin);
-        
-        // Create the actual ray for Physics ray-casting
-        Ray aimRay = new Ray(rayOrigin, rayDirection);
-        
-        // Perform raycast to see if we hit anything
-        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, aimRayHitMask))
-        {
-            // Set second point of line renderer to hit position
-            _lineRenderer.SetPosition(1, hitInfo.point);
-            
-            // Check if the hit object implements IInteractable
-            if (hitInfo.collider.TryGetComponent(out IInteractable hitInteractable))
-            {
-                if (CurrentAimedInteractable != hitInteractable)
-                {
-                    // Exit previous target if there was one
-                    if (CurrentAimedInteractable != null)
-                    {
-                        OnAimExit(CurrentAimedInteractable);
-                    }
-                    
-                    // Set new target and enter it
-                    CurrentAimedInteractable = hitInteractable;
-                    OnAimInteractableEnter(CurrentAimedInteractable);
-                }
-                
-                // Update aim on current target
-                OnAimInteractableStay(CurrentAimedInteractable);
-            }
-            else if (CurrentAimedInteractable != null)
-            {
-                // We're no longer aiming at an interactable
-                OnAimExit(CurrentAimedInteractable);
-                CurrentAimedInteractable = null;
-            }
-        }
-        else
-        {
-            // No hit, set line end point to max distance
-            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
-            
-            // Clear current target if we had one
-            if (CurrentAimedInteractable != null)
-            {
-                OnAimExit(CurrentAimedInteractable);
-                CurrentAimedInteractable = null;
-            }
-        }
+        _controller.enabled = state;
     }
 
-    
+    #endregion State methods - Utility ---------------------------------------------------------------
 
-
-    #endregion Utility ---------------------------------------------------------------
     
     
     #region Debug ---------------------------------------------------------------
 
     
-    private void UpdateDebugText()
+    private void UpdateDebugInformation()
     {
-        if (!debugText) return;
+        if (TestManager.Instance && TestManager.Instance.DebugMode)
+        {
+            if (debugText)
+            {
+                debugText.text = $"State: {CurrentState.GetType().Name}\n" +
+                                 $"IsGrounded: {IsGrounded}\n" +
+                                 $"CanStand: {CanStand}\n" +
+                                 $"IsAiming: {IsAiming}\n" +
+                                 $"AirTime: {AirTime}\n" +
+                                 $"FallTime: {FallTime}\n" +
+                                 $"Robot: {_robot}, {_robot.CurrentState}\n" +
+                                 $"MoveDirection: {ActiveMoveDirection}\n" +
+                                 $"Interactable: {CurrentInteractable}\n" +
+                                 $"AimedInteractable: {CurrentAimedInteractable}\n" +
+                                 $"ActiveHorizontalSpeed: {ActiveHorizontalVelocity}\n" +
+                                 $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n";
+            }
+        
+        
+            if (!_lineRenderer.enabled)
+            {
+                _lineRenderer.enabled = true;
+            }
+            
+        }
+        else
+        {
+            if (debugText)
+            {
+                debugText.text = "";
+            }
 
-        debugText.text = $"State: {CurrentState.GetType().Name}\n" +
-                         $"IsGrounded: {IsGrounded}\n" +
-                         $"CanStand: {CanStand}\n" +
-                         $"IsAiming: {IsAiming}\n" +
-                         $"AirTime: {AirTime}\n" +
-                         $"FallTime: {FallTime}\n" +
-                         $"Robot: {_robot}\n" +
-                         $"MoveDirection: {ActiveMoveDirection}\n" +
-                         $"Interactable: {CurrentInteractable}\n" +
-                         $"AimedInteractable: {CurrentAimedInteractable}\n" +
-                         $"ActiveHorizontalSpeed: {ActiveHorizontalVelocity}\n" +
-                         $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n";
+            if (_lineRenderer.enabled)
+            {
+                _lineRenderer.enabled = false;
+            }
+            
+        }
     }
+
+#if UNITY_EDITOR
     
     private void OnDrawGizmos()
     {
@@ -986,7 +1004,14 @@ public class PlayerStateMachine : MonoBehaviour
         Gizmos.color = CanStand ? Color.green : Color.red;
         Vector3 ceilingSpherePosition = transform.position + ceilingCheckOffset;
         Gizmos.DrawWireSphere(ceilingSpherePosition, environmentCheckRadius);
+        
+        // Interactable sphere
+        Gizmos.color = Color.blue;
+        Vector3 interactableSpherePosition = interactableCheckPosition.position;
+        Gizmos.DrawWireSphere(interactableSpherePosition, interactableCheckRadius);
     }
+#endif
+
     
     #endregion Debug ---------------------------------------------------------------
 

@@ -6,7 +6,9 @@ public class PlayerInteractingState : PlayerBaseState
     
     public override void EnterState()
     {
-        StateMachine.InputHandler.ConsumePlayerInteractBuffer();
+        StateMachine.InputHandler.ConsumeInteractBuffer();
+        StateMachine.ClearCurrentInteractable();
+        StateMachine.ClearCurrentAimedInteractable();
     }
     
     public override void ExitState()
@@ -15,6 +17,7 @@ public class PlayerInteractingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.HandleAiming(allowAiming: true);
         CheckStateTransitions();
     }
@@ -45,7 +48,7 @@ public class PlayerInteractingState : PlayerBaseState
         }
     }
     
-    public void OnInteractionComplete(IInteractable interactable)
+    public void OnInteractionComplete()
     {
         StateMachine.SwitchState(StateMachine.GroundedState);
     }

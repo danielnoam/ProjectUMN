@@ -18,6 +18,8 @@ public class PlayerCrouchingState : PlayerBaseState
 
     public override void UpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
+        StateMachine.CheckForInteractable();
         StateMachine.HandleAiming(allowAiming: true);
         StateMachine.CommandRobot();
         CheckStateTransitions();
@@ -47,10 +49,9 @@ public class PlayerCrouchingState : PlayerBaseState
         }
         
         // Interact
-        if (StateMachine.CanInteract && StateMachine.InputHandler.PlayerInteractInput)
+        if (StateMachine.InputHandler.InteractInput)
         {
-            StateMachine.CurrentInteractable.OnInteractionStart(StateMachine.gameObject);
-            StateMachine.SwitchState(StateMachine.InteractingState);
+            StateMachine.InteractWith();
             return;
         }
         
