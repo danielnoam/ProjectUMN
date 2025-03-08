@@ -416,58 +416,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         CurrentInteractable = null;
     }
     
-        private void CheckForAimInteractable()
-    {
-        if (!_robot) return;
-        
-        // Set ray origin 
-        Vector3 rayOrigin = aimRayStartPosition.position;
 
-        // Get ray direction from camera
-        Vector3 rayDirection = _cameraManager.GetCameraAimDirection() + new Vector3(0, +0.1f,0);
-
-        // Set first point of line renderer
-        _lineRenderer.SetPosition(0, rayOrigin);
-
-        // Create the actual ray for Physics ray-casting
-        Ray aimRay = new Ray(rayOrigin, rayDirection);
-
-        // Perform raycast to see if we hit anything
-        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, interactableLayer))
-        {
-            // Set second point of line renderer to hit position
-            _lineRenderer.SetPosition(1, hitInfo.point);
-            
-            // Check if the hit object implements IInteractable
-            if (hitInfo.collider.TryGetComponent(out Interactable hitInteractable))
-            {
-                // Check if this interactable is different from CurrentInteractable
-                // Only set it as CurrentAimedInteractable if it's not already the CurrentInteractable
-                if (CurrentAimedInteractable != hitInteractable && CurrentInteractable != hitInteractable)
-                {
-                    // Exit previous target if there was one
-                    ClearCurrentAimedInteractable();
-        
-                    // Set new target and enter it
-                    CurrentAimedInteractable = hitInteractable;
-                    CurrentAimedInteractable.MarkForRobotInteraction(_robot);
-                }
-            }
-            else if (CurrentAimedInteractable)
-            {
-                // We're no longer aiming at an interactable
-                ClearCurrentAimedInteractable();
-            }
-        }
-        else
-        {
-            // No hit, set line end point to max distance
-            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
-            
-            // Clear current target if we had one
-            ClearCurrentAimedInteractable();
-        }
-    }
 
     #endregion Interaction ---------------------------------------------------------------
     
@@ -494,6 +443,72 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         {
             Collider firstOverlap = interactableColliders[0];
             SelectInteractable(firstOverlap);
+        }
+    }
+    
+    private void CheckForAimInteractable()
+    {
+        if (!_robot) return;
+        
+        // Set ray origin 
+        Vector3 rayOrigin = aimRayStartPosition.position;
+
+        // Get ray direction from camera
+        Vector3 rayDirection = _cameraManager.GetCameraAimDirection() + new Vector3(0, +0.1f,0);
+
+        // Set first point of line renderer
+        _lineRenderer.SetPosition(0, rayOrigin);
+
+        // Create a layermask that includes both interactable objects AND environment/walls
+        // This ensures we hit walls first if they're in the way
+        LayerMask raycastMask = interactableLayer | environmentLayer;
+
+        // Create the actual ray for Physics ray-casting
+        Ray aimRay = new Ray(rayOrigin, rayDirection);
+
+        // Perform raycast to see if we hit anything
+        if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, raycastMask))
+        {
+            // Set second point of line renderer to hit position
+            _lineRenderer.SetPosition(1, hitInfo.point);
+            
+            // Check if the hit object is on the interactable layer
+            if (((1 << hitInfo.collider.gameObject.layer) & interactableLayer) != 0)
+            {
+                // Check if the hit object implements IInteractable
+                if (hitInfo.collider.TryGetComponent(out Interactable hitInteractable))
+                {
+                    // Check if this interactable is different from CurrentInteractable
+                    // Only set it as CurrentAimedInteractable if it's not already the CurrentInteractable
+                    if (CurrentAimedInteractable != hitInteractable && CurrentInteractable != hitInteractable)
+                    {
+                        // Exit previous target if there was one
+                        ClearCurrentAimedInteractable();
+        
+                        // Set new target and enter it
+                        CurrentAimedInteractable = hitInteractable;
+                        CurrentAimedInteractable.MarkForRobotInteraction(_robot);
+                    }
+                }
+                else if (CurrentAimedInteractable)
+                {
+                    // We're no longer aiming at an interactable
+                    ClearCurrentAimedInteractable();
+                }
+            }
+            else
+            {
+                // We hit something that's not an interactable (like a wall)
+                ClearCurrentAimedInteractable();
+            }
+        }
+        else
+        {
+            // No hit, set line end point to max distance
+            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
+            
+            // Clear current target if we had one
+            ClearCurrentAimedInteractable();
         }
     }
     
