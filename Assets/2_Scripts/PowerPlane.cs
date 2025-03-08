@@ -38,7 +38,23 @@ public class PowerPlane : MonoBehaviour
     
     private void Awake()
     {
-        // Create/get components
+        // Get or create components
+        SetupComponents();
+        
+        // Create new mesh
+        CreateNewMesh();
+        
+        // Set material
+        if (planeMaterial != null)
+            _meshRenderer.material = planeMaterial;
+            
+        // Initialize mesh collider
+        _meshCollider.sharedMesh = _planeMesh;
+        _meshCollider.convex = true;
+    }
+    
+    private void SetupComponents()
+    {
         _meshFilter = GetComponent<MeshFilter>();
         if (_meshFilter == null)
             _meshFilter = gameObject.AddComponent<MeshFilter>();
@@ -50,19 +66,23 @@ public class PowerPlane : MonoBehaviour
         _meshCollider = GetComponent<MeshCollider>();
         if (_meshCollider == null)
             _meshCollider = gameObject.AddComponent<MeshCollider>();
+    }
+    
+    private void CreateNewMesh()
+    {
+        // Clean up old mesh if it exists
+        if (_planeMesh != null)
+        {
+            if (Application.isPlaying)
+                Destroy(_planeMesh);
+            else
+                DestroyImmediate(_planeMesh);
+        }
         
         // Create new mesh
         _planeMesh = new Mesh();
-        _planeMesh.name = "PlaneMesh";
+        _planeMesh.name = "PlaneMesh_" + gameObject.name;
         _meshFilter.mesh = _planeMesh;
-        
-        // Set material
-        if (planeMaterial != null)
-            _meshRenderer.material = planeMaterial;
-            
-        // Initialize mesh collider
-        _meshCollider.sharedMesh = _planeMesh;
-        _meshCollider.convex = true;
     }
     
     private void Start()
@@ -86,6 +106,18 @@ public class PowerPlane : MonoBehaviour
             CreatePlaneMesh(1.0f);
             startPoint.hasChanged = false;
             endPoint.hasChanged = false;
+        }
+    }
+    
+    private void OnDestroy()
+    {
+        // Clean up mesh when the component is destroyed
+        if (_planeMesh != null)
+        {
+            if (Application.isPlaying)
+                Destroy(_planeMesh);
+            else
+                DestroyImmediate(_planeMesh);
         }
     }
     
@@ -265,7 +297,8 @@ public class PowerPlane : MonoBehaviour
         _targetState = active;
         isActive = active;
         
-        if (animate && gameObject.activeInHierarchy)
+        // Only animate in play mode and if animation is requested
+        if (animate && Application.isPlaying && gameObject.activeInHierarchy)
         {
             // If there's no active animation, start a new one
             if (_activationCoroutine == null)
@@ -276,7 +309,7 @@ public class PowerPlane : MonoBehaviour
         }
         else
         {
-            // Immediately set the state
+            // Immediately set the state without animation
             _currentAnimationProgress = active ? 1f : 0f;
             
             if (_meshRenderer != null)
@@ -338,8 +371,8 @@ public class PowerPlane : MonoBehaviour
         _activationCoroutine = null;
     }
     
-    // Also update in edit mode for easier debugging
     #if UNITY_EDITOR
+    // Also update in edit mode for easier debugging
     private void OnValidate()
     {
         // During OnValidate we just flag that we need to update
@@ -354,25 +387,14 @@ public class PowerPlane : MonoBehaviour
             
             if (!Application.isPlaying)
             {
-                if (GetComponent<MeshFilter>() == null)
-                    gameObject.AddComponent<MeshFilter>();
-                    
-                if (GetComponent<MeshRenderer>() == null)
-                    gameObject.AddComponent<MeshRenderer>();
-                    
-                if (GetComponent<MeshCollider>() == null)
-                    gameObject.AddComponent<MeshCollider>();
-                
                 // Initialize references for editor
-                _meshFilter = GetComponent<MeshFilter>();
-                _meshRenderer = GetComponent<MeshRenderer>();
-                _meshCollider = GetComponent<MeshCollider>();
+                SetupComponents();
                 
                 // Create mesh if it doesn't exist
                 if (_planeMesh == null)
                 {
                     _planeMesh = new Mesh();
-                    _planeMesh.name = "PlaneMesh";
+                    _planeMesh.name = "PlaneMesh_" + gameObject.name;
                     
                     // We use delayCall, so setting sharedMesh should be safe now
                     if (_meshFilter != null)
@@ -382,11 +404,11 @@ public class PowerPlane : MonoBehaviour
                 // Update the mesh
                 if (_planeMesh != null && startPoint != null && endPoint != null)
                 {
-                    // Update current animation progress based on isActive for editor
+                    // In editor mode, always set to final state without animation
                     _currentAnimationProgress = isActive ? 1f : 0f;
                     _targetState = isActive;
                     
-                    CreatePlaneMesh(isActive ? 1.0f : 0.0f);
+                    CreatePlaneMesh(_currentAnimationProgress);
                 }
                 
                 // Visual representation in editor
@@ -422,8 +444,8 @@ public class PowerPlane : MonoBehaviour
         Gizmos.DrawSphere(startPoint.position, 0.2f);
         Gizmos.DrawSphere(endPoint.position, 0.2f);
         
-        // Draw the plane bounds if active
-        if (!isActive)
+        // Draw the plane bounds if inactive or in editor
+        if (!isActive || !Application.isPlaying)
         {
             // Draw wireframe
             Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
