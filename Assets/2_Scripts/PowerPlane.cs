@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using UnityEngine.Serialization;
 using VInspector;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,14 +12,19 @@ public class PowerPlane : MonoBehaviour
     public Transform endPoint;
     
     [Header("Plane Settings")]
+    [Range(0.5f, 10f)]
+    [Tooltip("Width of the plane")]
     public float planeWidth = 2f;
-    public float planeHeight = 0.2f;
-    public float activationTime = 1.0f;
-    public Material planeMaterial;
     
-    [Header("Orientation Settings")]
-    [Tooltip("When enabled, the plane will be oriented vertically like a wall")]
-    public bool isVertical = false;
+    [Range(0.1f, 5f)]
+    [Tooltip("Height/thickness of the plane")]
+    public float planeHeight = 0.2f;
+    
+    [Range(0.1f, 5f)]
+    [Tooltip("Time to fully activate or deactivate the plane")]
+    public float activationTime = 1.0f;
+    
+    public Material planeMaterial;
     
     [Header("Runtime")]
     [Tooltip("Toggle to activate/deactivate the plane (works in editor and play mode)")]
@@ -70,19 +74,17 @@ public class PowerPlane : MonoBehaviour
     
     private void CreateNewMesh()
     {
-        // Clean up old mesh if it exists
-        if (_planeMesh != null)
+        // We don't destroy the mesh on recreation since it causes issues with references
+        if (_planeMesh == null)
         {
-            if (Application.isPlaying)
-                Destroy(_planeMesh);
-            else
-                DestroyImmediate(_planeMesh);
+            _planeMesh = new Mesh();
+            _planeMesh.name = "PlaneMesh_" + gameObject.name;
+            _meshFilter.mesh = _planeMesh;
         }
-        
-        // Create new mesh
-        _planeMesh = new Mesh();
-        _planeMesh.name = "PlaneMesh_" + gameObject.name;
-        _meshFilter.mesh = _planeMesh;
+        else
+        {
+            _planeMesh.Clear();
+        }
     }
     
     private void Start()
@@ -112,12 +114,14 @@ public class PowerPlane : MonoBehaviour
     private void OnDestroy()
     {
         // Clean up mesh when the component is destroyed
-        if (_planeMesh != null)
+        if (_planeMesh != null && gameObject != null)
         {
             if (Application.isPlaying)
                 Destroy(_planeMesh);
             else
                 DestroyImmediate(_planeMesh);
+                
+            _planeMesh = null;
         }
     }
     
@@ -140,22 +144,9 @@ public class PowerPlane : MonoBehaviour
         
         // Create local axes for the plane orientation
         Vector3 forward = direction;
-        
-        Vector3 up, right;
-        
-        if (isVertical)
-        {
-            // For a vertical plane, the "up" direction is actually the world up
-            up = Vector3.up;
-            right = Vector3.Cross(up, forward).normalized;
-        }
-        else
-        {
-            // For a horizontal plane, the "up" direction is perpendicular to the plane direction
-            up = Vector3.up;
-            right = Vector3.Cross(up, forward).normalized;
-            up = Vector3.Cross(forward, right).normalized;
-        }
+        Vector3 up = Vector3.up;
+        Vector3 right = Vector3.Cross(up, forward).normalized;
+        up = Vector3.Cross(forward, right).normalized;
         
         // Calculate half width and height for vertex positions
         float halfWidth = planeWidth * 0.5f;
@@ -232,8 +223,14 @@ public class PowerPlane : MonoBehaviour
         // Update mesh collider
         if (_meshCollider != null)
         {
+            // Temporarily disable to avoid errors during mesh update
+            bool wasEnabled = _meshCollider.enabled;
+            _meshCollider.enabled = false;
+            
             _meshCollider.sharedMesh = null; // Necessary to force update
             _meshCollider.sharedMesh = _planeMesh;
+            _meshCollider.convex = true;
+            _meshCollider.enabled = wasEnabled;
         }
     }
     
@@ -280,16 +277,6 @@ public class PowerPlane : MonoBehaviour
         SetPlaneActive(false);
     }
     
-    [Button]
-    public void ToggleOrientation()
-    {
-        isVertical = !isVertical;
-        if (isActive)
-        {
-            CreatePlaneMesh(1.0f);
-        }
-    }
-    
     // Activate or deactivate the plane
     private void SetPlaneActive(bool active, bool animate = true)
     {
@@ -327,10 +314,15 @@ public class PowerPlane : MonoBehaviour
     private IEnumerator AnimatePlane()
     {
         // Show the renderer during animation
-        _meshRenderer.enabled = true;
+        if (_meshRenderer != null)
+            _meshRenderer.enabled = true;
         
-        // Keep collider active during animation
-        _meshCollider.enabled = true;
+        // Temporarily disable collider to avoid errors during animation
+        if (_meshCollider != null)
+            _meshCollider.enabled = false;
+            
+        // Get a smaller step size for smoother animation
+        float smallStep = 0.05f;
         
         // Animate until we reach the target state
         while ((_targetState && _currentAnimationProgress < 1f) || (!_targetState && _currentAnimationProgress > 0f))
@@ -338,10 +330,10 @@ public class PowerPlane : MonoBehaviour
             // Calculate the current target value
             float targetValue = _targetState ? 1f : 0f;
             
-            // Calculate step based on the direction we're going
+            // Calculate step based on the direction we're going, with a limit
             float step = (targetValue - _currentAnimationProgress) > 0 ? 
-                Time.deltaTime / activationTime : 
-                -Time.deltaTime / activationTime;
+                Mathf.Min(Time.deltaTime / activationTime, smallStep) : 
+                Mathf.Max(-Time.deltaTime / activationTime, -smallStep);
                 
             // Update progress
             _currentAnimationProgress = Mathf.Clamp01(_currentAnimationProgress + step);
@@ -350,9 +342,6 @@ public class PowerPlane : MonoBehaviour
             CreatePlaneMesh(_currentAnimationProgress);
             
             yield return null;
-            
-            // Check if target state changed during yield
-            // No need for special handling as we'll update towards the new target state
         }
         
         // Set final state
@@ -360,12 +349,22 @@ public class PowerPlane : MonoBehaviour
         {
             // Final full-size mesh
             CreatePlaneMesh(1.0f);
+            
+            // Enable renderer and collider
+            if (_meshRenderer != null)
+                _meshRenderer.enabled = true;
+                
+            if (_meshCollider != null)
+                _meshCollider.enabled = true;
         }
         else
         {
             // Disable rendering and collider when fully deactivated
-            _meshRenderer.enabled = false;
-            _meshCollider.enabled = false;
+            if (_meshRenderer != null)
+                _meshRenderer.enabled = false;
+                
+            if (_meshCollider != null)
+                _meshCollider.enabled = false;
         }
         
         _activationCoroutine = null;
@@ -375,6 +374,10 @@ public class PowerPlane : MonoBehaviour
     // Also update in edit mode for easier debugging
     private void OnValidate()
     {
+        // Make sure sizes stay within safe ranges
+        planeWidth = Mathf.Max(0.5f, planeWidth);
+        planeHeight = Mathf.Max(0.1f, planeHeight);
+        
         // During OnValidate we just flag that we need to update
         // To avoid the "SendMessage cannot be called during..." error, we'll delay the mesh creation
         EditorApplication.delayCall += () => 
@@ -422,8 +425,11 @@ public class PowerPlane : MonoBehaviour
                     // Make sure the mesh collider has the current mesh
                     if (_meshCollider != null && _planeMesh != null)
                     {
+                        bool wasEnabled = _meshCollider.enabled;
+                        _meshCollider.enabled = false;
                         _meshCollider.sharedMesh = _planeMesh;
-                        _meshCollider.enabled = isActive;
+                        _meshCollider.convex = true;
+                        _meshCollider.enabled = isActive && wasEnabled;
                     }
                 }
             }
@@ -453,17 +459,14 @@ public class PowerPlane : MonoBehaviour
             float distance = direction.magnitude;
             Vector3 center = startPoint.position + direction * 0.5f;
             
-            // Choose dimensions based on orientation
-            Vector3 size = new Vector3(planeWidth, planeHeight, distance);
-            
-            // Draw the plane bounds
+            // Draw plane bounds
             Matrix4x4 originalMatrix = Gizmos.matrix;
             Gizmos.matrix = Matrix4x4.TRS(
                 center,
                 Quaternion.LookRotation(direction),
                 Vector3.one
             );
-            Gizmos.DrawWireCube(Vector3.zero, size);
+            Gizmos.DrawWireCube(Vector3.zero, new Vector3(planeWidth, planeHeight, distance));
             Gizmos.matrix = originalMatrix;
         }
     }
