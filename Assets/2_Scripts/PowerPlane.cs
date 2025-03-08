@@ -41,6 +41,7 @@ public class PowerPlane : MonoBehaviour
     private float _currentAnimationProgress = 0f; // 0 = fully inactive, 1 = fully active
     private bool _targetState = false; // The state we're animating towards
     private bool _meshNeedsRebuild = true;
+    private bool _colliderNeedsUpdate = true; // New flag to ensure collider is updated
     
     private void Awake()
     {
@@ -54,13 +55,17 @@ public class PowerPlane : MonoBehaviour
         _targetState = isActive;
         UpdateMesh();
         
+        // Force an immediate collider update
+        _colliderNeedsUpdate = true;
+        UpdateCollider();
+        
         // Set collider and renderer state
         UpdateComponentStates();
     }
     
     private void Update()
     {
-        // Only update if active and if positions have changed
+        // Only update if points exist and if positions have changed
         if (startPoint != null && endPoint != null && 
            (startPoint.hasChanged || endPoint.hasChanged))
         {
@@ -68,6 +73,24 @@ public class PowerPlane : MonoBehaviour
             UpdateMesh();
             startPoint.hasChanged = false;
             endPoint.hasChanged = false;
+        }
+        
+        // Check if collider needs update
+        if (_colliderNeedsUpdate)
+        {
+            UpdateCollider();
+            _colliderNeedsUpdate = false;
+        }
+    }
+    
+    private void LateUpdate()
+    {
+        // Extra safety check to make sure collider has mesh
+        if (isActive && _currentAnimationProgress > 0.01f && 
+            _meshCollider != null && _meshCollider.enabled &&
+            (_meshCollider.sharedMesh == null || _meshCollider.sharedMesh != _mesh))
+        {
+            UpdateCollider();
         }
     }
     
@@ -77,6 +100,7 @@ public class PowerPlane : MonoBehaviour
             _meshRenderer.enabled = true;
             
         _meshNeedsRebuild = true;
+        _colliderNeedsUpdate = true;
     }
     
     private void OnDisable()
@@ -236,8 +260,8 @@ public class PowerPlane : MonoBehaviour
         _mesh.RecalculateNormals();
         _mesh.RecalculateBounds();
         
-        // Update mesh collider safely
-        UpdateCollider();
+        // Flag that collider needs to be updated
+        _colliderNeedsUpdate = true;
         
         _meshNeedsRebuild = false;
     }
@@ -253,30 +277,41 @@ public class PowerPlane : MonoBehaviour
             if (isActive && _currentAnimationProgress > 0.01f)
             {
                 // Check if the mesh is valid for collider
-                if (_mesh.vertexCount > 0)
+                if (_mesh.vertexCount > 0 && _mesh.triangles.Length > 0)
                 {
                     // Disable temporarily - helps avoid PhysX errors
                     bool wasEnabled = _meshCollider.enabled;
                     _meshCollider.enabled = false;
                     
-                    // Set mesh and re-enable if needed
+                    // Clear and set the mesh with a small delay
                     _meshCollider.sharedMesh = null;
-                    _meshCollider.sharedMesh = _mesh;
                     
-                    // Only try to make convex if we have enough volume
-                    Bounds bounds = _mesh.bounds;
-                    float minDimension = Mathf.Min(bounds.size.x, bounds.size.y, bounds.size.z);
-                    
-                    if (minDimension > 0.05f)
+                    // Force Unity to process this first
+                    if (Application.isPlaying)
                     {
-                        _meshCollider.convex = true;
+                        // Use a coroutine in play mode
+                        StartCoroutine(DelayedSetColliderMesh(wasEnabled));
                     }
                     else
                     {
-                        _meshCollider.convex = false;
+                        // Immediate in edit mode
+                        _meshCollider.sharedMesh = _mesh;
+                        
+                        // Only try to make convex if we have enough volume
+                        Bounds bounds = _mesh.bounds;
+                        float minDimension = Mathf.Min(bounds.size.x, bounds.size.y, bounds.size.z);
+                        
+                        if (minDimension > 0.05f)
+                        {
+                            _meshCollider.convex = true;
+                        }
+                        else
+                        {
+                            _meshCollider.convex = false;
+                        }
+                        
+                        _meshCollider.enabled = wasEnabled && isActive;
                     }
-                    
-                    _meshCollider.enabled = wasEnabled && isActive;
                 }
             }
             else
@@ -292,6 +327,42 @@ public class PowerPlane : MonoBehaviour
         }
     }
     
+    // Coroutine to delay setting the collider mesh for better stability
+    private IEnumerator DelayedSetColliderMesh(bool wasEnabled)
+    {
+        // Wait a frame for Unity to process the null assignment
+        yield return null;
+        
+        if (_meshCollider == null || _mesh == null) 
+            yield break;
+            
+        try
+        {
+            // Now assign the actual mesh
+            _meshCollider.sharedMesh = _mesh;
+            
+            // Only try to make convex if we have enough volume
+            Bounds bounds = _mesh.bounds;
+            float minDimension = Mathf.Min(bounds.size.x, bounds.size.y, bounds.size.z);
+            
+            if (minDimension > 0.05f)
+            {
+                _meshCollider.convex = true;
+            }
+            else
+            {
+                _meshCollider.convex = false;
+            }
+            
+            // Re-enable if needed
+            _meshCollider.enabled = wasEnabled && isActive;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("PowerPlane: Error in delayed collider update: " + e.Message);
+        }
+    }
+    
     private void UpdateComponentStates()
     {
         if (_meshRenderer != null)
@@ -299,6 +370,9 @@ public class PowerPlane : MonoBehaviour
             
         if (_meshCollider != null)
             _meshCollider.enabled = isActive && _currentAnimationProgress > 0.01f;
+            
+        // Ensure we update the collider when the component states change
+        _colliderNeedsUpdate = true;
     }
     
     [Button]
@@ -392,6 +466,9 @@ public class PowerPlane : MonoBehaviour
         // Set final state
         UpdateComponentStates();
         
+        // Force one final collider update
+        _colliderNeedsUpdate = true;
+        
         _activationCoroutine = null;
     }
     
@@ -419,6 +496,17 @@ public class PowerPlane : MonoBehaviour
             };
         }
         #endif
+    }
+    
+    // Public method to force collider refresh
+    [Button]
+    public void RefreshCollider()
+    {
+        if (_mesh != null && _meshCollider != null)
+        {
+            _colliderNeedsUpdate = true;
+            UpdateCollider();
+        }
     }
     
     #if UNITY_EDITOR

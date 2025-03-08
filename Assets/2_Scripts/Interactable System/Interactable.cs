@@ -190,7 +190,7 @@ public class Interactable : MonoBehaviour
         }
     }
     
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
         
