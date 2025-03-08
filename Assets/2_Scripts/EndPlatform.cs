@@ -6,7 +6,7 @@ public class EndPlatform : MonoBehaviour
     
     private TestManager _testManager;
 
-    private void Awake()
+    private void Start()
     {
         _testManager = TestManager.Instance;
     }

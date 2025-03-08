@@ -7,7 +7,7 @@ public class SpawnPlatform : MonoBehaviour
     private bool _hasReached;
     private TestManager _testManager;
     
-    private void Awake()
+    private void Start()
     {
         _testManager = TestManager.Instance;
     }
