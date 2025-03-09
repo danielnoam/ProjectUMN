@@ -47,6 +47,7 @@ public class Interactable : MonoBehaviour
         if (outlineObject)
         {
             outlineObject.OutlineColor = Color.clear;
+            outlineObject.OutlineWidth = outlineWidth;
         }
     } 
 

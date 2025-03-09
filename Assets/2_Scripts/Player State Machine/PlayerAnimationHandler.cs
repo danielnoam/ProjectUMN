@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 using UnityEngine.Serialization;
 
 
@@ -13,19 +15,23 @@ public enum PlayerAnimationState
     Teleporting = 6,
 }
 
-[RequireComponent(typeof(Animator))]
+
 [RequireComponent(typeof(PlayerStateMachine))]
 public class PlayerAnimationHandler : MonoBehaviour
 {
-    private Animator _animator;
-    private PlayerStateMachine _stateMachine;
+
     
     [Header("Animation Smoothing")]
     [SerializeField, Range(0.01f, 1f)] private float animationSmoothTime = 0.1f;
     [Tooltip("Maximum fall time used for animation blending")]
     [SerializeField] private float maxFallTime = 2.0f;
 
-
+    [Header("IK")]
+    [SerializeField] private Rig rig;
+    [SerializeField] private MultiAimConstraint headIK;
+    [SerializeField] private MultiAimConstraint spineIK;
+    [SerializeField] private Transform IKTarget;
+    
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
     private readonly int _verticalHash = Animator.StringToHash("VerticalValue");
     private readonly int _horizontalHash = Animator.StringToHash("HorizontalValue");
@@ -33,20 +39,161 @@ public class PlayerAnimationHandler : MonoBehaviour
     private readonly int _fallTimeHash = Animator.StringToHash("FallTime");
     private readonly int _rotationMismatchHash = Animator.StringToHash("RotationMismatch");
     private readonly int _isRotatingToTargetHash = Animator.StringToHash("IsRotatingToTarget");
+    
+    private Animator _animator;
+    private PlayerStateMachine _stateMachine;
+    private CameraManager _cameraManager;
+    private float _targetHeadWeight = 1f;
+    private float _targetSpineWeight = 1f;
+    private Vector3 _currentIKPosition;
 
     private void Awake()
     {
-        _animator = GetComponent<Animator>();
+        _animator = GetComponentInChildren<Animator>();
         _stateMachine = GetComponent<PlayerStateMachine>();
     }
-    
+
+    private void Start()
+    {
+        if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
+    }
 
     private void Update()
     {
+        // Animator
         UpdateStateIndex();
         UpdateMovementAnimation();
         UpdateFallAnimation();
         UpdateRotationAnimation();
+
+        // IK
+        UpdateIKTarget();
+        UpdateHeadIK();
+        UpdateSpineIK();
+    }
+
+    
+    
+    
+    #region IK -------------------------------------------------------------------------------------------------------
+
+    private void UpdateIKTarget()
+    {
+        if (!IKTarget) return;
+        
+        if (_stateMachine.CurrentState != _stateMachine.InMenuState)
+        {
+            Vector3 targetPosition;
+        
+            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
+            {
+                targetPosition = _stateMachine.CurrentInteractable.transform.position;
+            }
+            else if (_cameraManager)
+            {
+                targetPosition = _cameraManager.targetTransform.position;
+            }
+            else
+            {
+                return;
+            }
+        
+            // Lerp the position
+            _currentIKPosition = Vector3.Lerp(_currentIKPosition, targetPosition, Time.deltaTime * 5);
+        
+            // Apply the lerped position
+            IKTarget.transform.position = _currentIKPosition;
+        }
+    }
+    
+    private void UpdateSpineIK()
+    {
+        if (!rig || !spineIK) return;
+
+        if (_stateMachine.CurrentState != _stateMachine.InMenuState && _stateMachine.CurrentState != _stateMachine.CrouchingState && _stateMachine.ActiveHorizontalVelocity < _stateMachine.runSpeed)
+        {
+            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
+            {
+            
+                // Determine target weight based on conditions
+                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(180))
+                {
+                    _targetSpineWeight = 0f;
+                }
+                else
+                {
+                    _targetSpineWeight = 0.5f;
+                }
+
+                // Smoothly interpolate the actual weight toward the target weight
+                spineIK.weight = Mathf.Lerp(spineIK.weight, _targetSpineWeight, Time.deltaTime * 5);
+            }
+            else if (_cameraManager)
+            {
+            
+                // Determine target weight based on conditions
+                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(140))
+                {
+                    _targetSpineWeight = 0f;
+                }
+                else
+                {
+                    _targetSpineWeight = 0.7f;
+                }
+
+                // Smoothly interpolate the actual weight toward the target weight
+                spineIK.weight = Mathf.Lerp(spineIK.weight, _targetSpineWeight, Time.deltaTime * 5);
+            }
+        }
+        else
+        {
+            spineIK.weight = Mathf.Lerp(spineIK.weight, 0f, Time.deltaTime * 5);
+        }
+    }
+
+    private void UpdateHeadIK()
+    {
+        if (!rig || !headIK) return;
+
+        if (_stateMachine.CurrentState != _stateMachine.InMenuState)
+        {
+            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
+            {
+            
+                // Determine target weight based on conditions
+                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(180))
+                {
+                    _targetHeadWeight = 0f;
+                }
+                else
+                {
+                    _targetHeadWeight = 0.7f;
+                }
+
+                // Smoothly interpolate the actual weight toward the target weight
+                headIK.weight = Mathf.Lerp(headIK.weight, _targetHeadWeight, Time.deltaTime * 5);
+            }
+            else if (_cameraManager)
+            {
+            
+                // Determine target weight based on conditions
+                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(140))
+                {
+                    _targetHeadWeight = 0f;
+                }
+                else
+                {
+                    _targetHeadWeight = 1f;
+                }
+
+                // Smoothly interpolate the actual weight toward the target weight
+                headIK.weight = Mathf.Lerp(headIK.weight, _targetHeadWeight, Time.deltaTime * 5);
+            }
+        }
+        else
+        {
+            headIK.weight = Mathf.Lerp(headIK.weight, 0f, Time.deltaTime * 5);
+        }
     }
 
     private void UpdateStateIndex()
@@ -67,6 +214,12 @@ public class PlayerAnimationHandler : MonoBehaviour
         // Set the animation state parameter
         _animator.SetInteger(_stateHash, (int)currentAnimState);
     }
+
+    #endregion IK -------------------------------------------------------------------------------------------------------
+
+    
+
+    #region Animator -------------------------------------------------------------------------------------------------------
 
     private void UpdateMovementAnimation()
     {
@@ -148,4 +301,6 @@ public class PlayerAnimationHandler : MonoBehaviour
         return 1.0f + ((currentSpeed - _stateMachine.runSpeed) / 
                        (_stateMachine.sprintSpeed - _stateMachine.runSpeed)) * 1.0f;
     }
+
+    #endregion Animator -------------------------------------------------------------------------------------------------------
 }

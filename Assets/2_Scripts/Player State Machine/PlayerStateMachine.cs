@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 
 
-public enum AimMode
+public enum CameraMode
 {
     AimOnly,            
     ExplorationAndAim   
@@ -29,7 +29,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     [Header("Movement")]
     [Tooltip("Controls whether the player can only aim or can toggle between aim and non-aim modes")]
-    [SerializeField] private AimMode cameraMode = AimMode.ExplorationAndAim;
+    [SerializeField] private CameraMode cameraMode = CameraMode.ExplorationAndAim;
     [Tooltip("Walking speed when holding the walk button")]
     public float walkSpeed = 4f;
     [Tooltip("Default running speed")]
@@ -100,7 +100,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public GameObject menu;
     
     
-    public AimMode CurrentCameraMode => cameraMode;
+    public InteractorType InteractorType { get; } = InteractorType.Player;
+    public CameraMode CurrentCameraMode => cameraMode;
     public float AirTime { get;  set; }
     public float FallTime { get;  set; }
     public float ActiveHorizontalVelocity { get; private set; }
@@ -112,18 +113,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public PlayerInputHandler InputHandler { get; private set; }
     public Interactable CurrentInteractable { get; private set; }
     public Interactable CurrentAimedInteractable { get; private set; }
-    public InteractorType InteractorType { get; } = InteractorType.Player;
-    private CharacterController _controller;
-    private RobotCompanion _robot;
-    private CameraManager _cameraManager;
-    private LineRenderer _lineRenderer;
+    public float RotationMismatch { get; private set; }
+    public bool IsRotatingToTarget { get; private set; }
+    
     private bool _lockSprinting;
     private float _defaultCharacterHeight;
     private Vector3 _defaultCharacterCenter;
     private readonly float _crouchCharacterHeight = 1.2333f;
     private readonly Vector3 _crouchCharacterCenter = new Vector3(0, -0.3f, 0.2f);
-    public float RotationMismatch { get; private set; }
-    public bool IsRotatingToTarget { get; private set; }
     private float _rotatingToTargetTimer = 0f;
     private Vector3 _lastCameraForward;
     private bool _isMovingLaterally = false;
@@ -133,6 +130,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private bool _isRotatingFromIdle = false;
     private Quaternion _targetIdleRotation = Quaternion.identity;
     private float _rotationProgress = 1.0f; 
+    
+    private CharacterController _controller;
+    private LineRenderer _lineRenderer;
+    private RobotCompanion _robot;
+    private CameraManager _cameraManager;
     
 
 
@@ -162,7 +164,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         _lineRenderer.positionCount = 2;
         _lineRenderer.enabled = false;
-        IsAiming = cameraMode == AimMode.AimOnly;
+        IsAiming = cameraMode == CameraMode.AimOnly;
         SwitchState(GroundedState);
     }
 
@@ -850,10 +852,10 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             return;
         }
 
-        // Handle aim mode based on the selected AimMode
+        // Handle aim mode based on the selected CameraMode
         switch (cameraMode)
         {
-            case AimMode.AimOnly:
+            case CameraMode.AimOnly:
                 // In AimOnly mode, always enable aiming when it's allowed
                 if (!IsAiming)
                 {
@@ -861,7 +863,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                 }
                 break;
             
-            case AimMode.ExplorationAndAim:
+            case CameraMode.ExplorationAndAim:
                 // Toggle aim mode based on input (original behavior)
                 if (InputHandler.AimInput)
                 {

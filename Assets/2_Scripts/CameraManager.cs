@@ -1,37 +1,54 @@
 using UnityEngine;
 using Unity.Cinemachine;
-using UnityEngine.Serialization;
 
 public class CameraManager : MonoBehaviour
 {
     public static CameraManager Instance { get; private set; }
     
-    [Header("Camera Settings")]
+    [Header("Postion/Rotation Settings")]
+    [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
+    [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 0.5f;
+    [SerializeField] private float aimMaxPitch = 80f;
+    [SerializeField] private float crouchVerticalOffset = -0.3f;
+    
+    [Header("Fov Settings")]
+    [SerializeField] private float minFov = 40f;
+    [SerializeField] private float maxFov = 65f;
+    
+    [Header("Noise Settings")]
+    [SerializeField] private float maxAmplitude = 0.3f;
+    [SerializeField] private float maxFrequency = 5f;
+    
+    
+    [Header("Cameras Priority")]
     [SerializeField] private int freeLookCameraPriority = 10;
     [SerializeField] private int aimCameraPriority = 15;
     [SerializeField] private int menuCameraPriority = 20;
-    [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
-    [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 1f;
-    [SerializeField] private float aimMaxPitch = 80f;
-    
     
     [Header("References")]
     public CinemachineCamera freeLookCamera;
     public CinemachineCamera aimCamera;
     public CinemachineCamera menuCamera;
     public GameObject aimCore;
-    
-    
-    
-    
+    public Transform targetTransform;
+
+
+
+    private CinemachineCamera _currentCamera;
+    private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
+    private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
+    private CinemachineInputAxisController _freeLookCameraInput;
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
     private Vector3 _lastAimDirection = Vector3.forward;
+    private Vector3 _currentOffset = Vector3.zero;
     private float _pitchAccumulation = 0f;
     private float _yawAccumulation = 0f;
-    private bool IsMenuActive => _player != null && _player.CurrentState == _player.InMenuState;
-    private bool IsPlayerAiming => _player != null && _player.IsAiming;
-    private bool IsAimOnlyMode => _player != null && _player.CurrentCameraMode == AimMode.AimOnly;
+    private float _freeLookInitialFOV;
+    private float _aimInitialFOV;
+    private bool IsMenuActive => _player && _player.CurrentState == _player.InMenuState;
+    private bool IsPlayerAiming => _player && _player.IsAiming;
+    private bool IsAimOnlyMode => _player && _player.CurrentCameraMode == CameraMode.AimOnly;
     
 
     private void Awake()
@@ -45,26 +62,30 @@ public class CameraManager : MonoBehaviour
             Instance = this;
         }
         
-        // Validate references
-        if (freeLookCamera == null || aimCamera == null || aimCore == null || menuCamera == null)
+
+        if (!freeLookCamera|| !aimCamera || !aimCore || !menuCamera)
         {
             Debug.LogError("Camera references not assigned to CameraManager!");
         }
 
-        // Hide cursor
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
 
-        // Set initial camera priorities
-        freeLookCamera.Priority = freeLookCameraPriority + 5; // Start with free look as active camera
-        aimCamera.Priority = freeLookCameraPriority;
-        menuCamera.Priority = freeLookCameraPriority;
+
+        _freeLookInitialFOV = freeLookCamera.Lens.FieldOfView;
+        _aimInitialFOV = aimCamera.Lens.FieldOfView;
+        _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        _freeLookCameraInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
+        
+        if (IsAimOnlyMode) SwitchToAimCamera();
+        else SwitchToFreeLookCamera();
     }
     
     
     private void Update()
     {
         UpdateAimCore();
+        UpdateCameraFOV();
+        UpdateCameraNoise();
         HandleCameraSwitching();
     }
     
@@ -77,8 +98,10 @@ public class CameraManager : MonoBehaviour
     {
         _player = player;
         _playerInputHandler = _player.InputHandler;
-        freeLookCamera.Follow = _player.transform;
         menuCamera.Follow = _player.transform;
+        freeLookCamera.Follow = aimCore.transform;
+        aimCamera.Follow = aimCore.transform;
+        
     }
     
     public bool IsAimCameraActive()
@@ -140,12 +163,22 @@ public class CameraManager : MonoBehaviour
     private void UpdateAimCore()
     {
         // Update aim core position to follow the player
-        if (!aimCore || !_playerInputHandler || _player.CurrentState == _player.InMenuState) return;
+        if (!aimCore || !_player || IsMenuActive) return;
+        
+
+        // Set aim core position
+        // Determine target offset based on player state
+        Vector3 targetOffset = _player.CurrentState == _player.CrouchingState ? new Vector3(0,crouchVerticalOffset,0) : Vector3.zero;
     
-        aimCore.transform.position = _playerInputHandler.transform.position;
+        // Smoothly interpolate between current and target offset
+        _currentOffset = Vector3.Lerp(_currentOffset, targetOffset, Time.deltaTime * 10f);
+    
+        // Apply position with smooth offset
+        aimCore.transform.position = _player.transform.position + _currentOffset;
+        
     
         // When not aiming, sync aim core rotation with free look camera
-        if (!IsPlayerAiming && freeLookCamera != null)
+        if (!IsPlayerAiming && freeLookCamera)
         {
             // Extract pitch and yaw from free look camera
             Vector3 forward = freeLookCamera.transform.forward;
@@ -160,9 +193,7 @@ public class CameraManager : MonoBehaviour
             aimCore.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
             return;
         }
-    
-        // Only handle manual rotation updates when actually aiming or in free look mode
-        if (IsMenuActive) return;
+        
 
         // Get the appropriate sensitivity based on current camera state
         float cameraSensitivity = IsAimCameraActive() 
@@ -178,6 +209,68 @@ public class CameraManager : MonoBehaviour
 
         // Apply the accumulated rotation
         aimCore.transform.rotation = Quaternion.Euler(_pitchAccumulation, _yawAccumulation, 0f);
+    }
+
+    private void UpdateCameraNoise()
+    {
+        // Skip if player reference is missing or menu camera is active
+        if (!_player || IsMenuCameraActive()) return;
+        
+        // Get the player's current speed
+        float currentSpeed = _player.ActiveHorizontalVelocity;
+            
+        
+        // Calculate a noise factor (0 to 1) based on current speed
+        // This will be 0 below minNoiseSpeed and 1 at or above maxNoiseSpeed
+        float noiseFactor = Mathf.Clamp01((currentSpeed - 0) / (_player.sprintSpeed - 0));
+        
+        // Calculate target amplitude and frequency based on the noise factor
+        float targetAmplitude = noiseFactor * maxAmplitude;
+        float targetFrequency = noiseFactor * maxFrequency;
+        
+        // Apply noise to the active camera
+        CinemachineBasicMultiChannelPerlin activeNoise = IsAimCameraActive() ? _aimCameraNoise : _freeLookCameraNoise;
+        
+            if (activeNoise)
+        {
+            // Smoothly interpolate current values to target values
+            activeNoise.AmplitudeGain = Mathf.Lerp(activeNoise.AmplitudeGain, targetAmplitude, Time.deltaTime * 5f);
+            activeNoise.FrequencyGain = Mathf.Lerp(activeNoise.FrequencyGain, targetFrequency, Time.deltaTime * 5f);
+        }
+    }
+    
+    private void UpdateCameraFOV()
+    {
+        // Skip if player reference is missing or menu camera is active
+        if (!_player || IsMenuCameraActive()) return;
+
+        // Determine which camera is active and its initial FOV
+        var initialFOV = IsAimCameraActive() ? _aimInitialFOV : _freeLookInitialFOV;
+
+        // Calculate velocity factor (0 to 1)
+        float velocityFactor = Mathf.Clamp01(_player.ActiveHorizontalVelocity / _player.sprintSpeed);
+    
+        // Calculate pitch factor (0 to 1) based on how close we are to maximum pitch
+        // Take the absolute value of pitch to handle looking up or down equally
+        float pitchFactor = Mathf.Abs(_pitchAccumulation) / aimMaxPitch;
+        pitchFactor = Mathf.Clamp01(pitchFactor); // Ensure value is between 0-1
+    
+        // Combine factors - give each factor a weight
+        // You can adjust these weights based on how much you want each to influence the FOV
+        float velocityWeight = 0.5f;
+        float pitchWeight = 0.5f;
+        float combinedFactor = (velocityFactor * velocityWeight) + (pitchFactor * pitchWeight);
+    
+        // Calculate fov offset and apply it to initial FOV
+        float fovOffset = maxFov - minFov;
+        float targetFOV = Mathf.Min(initialFOV + (fovOffset * combinedFactor), maxFov);
+
+        // Smoothly interpolate to target FOV
+        float currentFOV = _currentCamera.Lens.FieldOfView;
+        float newFOV = Mathf.Lerp(currentFOV, targetFOV, Time.deltaTime * 5f);
+
+        // Apply new FOV
+        _currentCamera.Lens.FieldOfView = newFOV;
     }
     
 
@@ -202,17 +295,12 @@ public class CameraManager : MonoBehaviour
     
     private void SwitchToAimCamera()
     {
-        // // When switching to aim camera, align it with the free look camera
-        // if (aimCamera && freeLookCamera && !IsAimOnlyMode)
-        // {
-        //     aimCamera.transform.rotation = freeLookCamera.transform.rotation;
-        // }
         
-        // Set camera priorities to switch to aim camera
         aimCamera.Priority = aimCameraPriority;
         freeLookCamera.Priority = freeLookCameraPriority;
         menuCamera.Priority = freeLookCameraPriority;
-        
+        _freeLookCameraInput.enabled = false;
+        _currentCamera = aimCamera;
 
         
         // Hide cursor
@@ -222,16 +310,12 @@ public class CameraManager : MonoBehaviour
 
     private void SwitchToFreeLookCamera()
     {
-        // if (aimCamera && freeLookCamera)
-        // {
-        //     // Apply this rotation to the free look camera before switching
-        //     freeLookCamera.transform.rotation = aimCamera.transform.rotation;
-        // }
         
-        // Reset camera priorities
         freeLookCamera.Priority = aimCameraPriority;
         aimCamera.Priority = freeLookCameraPriority;
         menuCamera.Priority = freeLookCameraPriority;
+        _freeLookCameraInput.enabled = true;
+        _currentCamera = freeLookCamera;
         
         // Hide cursor
         Cursor.visible = false;
@@ -240,10 +324,11 @@ public class CameraManager : MonoBehaviour
 
     private void SwitchToMenuCamera()
     {
-        // Set menu camera as highest priority
         menuCamera.Priority = menuCameraPriority;
         freeLookCamera.Priority = freeLookCameraPriority;
         aimCamera.Priority = freeLookCameraPriority;
+        _freeLookCameraInput.enabled = false;
+        _currentCamera = menuCamera;
         
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;

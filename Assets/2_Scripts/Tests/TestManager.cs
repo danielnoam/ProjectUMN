@@ -59,25 +59,13 @@ public class TestManager : MonoBehaviour
     
     private void Update()
     {
-
-        if (_activeSequenceCoroutine == null)
+        if (Input.GetKeyDown(KeyCode.F1))
         {
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                StartTest(0);
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                StartTest(1);
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                StartTest(2);
-            }
+            // Toggle debug
+            debugMode = !debugMode;
         }
     }
     
-
 
     #region Public methods ----------------------------------------------------------------------------
 
