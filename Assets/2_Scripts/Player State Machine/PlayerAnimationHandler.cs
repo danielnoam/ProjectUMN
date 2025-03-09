@@ -23,8 +23,6 @@ public class PlayerAnimationHandler : MonoBehaviour
     
     [Header("Animation Smoothing")]
     [SerializeField, Range(0.01f, 1f)] private float animationSmoothTime = 0.1f;
-    [Tooltip("Maximum fall time used for animation blending")]
-    [SerializeField] private float maxFallTime = 2.0f;
 
     [Header("IK")]
     [SerializeField] private Rig rig;
@@ -109,8 +107,10 @@ public class PlayerAnimationHandler : MonoBehaviour
     private void UpdateSpineIK()
     {
         if (!rig || !spineIK) return;
+        
+        bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && _stateMachine.CurrentState != _stateMachine.CrouchingState && _stateMachine.CurrentState != _stateMachine.FallingState;
 
-        if (_stateMachine.CurrentState != _stateMachine.InMenuState && _stateMachine.CurrentState != _stateMachine.CrouchingState && _stateMachine.ActiveHorizontalVelocity < _stateMachine.runSpeed)
+        if (allowedState && _stateMachine.ActiveHorizontalVelocity < _stateMachine.runSpeed - 2f)
         {
             if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
             {
@@ -147,7 +147,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         }
         else
         {
-            spineIK.weight = Mathf.Lerp(spineIK.weight, 0f, Time.deltaTime * 5);
+            spineIK.weight = Mathf.Lerp(spineIK.weight, 0f, Time.deltaTime * 7);
         }
     }
 
@@ -192,7 +192,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         }
         else
         {
-            headIK.weight = Mathf.Lerp(headIK.weight, 0f, Time.deltaTime * 5);
+            headIK.weight = Mathf.Lerp(headIK.weight, 0f, Time.deltaTime * 7);
         }
     }
 
@@ -277,7 +277,7 @@ public class PlayerAnimationHandler : MonoBehaviour
 
     private void UpdateFallAnimation()
     {
-        float fallBlend = Mathf.Clamp01(_stateMachine.FallTime / maxFallTime);
+        float fallBlend = Mathf.Clamp01(_stateMachine.ActiveVerticalVelocity / _stateMachine.maxVerticalVelocity);
         _animator.SetFloat(_fallTimeHash, fallBlend);
     }
     

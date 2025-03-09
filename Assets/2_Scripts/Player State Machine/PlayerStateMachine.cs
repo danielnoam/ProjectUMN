@@ -70,7 +70,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Tooltip("Downward acceleration applied while in the air")]
     public float gravity = -15f;
     [Tooltip("Maximum downward velocity the character can reach")]
-    public float maxVerticalVelocity = -50f;
+    public float maxVerticalVelocity = -25f;
 
 
 
