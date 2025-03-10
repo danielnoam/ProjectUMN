@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1678197192722327251}
   - component: {fileID: 1027728058068076933}
   - component: {fileID: 8118514843660340063}
+  - component: {fileID: 3615582205148944545}
   m_Layer: 8
   m_Name: Button
   m_TagString: Untagged
@@ -168,12 +169,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5ab9717f728a1d44b50b7556a5b3b1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedInteractors: 2
-  allowMultipleInteractions: 1
-  interactionTime: 0.3
+  allowedInteractors: 0
+  allowMultipleInteractions: 0
+  interactionTime: 0
   interactPosition: {fileID: 908175272869979877}
   robotInteractPosition: {fileID: 5765648263518085736}
-  commandToSend: 1
+  commandToSend: 0
   interactPrompt: {fileID: 8171579557511503275}
   interactPromptText: {fileID: 6109428879787846273}
   interactSfx: {fileID: 0}
@@ -185,6 +186,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onInteractEndEvents:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3615582205148944545}
+        m_TargetAssemblyTypeName: PillerButton, Assembly-CSharp
+        m_MethodName: PressButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &3615582205148944545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 477371418647919188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0878a8f0f0e6dff4e8b6497d03aa852e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buttonTransform: {fileID: 3970391392834869315}
+  buttonAnimationHeight: 0.1
+  buttonAnimationSpeed: 5
+  autoReleaseDelay: 0.5
+  onButtonPressed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &728557960358277471

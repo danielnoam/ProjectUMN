@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Interactable))]
 public class PressurePlate : MonoBehaviour
@@ -12,7 +13,7 @@ public class PressurePlate : MonoBehaviour
     
     [Header("Pressure Plate Visuals")]
     [SerializeField] private Transform plateTransform;            
-    [SerializeField, Min(0.1f)] private float plateHeight = 0.1f;            
+    [SerializeField, Min(0.1f)] private float plateAnimationHeight = 0.1f;            
     [SerializeField] private float plateAnimationSpeed = 5f;
     
     [Header("Pressure Plate Events")]
@@ -38,7 +39,7 @@ public class PressurePlate : MonoBehaviour
         
         // Store initial positions
         _initialPlatePosition = plateTransform.localPosition;
-        _pressedPlatePosition = _initialPlatePosition - new Vector3(0, plateHeight, 0);
+        _pressedPlatePosition = _initialPlatePosition - new Vector3(0, plateAnimationHeight, 0);
         
         // Subscribe to Interactable events
         _interactable.onInteractStartEvents.AddListener(OnInteractionStart);

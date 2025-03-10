@@ -341,6 +341,18 @@ public class CameraManager : MonoBehaviour
 
 
 
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (Application.isPlaying || !aimCore) return;
+        
+        if (!_player)
+        {
+            _player = FindFirstObjectByType<PlayerStateMachine>();
+        }
+        aimCore.transform.position = _player.transform.position + _currentOffset;
+    }
+#endif
 
     
 }
