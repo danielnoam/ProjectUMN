@@ -6,10 +6,15 @@ using System.Collections.Generic;
 public class PressurePlate : MonoBehaviour
 {
     [Header("Pressure Plate Settings")]
+    [SerializeField] private Vector3 checkBoxOffset = new Vector3(0f, 0f, 0f);
+    [SerializeField] private Vector3 checkBoxSize = new Vector3(1f, 0.5f, 1f);
+    [SerializeField] private LayerMask interactableLayer;
+    
+    [Header("Pressure Plate Visuals")]
     [SerializeField] private Transform plateTransform;            
-    [SerializeField] private float plateHeight = 0.1f;            
-    [SerializeField] private float plateAnimationSpeed = 5f;         
-
+    [SerializeField, Min(0.1f)] private float plateHeight = 0.1f;            
+    [SerializeField] private float plateAnimationSpeed = 5f;
+    
     [Header("Pressure Plate Events")]
     [SerializeField] private UnityEvent onPlateActivated;           
     [SerializeField] private UnityEvent onPlateDeactivated;         
@@ -18,7 +23,6 @@ public class PressurePlate : MonoBehaviour
     private Vector3 _pressedPlatePosition;                     
     private bool _isActivated = false;                            
     private readonly HashSet<GameObject> _objectsOnPlate = new HashSet<GameObject>(); 
-    private RobotCompanion _robot;
     private Interactable _interactable;
     
     private void Awake()
@@ -62,36 +66,37 @@ public class PressurePlate : MonoBehaviour
         );
     }
     
-    private void OnTriggerEnter(Collider other)
+    private void FixedUpdate()
     {
-        // Add to tracking set
-        _objectsOnPlate.Add(other.gameObject);
+        CheckForObjectsOnPlate();
+    }
+    
+
+    private void CheckForObjectsOnPlate()
+    {
+        // Clear previous objects
+        _objectsOnPlate.Clear();
         
-        if (other.TryGetComponent(out RobotCompanion robot))
+        // Check for colliders in the plate area
+        Collider[] collidersOnPlate = Physics.OverlapBox(
+            transform.position + checkBoxOffset, 
+            checkBoxSize * 0.5f, 
+            transform.rotation, 
+            interactableLayer
+        );
+        
+        // Process detected objects
+        foreach (Collider col in collidersOnPlate)
         {
-            _robot = robot;
+            _objectsOnPlate.Add(col.gameObject);
         }
-            
-        // Activate if not already activated
-        if (!_isActivated)
+        
+        // Update activation state
+        if (_objectsOnPlate.Count > 0 && !_isActivated)
         {
             Activate();
         }
-    }
-    
-    private void OnTriggerExit(Collider other)
-    {
-        // Remove from tracking set
-        _objectsOnPlate.Remove(other.gameObject);
-        
-
-        if (other.TryGetComponent(out RobotCompanion robot) && robot == _robot)
-        {
-            _robot = null;
-        }
-        
-        // If no objects left on plate, deactivate
-        if (_objectsOnPlate.Count == 0 && _isActivated)
+        else if (_objectsOnPlate.Count == 0 && _isActivated)
         {
             Deactivate();
         }
@@ -113,20 +118,25 @@ public class PressurePlate : MonoBehaviour
         onPlateDeactivated?.Invoke();
     }
 
-
     private void OnInteractionStart()
     {
 
     }
     
-
     private void OnInteractionEnd()
     {
-        if (_robot)
-        {
-            _robot.CommandSitDown();
-            _robot = null;
-        }
-        
+
     }
+
+
+
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.matrix = transform.localToWorldMatrix;
+        Gizmos.DrawWireCube(Vector3.zero + checkBoxOffset, checkBoxSize);
+    }
+#endif
+
 }

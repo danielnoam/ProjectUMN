@@ -91,7 +91,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 40
+    FieldOfView: 51.07284
     OrthographicSize: 10
     NearClipPlane: 0.2
     FarClipPlane: 500
@@ -168,8 +168,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NoiseProfile: {fileID: 11400000, guid: 717f6ec7c523c3c47bcca0a69bcb47e2, type: 2}
   PivotOffset: {x: 0, y: 0, z: 0}
-  AmplitudeGain: 1
-  FrequencyGain: 1
+  AmplitudeGain: 1e-45
+  FrequencyGain: 1e-45
   m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1 &4097674638430126449
 GameObject:
@@ -379,7 +379,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 7284159154342728571}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 40
+    FieldOfView: 49.96595
     OrthographicSize: 10
     NearClipPlane: 0.2
     FarClipPlane: 500
@@ -585,8 +585,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NoiseProfile: {fileID: 11400000, guid: 717f6ec7c523c3c47bcca0a69bcb47e2, type: 2}
   PivotOffset: {x: 0, y: 0, z: 0}
-  AmplitudeGain: 1
-  FrequencyGain: 1
+  AmplitudeGain: 6.293858e-14
+  FrequencyGain: 1.048975e-12
   m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1 &7702849316814007445
 GameObject:
@@ -656,7 +656,7 @@ Camera:
     height: 1
   near clip plane: 0.2
   far clip plane: 500
-  field of view: 40
+  field of view: 49.96595
   orthographic: 0
   orthographic size: 10
   m_Depth: -1
@@ -699,7 +699,7 @@ MonoBehaviour:
   IgnoreTimeScale: 0
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
-  UpdateMethod: 0
+  UpdateMethod: 2
   BlendUpdateMethod: 1
   LensModeOverride:
     Enabled: 0

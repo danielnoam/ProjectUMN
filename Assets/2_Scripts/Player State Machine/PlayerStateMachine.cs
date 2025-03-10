@@ -894,32 +894,26 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public void CommandRobot()
     {
         if (!_robot || !_robot.CanCommend()) return;
-            
+        
+        
+        
         if (InputHandler.CommandRobotInput)
         {
             InputHandler.ConsumeCommandRobotBuffer();
-
-            if (_robot.CurrentState != RobotState.FollowingPlayer)
-            {
-                _robot.CommandFollowPlayer();
-                return;
-            }
-            else
-            {
-                _robot.CommandIdle();
-                return;
-            }
-        }
-        
-        if (InputHandler.InteractInput)
-        {
-            InputHandler.ConsumeInteractBuffer();
             
             if (CurrentAimedInteractable)
             {
                 _robot.CommandInteractWith(CurrentAimedInteractable);
                 return;
             }
+            
+            if (_robot.CurrentState != RobotState.FollowingPlayer)
+            {
+                _robot.CommandFollowPlayer();
+                return;
+            }
+            
+            _robot.CommandIdle();
         }
     }
     

@@ -85,7 +85,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         
             if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
             {
-                targetPosition = _stateMachine.CurrentInteractable.transform.position;
+                targetPosition = _stateMachine.CurrentInteractable.GetInteractPosition(_stateMachine).position;
             }
             else if (_cameraManager)
             {

@@ -136,6 +136,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1368655913133225241}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2828406623127425786
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6616605279194390635}
+  m_Layer: 8
+  m_Name: RobotInteractPosition
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6616605279194390635
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2828406623127425786}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.051, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1368655913133225241}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6269633314066952691
 GameObject:
   m_ObjectHideFlags: 0
@@ -172,6 +203,7 @@ Transform:
   - {fileID: 8062068173172503450}
   - {fileID: 4113800438950421191}
   - {fileID: 3717370947993530881}
+  - {fileID: 6616605279194390635}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!135 &5721945165341559026
@@ -308,7 +340,10 @@ MonoBehaviour:
   allowMultipleInteractions: 1
   interactionTime: 0.3
   interactPosition: {fileID: 3717370947993530881}
+  robotInteractPosition: {fileID: 6616605279194390635}
+  commandToSend: 2
   interactPrompt: {fileID: 2351961453603236935}
+  interactPromptText: {fileID: 364119877406677869}
   interactSfx: {fileID: 0}
   outlineObject: {fileID: 4108418023654763997}
   playerOutlineColor: {r: 0, g: 1, b: 1, a: 1}
@@ -332,6 +367,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f579d8e8b5c982f47b63c02ed8835573, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  checkBoxOffset: {x: 0, y: 0.25, z: 0}
+  checkBoxSize: {x: 1.2, y: 0.3, z: 1.2}
+  interactableLayer:
+    serializedVersion: 2
+    m_Bits: 192
   plateTransform: {fileID: 7568533528533961404}
   plateHeight: 0.1
   plateAnimationSpeed: 5
@@ -583,6 +623,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
+--- !u!114 &364119877406677869 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1521244110413058143, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
+  m_PrefabInstance: {fileID: 1157731232552356658}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2351961453603236935 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3509093658303801205, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}

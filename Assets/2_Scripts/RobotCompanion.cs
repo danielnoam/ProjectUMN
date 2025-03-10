@@ -1,7 +1,6 @@
 
-using System;
+
 using UnityEngine;
-using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -259,7 +258,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (!CanCommend()) return;
 
        CurrentInteractable = interactable;
-       _target = interactable.GetInteractPosition();
+       _target = interactable.GetInteractPosition(this);
        currentState = RobotState.GoingToTarget;
    }
    
@@ -321,19 +320,22 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    public void OnInteractionEnd(Interactable interactable)
    {
-       CurrentInteractable = null;
-       if (currentState != RobotState.Sitting)
-       {
-           if (_player)
-           {
-               CommandFollowPlayer();
-           }
-           else
-           {
-               CommandIdle();
-           }
-       }
 
+       switch (CurrentInteractable.Command)
+       {
+           case CommandToSend.Idle:
+               CommandIdle();
+               break;
+           case CommandToSend.Sit:
+               CommandSitDown();
+               break;
+           case  CommandToSend.Follow:
+               CommandFollowPlayer();
+               break;
+           case  CommandToSend.Nothing:
+               break;
+       }
+       CurrentInteractable = null;
    }
 
    public void CancelInteraction(Interactable interactable)

@@ -1,7 +1,16 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using VInspector;
 
+public enum CommandToSend
+{
+    Nothing,
+    Follow,
+    Sit,
+    Idle,
+}
 
 [RequireComponent(typeof(AudioSource))]
 public class Interactable : MonoBehaviour
@@ -10,11 +19,18 @@ public class Interactable : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private InteractorType allowedInteractors = InteractorType.Both;
     [SerializeField] private bool allowMultipleInteractions = false;
-    [SerializeField, Range(0f, 4f)] private float interactionTime = 0f;
+    [SerializeField, Range(0f, 4f)] private float interactionTime = 0.3f;
     [SerializeField] private Transform interactPosition;
+    
+    [DisableIf("OnlyPlayerCanInteract")]
+    [Header("Robot")]
+    [SerializeField] private Transform robotInteractPosition;
+    [SerializeField] private CommandToSend commandToSend = CommandToSend.Follow;
+    [EndIf]
     
     [Header("Feedback")]
     [SerializeField] private GameObject interactPrompt;
+    [SerializeField] private TextMeshProUGUI interactPromptText;
     [SerializeField] private SOAudioEvent interactSfx;
     [SerializeField] private Outline outlineObject;
     [SerializeField] private Color playerOutlineColor = Color.cyan;
@@ -31,7 +47,7 @@ public class Interactable : MonoBehaviour
     public bool OnlyRobotCanInteract => allowedInteractors == InteractorType.Robot;
     public bool BothCanInteract => allowedInteractors == InteractorType.Both;
     public bool MarkedForInteraction => _markedForInteraction;
-
+    public CommandToSend Command => commandToSend;
     private bool _interacted = false;
     private bool _isInteracting = false;
     private bool _markedForInteraction = false;
@@ -58,6 +74,7 @@ public class Interactable : MonoBehaviour
         {
             outlineObject.OutlineColor = playerOutlineColor;
             _markedForInteraction = true;
+            interactPromptText.text = $"E";
             interactPrompt?.SetActive(true);
         }
         // Otherwise use the normal check
@@ -65,6 +82,7 @@ public class Interactable : MonoBehaviour
         {
             outlineObject.OutlineColor = playerOutlineColor;
             _markedForInteraction = true;
+            interactPromptText.text = $"E";
             interactPrompt?.SetActive(true);
         }
     }
@@ -75,6 +93,7 @@ public class Interactable : MonoBehaviour
         {
             outlineObject.OutlineColor = robotOutlineColor;
             _markedForInteraction = true;
+            interactPromptText.text = $"R";
             interactPrompt?.SetActive(true);
         }
     }
@@ -85,7 +104,7 @@ public class Interactable : MonoBehaviour
         {
             outlineObject.OutlineColor = Color.clear;
             _markedForInteraction = false;
-            interactPrompt?.SetActive(false);
+            interactPrompt?.gameObject.SetActive(false);
         }
     }
 
@@ -128,8 +147,18 @@ public class Interactable : MonoBehaviour
         _markedForInteraction = false;
     }
     
-    public Transform GetInteractPosition()
+    public Transform GetInteractPosition(Iinteractor interactor)
     {
+        if (interactor.InteractorType == InteractorType.Robot && robotInteractPosition)
+        {
+            return robotInteractPosition;
+        }
+        
+        if (interactor.InteractorType == InteractorType.Player && interactPosition)
+        {
+            return interactPosition;
+        }
+        
         return interactPosition ? interactPosition : transform;
     }
 
@@ -189,6 +218,11 @@ public class Interactable : MonoBehaviour
         {
             gameObject.AddComponent<AudioSource>();
         }
+
+        if (OnlyPlayerCanInteract)
+        {
+            commandToSend = CommandToSend.Nothing;
+        }
     }
     
     private void OnDrawGizmosSelected()
@@ -201,12 +235,20 @@ public class Interactable : MonoBehaviour
         style.fontStyle = FontStyle.Bold;
         style.alignment = TextAnchor.MiddleCenter;
         
-        if (interactPosition)
+        if (interactPosition && !OnlyRobotCanInteract)
         {
             Gizmos.DrawLine(transform.position, interactPosition.position);
             Gizmos.DrawWireSphere(interactPosition.position, 0.1f);
             UnityEditor.Handles.Label(interactPosition.position + new Vector3(0f, 0.1f, 0f), "Interact Position", style);
         }
+        
+        if (robotInteractPosition && !OnlyPlayerCanInteract)
+        {
+            Gizmos.DrawLine(transform.position, robotInteractPosition.position);
+            Gizmos.DrawWireSphere(robotInteractPosition.position, 0.1f);
+            UnityEditor.Handles.Label(robotInteractPosition.position + new Vector3(0f, 0.1f, 0f), "Robot Interact Position", style);
+        }
+        
 
         if (!interactPrompt)
         {
