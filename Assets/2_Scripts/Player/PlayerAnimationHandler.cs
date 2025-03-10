@@ -23,12 +23,7 @@ public class PlayerAnimationHandler : MonoBehaviour
     
     [Header("Animation Smoothing")]
     [SerializeField, Range(0.01f, 1f)] private float animationSmoothTime = 0.1f;
-
-    [Header("IK")]
-    [SerializeField] private Rig rig;
-    [SerializeField] private MultiAimConstraint headIK;
-    [SerializeField] private MultiAimConstraint spineIK;
-    [SerializeField] private Transform IKTarget;
+    
     
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
     private readonly int _verticalHash = Animator.StringToHash("VerticalValue");
@@ -40,161 +35,23 @@ public class PlayerAnimationHandler : MonoBehaviour
     
     private Animator _animator;
     private PlayerStateMachine _stateMachine;
-    private CameraManager _cameraManager;
-    private float _targetHeadWeight = 1f;
-    private float _targetSpineWeight = 1f;
-    private Vector3 _currentIKPosition;
 
     private void Awake()
     {
         _animator = GetComponentInChildren<Animator>();
         _stateMachine = GetComponent<PlayerStateMachine>();
     }
-
-    private void Start()
-    {
-        if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
-    }
-
+    
     private void Update()
     {
-        // Animator
         UpdateStateIndex();
         UpdateMovementAnimation();
         UpdateFallAnimation();
         UpdateRotationAnimation();
-
-        // IK
-        UpdateIKTarget();
-        UpdateHeadIK();
-        UpdateSpineIK();
     }
 
     
-    
-    
-    #region IK -------------------------------------------------------------------------------------------------------
-
-    private void UpdateIKTarget()
-    {
-        if (!IKTarget) return;
-        
-        if (_stateMachine.CurrentState != _stateMachine.InMenuState)
-        {
-            Vector3 targetPosition;
-        
-            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
-            {
-                targetPosition = _stateMachine.CurrentInteractable.GetInteractPosition(_stateMachine).position;
-            }
-            else if (_cameraManager)
-            {
-                targetPosition = _cameraManager.targetTransform.position;
-            }
-            else
-            {
-                return;
-            }
-        
-            // Lerp the position
-            _currentIKPosition = Vector3.Lerp(_currentIKPosition, targetPosition, Time.deltaTime * 5);
-        
-            // Apply the lerped position
-            IKTarget.transform.position = _currentIKPosition;
-        }
-    }
-    
-    private void UpdateSpineIK()
-    {
-        if (!rig || !spineIK) return;
-        
-        bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && _stateMachine.CurrentState != _stateMachine.CrouchingState && _stateMachine.CurrentState != _stateMachine.FallingState;
-
-        if (allowedState && _stateMachine.ActiveHorizontalVelocity < _stateMachine.runSpeed - 2f)
-        {
-            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
-            {
-            
-                // Determine target weight based on conditions
-                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(180))
-                {
-                    _targetSpineWeight = 0f;
-                }
-                else
-                {
-                    _targetSpineWeight = 0.5f;
-                }
-
-                // Smoothly interpolate the actual weight toward the target weight
-                spineIK.weight = Mathf.Lerp(spineIK.weight, _targetSpineWeight, Time.deltaTime * 5);
-            }
-            else if (_cameraManager)
-            {
-            
-                // Determine target weight based on conditions
-                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(140))
-                {
-                    _targetSpineWeight = 0f;
-                }
-                else
-                {
-                    _targetSpineWeight = 0.7f;
-                }
-
-                // Smoothly interpolate the actual weight toward the target weight
-                spineIK.weight = Mathf.Lerp(spineIK.weight, _targetSpineWeight, Time.deltaTime * 5);
-            }
-        }
-        else
-        {
-            spineIK.weight = Mathf.Lerp(spineIK.weight, 0f, Time.deltaTime * 7);
-        }
-    }
-
-    private void UpdateHeadIK()
-    {
-        if (!rig || !headIK) return;
-
-        if (_stateMachine.CurrentState != _stateMachine.InMenuState)
-        {
-            if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
-            {
-            
-                // Determine target weight based on conditions
-                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(180))
-                {
-                    _targetHeadWeight = 0f;
-                }
-                else
-                {
-                    _targetHeadWeight = 0.7f;
-                }
-
-                // Smoothly interpolate the actual weight toward the target weight
-                headIK.weight = Mathf.Lerp(headIK.weight, _targetHeadWeight, Time.deltaTime * 5);
-            }
-            else if (_cameraManager)
-            {
-            
-                // Determine target weight based on conditions
-                if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(140))
-                {
-                    _targetHeadWeight = 0f;
-                }
-                else
-                {
-                    _targetHeadWeight = 1f;
-                }
-
-                // Smoothly interpolate the actual weight toward the target weight
-                headIK.weight = Mathf.Lerp(headIK.weight, _targetHeadWeight, Time.deltaTime * 5);
-            }
-        }
-        else
-        {
-            headIK.weight = Mathf.Lerp(headIK.weight, 0f, Time.deltaTime * 7);
-        }
-    }
+    #region Animator -------------------------------------------------------------------------------------------------------
 
     private void UpdateStateIndex()
     {
@@ -214,13 +71,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         // Set the animation state parameter
         _animator.SetInteger(_stateHash, (int)currentAnimState);
     }
-
-    #endregion IK -------------------------------------------------------------------------------------------------------
-
     
-
-    #region Animator -------------------------------------------------------------------------------------------------------
-
     private void UpdateMovementAnimation()
     {
         // Get current movement data

@@ -1377,6 +1377,7 @@ GameObject:
   - component: {fileID: 4944199171973541159}
   - component: {fileID: 5104919376805049993}
   - component: {fileID: 4320568683722358497}
+  - component: {fileID: 8070195118980874543}
   - component: {fileID: 7928860610601458710}
   m_Layer: 6
   m_Name: Player
@@ -1590,10 +1591,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSmoothTime: 0.1
+--- !u!114 &8070195118980874543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929691532129443097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf50f091b9cca4a45a65b2d7c61f77fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IKTarget: {fileID: 3478666627127020293}
   rig: {fileID: 6848896613521555473}
   headIK: {fileID: 6524348016732155277}
+  maxHeadWeight: 0.7
   spineIK: {fileID: 2548712413202697619}
-  IKTarget: {fileID: 3478666627127020293}
+  maxSpineWeight: 0.7
 --- !u!114 &7928860610601458710
 MonoBehaviour:
   m_ObjectHideFlags: 0
