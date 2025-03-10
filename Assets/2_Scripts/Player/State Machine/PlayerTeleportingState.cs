@@ -27,6 +27,8 @@ public class PlayerTeleportingState : PlayerBaseState
         StateMachine.ResetGravity();
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.ClearCurrentInteractable();
+        StateMachine.transform.position = _teleportationDestination;
+        StateMachine.transform.rotation = _teleportationRotation;
     }
     
     public override void ExitState()
@@ -61,9 +63,7 @@ public class PlayerTeleportingState : PlayerBaseState
     {
         if (_teleportationComplete)
         {
-            
-            StateMachine.transform.position = _teleportationDestination;
-            StateMachine.transform.rotation = _teleportationRotation;
+            StateMachine.onPlayerSpawned?.Invoke();
             StateMachine.SwitchState(StateMachine.GroundedState);
         }
     }

@@ -8,7 +8,6 @@ public class TouchPanel : MonoBehaviour
 
     [Header("Panel Visuals")]
     [SerializeField] private Transform panelTransform;            
-    [SerializeField] private float animationSpeed = 5f;
     [SerializeField] private float autoReleaseDelay = 0.5f;
     
 

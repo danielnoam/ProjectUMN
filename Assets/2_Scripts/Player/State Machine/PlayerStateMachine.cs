@@ -1,6 +1,8 @@
 
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 
 public enum CameraMode
@@ -43,7 +45,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
     [Tooltip("Drag force applied to movement on ground")]
-    public float groundDrag = 1f;
+    public float groundDrag = 10f;
     [Tooltip("Anti-bump force to prevent sticking to slopes")]
     public float antiBumpForce = 4f;
     [Tooltip("Base rotation speed when turning on the ground")]
@@ -98,6 +100,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Header("References")] 
     public TextMeshProUGUI debugText;
     public GameObject menu;
+
+    [Header("Events")] 
+    public UnityEvent onPlayerSpawned = new UnityEvent();
     
     
     public InteractorType InteractorType { get; } = InteractorType.Player;
@@ -207,7 +212,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnTestLoaded(SOTest test)
     {
         _robot = TestManager.Instance.Robot;
-        SwitchState(new PlayerTeleportingState(this, test.GetPlayerSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f));
+        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f));
     }
     
 
@@ -249,7 +254,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         CurrentState.EnterState();
     }
 
-    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.TryGetComponent(out LaserGround laserGround))
+        {
+            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetCheckPoint(), Quaternion.Euler(0, 0, 0), 2f));
+        }
+    }
+
     #endregion State machine ---------------------------------------------------------------
     
     
@@ -955,26 +967,28 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         {
             if (debugText)
             {
+                string robotInfo = _robot ? $"Robot: {_robot}, {_robot.CurrentState}" : "Robot: null";
+            
                 debugText.text = $"State: {CurrentState.GetType().Name}\n" +
                                  $"IsGrounded: {IsGrounded}\n" +
                                  $"CanStand: {CanStand}\n" +
                                  $"IsAiming: {IsAiming}\n" +
                                  $"AirTime: {AirTime}\n" +
                                  $"FallTime: {FallTime}\n" +
-                                 $"Robot: {_robot}, {_robot.CurrentState}\n" +
+                                 $"{robotInfo}\n" +
                                  $"MoveDirection: {ActiveMoveDirection}\n" +
                                  $"Interactable: {CurrentInteractable}\n" +
                                  $"AimedInteractable: {CurrentAimedInteractable}\n" +
                                  $"ActiveHorizontalSpeed: {ActiveHorizontalVelocity}\n" +
                                  $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n";
             }
-        
-        
+    
+    
             if (!_lineRenderer.enabled)
             {
                 _lineRenderer.enabled = true;
             }
-            
+        
         }
         else
         {
@@ -987,7 +1001,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             {
                 _lineRenderer.enabled = false;
             }
-            
+        
         }
     }
 

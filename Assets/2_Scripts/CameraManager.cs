@@ -215,27 +215,44 @@ public class CameraManager : MonoBehaviour
     {
         // Skip if player reference is missing or menu camera is active
         if (!_player || IsMenuCameraActive()) return;
-        
-        // Get the player's current speed
-        float currentSpeed = _player.ActiveHorizontalVelocity;
+
+        bool notAllowedStates = _player.CurrentState == _player.TeleportingState || _player.CurrentState == _player.FallingState || _player.CurrentState == _player.JumpingState;
+
+        if (!notAllowedStates)
+        {
+            // Get the player's current speed
+            float currentSpeed = _player.ActiveHorizontalVelocity;
             
         
-        // Calculate a noise factor (0 to 1) based on current speed
-        // This will be 0 below minNoiseSpeed and 1 at or above maxNoiseSpeed
-        float noiseFactor = Mathf.Clamp01((currentSpeed - 0) / (_player.sprintSpeed - 0));
+            // Calculate a noise factor (0 to 1) based on current speed
+            // This will be 0 below minNoiseSpeed and 1 at or above maxNoiseSpeed
+            float noiseFactor = Mathf.Clamp01((currentSpeed - 0) / (_player.sprintSpeed - 0));
         
-        // Calculate target amplitude and frequency based on the noise factor
-        float targetAmplitude = noiseFactor * maxAmplitude;
-        float targetFrequency = noiseFactor * maxFrequency;
+            // Calculate target amplitude and frequency based on the noise factor
+            float targetAmplitude = noiseFactor * maxAmplitude;
+            float targetFrequency = noiseFactor * maxFrequency;
         
-        // Apply noise to the active camera
-        CinemachineBasicMultiChannelPerlin activeNoise = IsAimCameraActive() ? _aimCameraNoise : _freeLookCameraNoise;
+            // Apply noise to the active camera
+            CinemachineBasicMultiChannelPerlin activeNoise = IsAimCameraActive() ? _aimCameraNoise : _freeLookCameraNoise;
         
             if (activeNoise)
+            {
+                // Smoothly interpolate current values to target values
+                activeNoise.AmplitudeGain = Mathf.Lerp(activeNoise.AmplitudeGain, targetAmplitude, Time.deltaTime * 5f);
+                activeNoise.FrequencyGain = Mathf.Lerp(activeNoise.FrequencyGain, targetFrequency, Time.deltaTime * 5f);
+            }
+        }
+        else
         {
-            // Smoothly interpolate current values to target values
-            activeNoise.AmplitudeGain = Mathf.Lerp(activeNoise.AmplitudeGain, targetAmplitude, Time.deltaTime * 5f);
-            activeNoise.FrequencyGain = Mathf.Lerp(activeNoise.FrequencyGain, targetFrequency, Time.deltaTime * 5f);
+            // Apply noise to the active camera
+            CinemachineBasicMultiChannelPerlin activeNoise = IsAimCameraActive() ? _aimCameraNoise : _freeLookCameraNoise;
+        
+            if (activeNoise)
+            {
+                // Smoothly interpolate current values to target values
+                activeNoise.AmplitudeGain = Mathf.Lerp(activeNoise.AmplitudeGain, 0, Time.deltaTime * 5f);
+                activeNoise.FrequencyGain = Mathf.Lerp(activeNoise.FrequencyGain, 0, Time.deltaTime * 5f);
+            }
         }
     }
     

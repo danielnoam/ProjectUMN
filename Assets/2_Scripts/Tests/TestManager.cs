@@ -30,7 +30,6 @@ public class TestManager : MonoBehaviour
     public bool DebugMode => debugMode;
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
-    public Vector3 CheckpointPosition => currentCheckpoint.position;
     public SOTest CurrentTest => currentTest;
     
     
@@ -61,8 +60,7 @@ public class TestManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            // Toggle debug
-            debugMode = !debugMode;
+            ToggleDebugMode();
         }
     }
     
@@ -137,10 +135,27 @@ public class TestManager : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
         #endif
     }
+
+    public void ToggleDebugMode()
+    {
+        debugMode = !debugMode;
+    }
     
     public void SetCheckpointPosition(Transform checkpoint)
     {
         currentCheckpoint = checkpoint;
+    }
+
+    public Vector3 GetCheckPoint()
+    {
+        if (!currentCheckpoint) return Vector3.zero;
+        return GetSpawnPoint();
+    }
+
+    public Vector3 GetSpawnPoint()
+    {
+        if (!currentTest) return Vector3.zero;
+        return currentTest.GetPlayerSpawnPoint();
     }
     
 

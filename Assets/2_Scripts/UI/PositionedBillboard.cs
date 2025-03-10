@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PositionedBillboard : MonoBehaviour
 {
@@ -136,7 +137,7 @@ public class PositionedBillboard : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if (Application.isPlaying) return;
+        if (Application.isPlaying || SceneManager.GetActiveScene().buildIndex != 0) return;
         
         if (centerObject)
         {
