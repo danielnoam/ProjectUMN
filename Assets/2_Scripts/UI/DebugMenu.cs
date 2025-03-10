@@ -4,18 +4,26 @@ using UnityEngine.UI;
 public class DebugMenu : MonoBehaviour
 {
     [Header("Buttons")]
+    [SerializeField] private Button pauseMenuButton;
     [SerializeField] private Button toggleDebugMode;
     [SerializeField] private Button nextTestButton;
     [SerializeField] private Button removeCurrentTestButton;
     [SerializeField] private Button restartSimulationButton; 
-    [SerializeField] private Button quitButton;
 
     [Header("References")]
     [SerializeField] private PlayerStateMachine player;
-    [SerializeField] private InfoTextHandler infoText;
     
     private void Start()
     {
+        
+        if (pauseMenuButton)
+        {
+            pauseMenuButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.ChangeMenu(MenuTypes.Pause);
+            });
+        }
+        
         if (TestManager.Instance)
         {
             toggleDebugMode.onClick.AddListener(() =>
@@ -42,9 +50,7 @@ public class DebugMenu : MonoBehaviour
                 TestManager.Instance.StartTest(0); 
                 player.SwitchState(player.GroundedState);
             });
-            
-            
-            quitButton.onClick.AddListener(TestManager.Instance.QuitApplication);
         }
     }
+    
 }

@@ -103,6 +103,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     [Header("Events")] 
     public UnityEvent onPlayerSpawned = new UnityEvent();
+    public UnityEvent onPlayerOpenedMenu = new UnityEvent();
     
     
     public InteractorType InteractorType { get; } = InteractorType.Player;
@@ -473,7 +474,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         // Set first point of line renderer
         _lineRenderer.SetPosition(0, rayOrigin);
 
-        // Create a layermask that includes both interactable objects AND environment/walls
+        // Create a layer mask that includes both interactable objects AND environment/walls
         // This ensures we hit walls first if they're in the way
         LayerMask raycastMask = interactableLayer | environmentLayer;
 

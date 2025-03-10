@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Unity.Cinemachine;
 
@@ -35,6 +36,7 @@ public class CameraManager : MonoBehaviour
 
 
     private CinemachineCamera _currentCamera;
+    private CinemachineThirdPersonFollow _menuCameraFollow;
     private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
     private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
     private CinemachineInputAxisController _freeLookCameraInput;
@@ -75,6 +77,7 @@ public class CameraManager : MonoBehaviour
         _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
+        _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
         
         if (IsAimOnlyMode) SwitchToAimCamera();
         else SwitchToFreeLookCamera();
@@ -83,14 +86,16 @@ public class CameraManager : MonoBehaviour
     
     private void Update()
     {
-        UpdateAimCore();
         UpdateCameraFOV();
         UpdateCameraNoise();
         HandleCameraSwitching();
     }
-    
-    
-    
+
+    private void LateUpdate()
+    {
+        UpdateAimCore();
+    }
+
 
     #region Public methods ----------------------------------------------------------------------------
 
@@ -298,6 +303,18 @@ public class CameraManager : MonoBehaviour
             if (!IsMenuCameraActive())
             {
                 SwitchToMenuCamera();
+            }
+
+            switch (_player.InMenuState.currentMenu)
+            {
+                case MenuTypes.Debug when _menuCameraFollow.CameraSide != 0:
+                    _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 0f, Time.deltaTime * 5f);
+                    break;
+                case MenuTypes.Pause when !Mathf.Approximately(_menuCameraFollow.CameraSide, 1):
+                    _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
+                    break;
+                case MenuTypes.Start:
+                    break;
             }
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())

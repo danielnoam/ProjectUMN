@@ -50,6 +50,7 @@ public class InfoTextHandler : MonoBehaviour
         if (player)
         {
             player.onPlayerSpawned.AddListener(PlayTextAnimation);
+            player.onPlayerOpenedMenu.AddListener(ForceHideAnimation);
         }
     }
     
@@ -63,6 +64,7 @@ public class InfoTextHandler : MonoBehaviour
         if (player)
         {
             player.onPlayerSpawned.RemoveListener(PlayTextAnimation);
+            player.onPlayerOpenedMenu.RemoveListener(ForceHideAnimation);
         }
         
     }
@@ -82,6 +84,14 @@ public class InfoTextHandler : MonoBehaviour
         _textSequence = Sequence.Create();
         _textSequence.Group(ShowInfoText());
         _textSequence.ChainDelay(delayBetweenFadesTime);
+        _textSequence.Group(HideInfoText());
+    }
+
+    [Button]
+    private void ForceHideAnimation()
+    {
+        _textSequence.Stop();
+        _textSequence = Sequence.Create();
         _textSequence.Group(HideInfoText());
     }
     
@@ -110,13 +120,13 @@ public class InfoTextHandler : MonoBehaviour
     private Sequence HideInfoText()
     {
         Sequence hideSequence = Sequence.Create()
-                .Group(Tween.Alpha(testNameText, startValue: 1f, endValue: 0f, duration: fadeOutTime/4))
+                .Group(Tween.Alpha(testNameText, startValue: testNameText.alpha, endValue: 0f, duration: fadeOutTime/4))
                 .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(testDescriptionText, startValue: 1f, endValue: 0f, duration: fadeOutTime/4))
+                .Group(Tween.Alpha(testDescriptionText, startValue: testDescriptionText.alpha, endValue: 0f, duration: fadeOutTime/4))
                 .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(musicNameText, startValue: 1f, endValue: 0f, duration: fadeOutTime/4))
+                .Group(Tween.Alpha(musicNameText, startValue: musicNameText.alpha, endValue: 0f, duration: fadeOutTime/4))
                 .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(musicAuthorText, startValue: 1f, endValue: 0f, duration: fadeOutTime/4))
+                .Group(Tween.Alpha(musicAuthorText, startValue: musicAuthorText.alpha, endValue: 0f, duration: fadeOutTime/4))
             ;
         
         return hideSequence;

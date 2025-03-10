@@ -136,6 +136,20 @@ public class TestManager : MonoBehaviour
         #endif
     }
 
+    public void RestartCurrentTest()
+    {
+        if (!currentTest) return;
+        
+        // get test index from currentTest
+        int testIndex = Array.IndexOf(tests, currentTest);
+        if (testIndex == -1)
+        {
+            Debug.Log("Current test not found in the tests array");
+            return;
+        }
+        StartTest(testIndex);
+    }
+
     public void ToggleDebugMode()
     {
         debugMode = !debugMode;

@@ -1,11 +1,20 @@
 using UnityEngine;
 
+public enum MenuTypes
+{
+    Start,
+    Pause,
+    Debug,
+}
+
 public class PlayerInMenuState : PlayerBaseState
 {
     public PlayerInMenuState(PlayerStateMachine stateMachine) : base(stateMachine) { }
+    public MenuTypes currentMenu { get; set; } = MenuTypes.Pause;
     
     public override void EnterState()
     {
+        StateMachine.onPlayerOpenedMenu?.Invoke();
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.InputHandler.ConsumeToggleMenuBuffer();
@@ -16,6 +25,7 @@ public class PlayerInMenuState : PlayerBaseState
     {
         StateMachine.InputHandler.ConsumeToggleMenuBuffer();
         StateMachine.menu.SetActive(false);
+        ChangeMenu(MenuTypes.Pause);
     }
 
     public override void UpdateState()
@@ -47,5 +57,12 @@ public class PlayerInMenuState : PlayerBaseState
             StateMachine.SwitchState(StateMachine.GroundedState);
             return;
         }
+    }
+
+    public void ChangeMenu(MenuTypes menuType)
+    {
+        if (currentMenu == menuType) return;
+        
+        currentMenu = menuType;
     }
 }

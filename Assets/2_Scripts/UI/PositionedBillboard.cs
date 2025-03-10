@@ -38,7 +38,7 @@ public class PositionedBillboard : MonoBehaviour
         if (!centerObject || !_camera) return;
             
 
-        UpdatePosition(false);
+        
         
 
     }
@@ -47,7 +47,7 @@ public class PositionedBillboard : MonoBehaviour
     {
         if (!centerObject || !_camera) return;
         
-        
+        UpdatePosition(false);
         FaceCamera();
     }
 
