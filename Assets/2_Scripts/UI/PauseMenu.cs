@@ -17,7 +17,7 @@ public class PauseMenu : MonoBehaviour
         {
             debugMenuButton.onClick.AddListener(() =>
             {
-                player.InMenuState.ChangeMenu(MenuTypes.Debug);
+                player.InMenuState.SelectPage(player.InMenuState.DebugPage);
             });
             
             restartTestButton.onClick.AddListener(() =>

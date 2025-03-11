@@ -305,16 +305,16 @@ public class CameraManager : MonoBehaviour
                 SwitchToMenuCamera();
             }
 
-            switch (_player.InMenuState.currentMenu)
+            if (_player.InMenuState.CurrentPage == _player.InMenuState.DebugPage && _menuCameraFollow.CameraSide != 0)
             {
-                case MenuTypes.Debug when _menuCameraFollow.CameraSide != 0:
-                    _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 0f, Time.deltaTime * 5f);
-                    break;
-                case MenuTypes.Pause when !Mathf.Approximately(_menuCameraFollow.CameraSide, 1):
-                    _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
-                    break;
-                case MenuTypes.Start:
-                    break;
+                _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 0f, Time.deltaTime * 5f);
+            }
+            else if (_player.InMenuState.CurrentPage == _player.InMenuState.PausePage && !Mathf.Approximately(_menuCameraFollow.CameraSide, 1))
+            {
+                _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
+            }
+            else if (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage)
+            {
             }
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())

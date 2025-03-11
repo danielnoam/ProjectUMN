@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,7 @@ public class DebugMenu : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlayerStateMachine player;
     
+    
     private void Start()
     {
         
@@ -20,7 +22,7 @@ public class DebugMenu : MonoBehaviour
         {
             pauseMenuButton.onClick.AddListener(() =>
             {
-                player.InMenuState.ChangeMenu(MenuTypes.Pause);
+                player.InMenuState.SelectPage(player.InMenuState.PausePage);
             });
         }
         
@@ -35,20 +37,20 @@ public class DebugMenu : MonoBehaviour
             nextTestButton.onClick.AddListener(() =>
             {
                 TestManager.Instance.LoadNextTest();
-                player.SwitchState(player.GroundedState);
+                player.InMenuState.ExitMenu();
             });
             
             removeCurrentTestButton.onClick.AddListener(() =>
             {
                 TestManager.Instance.RemoveCurrentTest();
-                player.SwitchState(player.GroundedState);
+                player.InMenuState.ExitMenu();
             });
             
             
             restartSimulationButton.onClick.AddListener(() =>
             {
                 TestManager.Instance.StartTest(0); 
-                player.SwitchState(player.GroundedState);
+                player.InMenuState.ExitMenu();
             });
         }
     }

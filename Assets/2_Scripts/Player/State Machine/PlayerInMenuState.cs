@@ -1,16 +1,14 @@
 using UnityEngine;
 
-public enum MenuTypes
-{
-    Start,
-    Pause,
-    Debug,
-}
-
 public class PlayerInMenuState : PlayerBaseState
 {
     public PlayerInMenuState(PlayerStateMachine stateMachine) : base(stateMachine) { }
-    public MenuTypes currentMenu { get; set; } = MenuTypes.Pause;
+    
+    public MenuController MenuController { get; private set; }
+    public MenuPage CurrentPage { get; private set; }
+    public MenuPage StartPage { get; private set; }
+    public MenuPage PausePage { get; private set; }
+    public MenuPage DebugPage { get; private set; }
     
     public override void EnterState()
     {
@@ -18,14 +16,13 @@ public class PlayerInMenuState : PlayerBaseState
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.InputHandler.ConsumeToggleMenuBuffer();
-        StateMachine.menu.SetActive(true);
+        SelectPage(PausePage);
     }
     
     public override void ExitState()
     {
-        StateMachine.InputHandler.ConsumeToggleMenuBuffer();
-        StateMachine.menu.SetActive(false);
-        ChangeMenu(MenuTypes.Pause);
+        CurrentPage = null;
+        MenuController.DeselectAllPages(true);
     }
 
     public override void UpdateState()
@@ -47,22 +44,36 @@ public class PlayerInMenuState : PlayerBaseState
         // Fall
         if (!StateMachine.IsGrounded && StateMachine.FallTime > StateMachine.fallThreshold)
         {
-            StateMachine.SwitchState(StateMachine.FallingState);
+            ExitMenu();
             return;
         }
 
         // Grounded
         if (StateMachine.InputHandler.ToggleMenuInput)
         {
-            StateMachine.SwitchState(StateMachine.GroundedState);
+            StateMachine.InputHandler.ConsumeToggleMenuBuffer();
+            ExitMenu();
             return;
         }
     }
 
-    public void ChangeMenu(MenuTypes menuType)
+    public void SelectPage(MenuPage page)
     {
-        if (currentMenu == menuType) return;
+        if (CurrentPage == page) return;
         
-        currentMenu = menuType;
+        CurrentPage = page;
+        MenuController.SelectPage(page);
+    }
+
+    public void SetupPages(MenuController menuController, MenuPage pauseCategory, MenuPage debugCategory)
+    {
+        MenuController = menuController;
+        PausePage = pauseCategory;
+        DebugPage = debugCategory;
+    }
+
+    public void ExitMenu()
+    {
+        StateMachine.SwitchState(StateMachine.GroundedState);
     }
 }

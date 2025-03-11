@@ -25,7 +25,7 @@ public class PlayerInputHandler : MonoBehaviour
     public bool JumpInput { get; private set; }
     public bool SprintInput { get; private set; }
     public bool CrouchInput { get; private set; }
-    public bool MoveSpeedInput { get; private set; }
+    public bool MoveSpeedInput { get; private set; } = true;
     public bool InteractInput { get; private set; }
     public bool CommandRobotInput { get; private set; }
     public bool AimInput { get; private set; }
