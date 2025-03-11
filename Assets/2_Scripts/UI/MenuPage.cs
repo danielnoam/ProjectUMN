@@ -69,7 +69,7 @@ public class MenuPage : MonoBehaviour
     [CustomAttribute.ReadOnly] public bool canSelect;
     
     private MenuController _menuController;
-    private bool _pageIsActive = true;
+    private bool _pageIsActive = false; 
     public bool PageIsActive => _pageIsActive;
     private readonly Dictionary<GameObject, Vector3> _moveInObjectsOriginalPositions = new Dictionary<GameObject, Vector3>();
     private readonly Dictionary<Selectable, Vector3> _selectableOriginalScales = new Dictionary<Selectable, Vector3>();
@@ -111,18 +111,34 @@ public class MenuPage : MonoBehaviour
         OnPageDeselected(false);
     }
     
-    
-
+    // Called when page is selected
     public void OnPageSelected(bool playAnimation)
     {
-
-        PlayMoveInAnimation(playAnimation);
+        SetPageState(true);
+        
+        if (playAnimation)
+        {
+            AnimateMoveIn();
+        }
+        else
+        {
+            SetMoveInPositionsInstantly();
+        }
     }
     
+    // Called when page is deselected
     public void OnPageDeselected(bool playAnimation)
     {
-        PlayMoveOutAnimation(playAnimation);
+        SetPageState(false);
         
+        if (playAnimation)
+        {
+            AnimateMoveOut();
+        }
+        else
+        {
+            SetMoveOutPositionsInstantly();
+        }
     }
 
     public void OnNavigate(InputAction.CallbackContext context) // Input event
@@ -135,7 +151,7 @@ public class MenuPage : MonoBehaviour
     
     
 
-#region Selectables Events // ---------------------------------------------------------------------
+    #region Selectables Events // ---------------------------------------------------------------------
 
     private void OnSelect(BaseEventData eventData)
     {
@@ -210,11 +226,12 @@ public class MenuPage : MonoBehaviour
     }
     
 
-#endregion Selectables Events // ---------------------------------------------------------------------
+    #endregion Selectables Events // ---------------------------------------------------------------------
 
-#region Page Management // ---------------------------------------------------------------------
     
-private void SetupSelectable(Selectable selectable)
+    #region Page Management // ---------------------------------------------------------------------
+    
+    private void SetupSelectable(Selectable selectable)
     {
         // Store all original information
         _selectableOriginalScales[selectable] = selectable.transform.localScale;
@@ -279,12 +296,6 @@ private void SetupSelectable(Selectable selectable)
             selectable.interactable = _selectableOriginalState[selectable];
         }
     }
-
-    private IEnumerator SelectFirstAvailableSelectableCar(float delay = 0)
-    {
-        yield return new WaitForSeconds(0.03f + delay); // small delay so the selectables will have time to initialize
-        SelectFirstAvailableSelectable();
-    }
     
     private void SelectFirstAvailableSelectable()
     {
@@ -316,16 +327,6 @@ private void SetupSelectable(Selectable selectable)
             group.enabled = true;
         }
     }
-
-    private void DisableAllLayoutGroups()
-    {
-        if (_layoutGroups.Count == 0) return;
-        
-        foreach (LayoutGroup group in _layoutGroups)
-        {
-            group.enabled = false;
-        }
-    }
     
     private void AddLayoutGroupsRecursively(Transform parent)
     {
@@ -342,9 +343,46 @@ private void SetupSelectable(Selectable selectable)
         }
     }
 
-#endregion Page Management // ---------------------------------------------------------------------
+    #endregion Page Management // ---------------------------------------------------------------------
 
-#region Animations // ---------------------------------------------------------------------
+    
+    #region Page State // ---------------------------------------------------------------------
+
+    // Method to set page state (active/inactive) and update UI elements accordingly
+    private void SetPageState(bool active)
+    {
+        _pageIsActive = active;
+        
+        // Reset UI state
+        currentSelectable = null;
+        previousSelectable = null;
+        EventSystem.current.SetSelectedGameObject(null);
+        
+        if (active)
+        {
+            // Enable interactable elements when page is activated
+            EnableAllSelectables();
+            canSelect = false; // Will be set to true after animation completes
+        }
+        else
+        {
+            // Disable interactable elements when page is deactivated
+            ResetAllSelectables();
+            DisableAllSelectables();
+            canSelect = false;
+        }
+    }
+    
+    private IEnumerator SetCanSelect(bool value, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        canSelect = value;
+    }
+
+    #endregion Page State // ---------------------------------------------------------------------
+
+    
+    #region Animations // ---------------------------------------------------------------------
     
     private void PlayScaleAnimation(Transform target, bool scaleUp)
     {
@@ -363,126 +401,147 @@ private void SetupSelectable(Selectable selectable)
         Tween.ShakeLocalPosition(target, shakeAxis, shakeDuration, shakeFrequency, easeBetweenShakes: shakeEase);
     }
     
-    [Button] private void PlayMoveInAnimation(bool playAnimation = true)
-    { 
-        currentSelectable = null;
-        previousSelectable = null;
-        EventSystem.current.SetSelectedGameObject(null);
-        canSelect = false;
-        EnableAllSelectables();
-        
-        if (playAnimation)
+
+    private void AnimateMoveIn()
+    {
+        if (moveInObjects.Count == 0) 
         {
-            // Animate the movement
-            for (int i = 0; i < moveInObjects.Count; i++)
-            {
-                GameObject currentObject = moveInObjects[i];
-                currentObject.transform.localPosition = moveInFromDirection;
-                Tween.LocalPosition(currentObject.transform, startValue: moveInFromDirection, endValue: _moveInObjectsOriginalPositions[currentObject], moveInDuration, ease: moveInEase, startDelay: i * moveInDelay, useUnscaledTime: true);
-            }
-            
-            float totalAnimationTime = moveInDuration + (moveInDelay * (moveInObjects.Count - 1));
-            StartCoroutine(SetCanSelect(true, totalAnimationTime));
-        }
-        else
-        {
-            // Set position instantly
-            for (int i = 0; i < moveInObjects.Count; i++)
-            {
-                GameObject currentObject = moveInObjects[i];
-                currentObject.transform.localPosition = _moveInObjectsOriginalPositions[currentObject];
-            }
-            
             canSelect = true;
-            ResetAllSelectables();
+            return;
         }
-    }
-    
-    private IEnumerator SetCanSelect(bool value, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        canSelect = value;
-    }
-    
-    [Button] private void PlayMoveOutAnimation(bool playAnimation)
-    {
-        ResetAllSelectables();
-        DisableAllSelectables();
-        EventSystem.current.SetSelectedGameObject(null);
-        previousSelectable = null;
-        currentSelectable = null;
-        canSelect = false;
         
-        if (playAnimation)
+        // Animate the movement
+        for (int i = 0; i < moveInObjects.Count; i++)
         {
-            // Animate the movement
-            for (int i = 0; i < moveOutObjects.Count; i++)
-            {
-                GameObject currentObject = moveOutObjects[i];
-                Tween.LocalPosition(currentObject.transform, startValue: _moveInObjectsOriginalPositions[currentObject], endValue: moveOutToDirection, moveOutDuration, ease: moveOutEase, startDelay: i * moveOutDelay, useUnscaledTime: true);
-            }
+            GameObject currentObject = moveInObjects[i];
+            currentObject.transform.localPosition = moveInFromDirection;
+            Tween.LocalPosition(
+                currentObject.transform, 
+                startValue: moveInFromDirection, 
+                endValue: _moveInObjectsOriginalPositions[currentObject], 
+                moveInDuration, 
+                ease: moveInEase, 
+                startDelay: i * moveInDelay, 
+                useUnscaledTime: true
+            );
         }
-        else
+        
+        // Calculate total animation time and enable selection after it completes
+        float totalAnimationTime = moveInDuration + (moveInDelay * (moveInObjects.Count - 1));
+        StartCoroutine(SetCanSelect(true, totalAnimationTime));
+    }
+    
+
+    private void SetMoveInPositionsInstantly()
+    {
+        if (moveInObjects.Count == 0) 
         {
-            // Set position instantly
-            for (int i = 0; i < moveOutObjects.Count; i++)
-            {
-                GameObject currentObject = moveOutObjects[i];
-                currentObject.transform.localPosition = moveOutToDirection;
-            }
+            canSelect = true;
+            return;
+        }
+        
+        // Set position instantly
+        for (int i = 0; i < moveInObjects.Count; i++)
+        {
+            GameObject currentObject = moveInObjects[i];
+            currentObject.transform.localPosition = _moveInObjectsOriginalPositions[currentObject];
+        }
+        
+        canSelect = true;
+        ResetAllSelectables();
+    }
+    
+
+    private void AnimateMoveOut()
+    {
+        if (moveOutObjects.Count == 0) return;
+        
+        // Animate the movement
+        for (int i = 0; i < moveOutObjects.Count; i++)
+        {
+            GameObject currentObject = moveOutObjects[i];
+            Tween.LocalPosition(
+                currentObject.transform, 
+                startValue: _moveInObjectsOriginalPositions[currentObject], 
+                endValue: moveOutToDirection, 
+                moveOutDuration, 
+                ease: moveOutEase, 
+                startDelay: i * moveOutDelay, 
+                useUnscaledTime: true
+            );
         }
     }
     
-#endregion Animations // ---------------------------------------------------------------------
+
+    private void SetMoveOutPositionsInstantly()
+    {
+        if (moveOutObjects.Count == 0) return;
+        
+        // Set position instantly
+        for (int i = 0; i < moveOutObjects.Count; i++)
+        {
+            GameObject currentObject = moveOutObjects[i];
+            currentObject.transform.localPosition = moveOutToDirection;
+        }
+    }
+    
+    #endregion Animations // ---------------------------------------------------------------------
 
 
+    #region Editor // ---------------------------------------------------------------------
 
 #if UNITY_EDITOR
+
     
-    
-[Button] private void AddAllSelectablesInPage()
-{
-    // Find all the selectables in the page
-    // Start the recursive search from this transform
-    AddSelectablesRecursively(transform);
+
+    [Button] private void AddAllSelectablesInPage()
+    {
+        // Find all the selectables in the page
+        // Start the recursive search from this transform
+        AddSelectablesRecursively(transform);
         
-    // Clean up any null references
-    selectables.RemoveAll(item => item == null);
-}
-
-private void AddSelectablesRecursively(Transform parent)
-{
-    // Check if the current object has a Selectable component
-    if (parent.TryGetComponent(out Selectable selectable) && !selectables.Contains(selectable))
-    {
-        selectables.Add(selectable);
+        // Clean up any null references
+        selectables.RemoveAll(item => item == null);
     }
 
-    // Recursively check all children
-    foreach (Transform child in parent)
+    private void AddSelectablesRecursively(Transform parent)
     {
-        AddSelectablesRecursively(child);
-    }
-}
+        // Check if the current object has a Selectable component
+        if (parent.TryGetComponent(out Selectable selectable) && !selectables.Contains(selectable))
+        {
+            selectables.Add(selectable);
+        }
 
-[Button] private void FindAndDisableAllLayoutGroups()
-{
-    // Find all layout groups in the page and disable them
-    LayoutGroup[] groups = GetComponentsInChildren<LayoutGroup>(true);
-    foreach (LayoutGroup group in groups)
-    {
-        group.enabled = false;
+        // Recursively check all children
+        foreach (Transform child in parent)
+        {
+            AddSelectablesRecursively(child);
+        }
     }
-}
 
-[Button] private void FindAndEnableAllLayoutGroups()
-{
-    // Find all layout groups in the page and enable them
-    LayoutGroup[] groups = GetComponentsInChildren<LayoutGroup>(true);
-    foreach (LayoutGroup group in groups)
+    [Button] private void FindAndDisableAllLayoutGroups()
     {
-        group.enabled = true;
+        // Find all layout groups in the page and disable them
+        LayoutGroup[] groups = GetComponentsInChildren<LayoutGroup>(true);
+        foreach (LayoutGroup group in groups)
+        {
+            group.enabled = false;
+        }
     }
-}
+
+    [Button] private void FindAndEnableAllLayoutGroups()
+    {
+        // Find all layout groups in the page and enable them
+        LayoutGroup[] groups = GetComponentsInChildren<LayoutGroup>(true);
+        foreach (LayoutGroup group in groups)
+        {
+            group.enabled = true;
+        }
+    }
+
+    
+
 #endif
+    
+    #endregion Editor // ---------------------------------------------------------------------
 }

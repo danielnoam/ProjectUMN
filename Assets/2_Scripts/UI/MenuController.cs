@@ -27,6 +27,7 @@ public class MenuController : MonoBehaviour
         if (player != null && player.InMenuState != null)
         {
             player.InMenuState.SetupPages(this, pausePage, debugPage);
+            DeselectAllPages(false);
         }
     }
 
@@ -61,9 +62,10 @@ public class MenuController : MonoBehaviour
     {
         if (!page) return;
 
-        if (currentPage)
+        // Only deselect the currently active page if there is one
+        if (currentPage && currentPage != page)
         {
-            if (page.PageIsActive || !playAnimation) currentPage.OnPageDeselected(playAnimation);
+            currentPage.OnPageDeselected(playAnimation);
         }
 
         currentPage = page;
@@ -73,9 +75,13 @@ public class MenuController : MonoBehaviour
 
     public void DeselectAllPages(bool playAnimation)
     {
+        // Only deselect pages that are currently active
         foreach (MenuPage page in menuPages)
         {
-            if (page.PageIsActive || !playAnimation) page.OnPageDeselected(playAnimation);
+            if (page && page.PageIsActive)
+            {
+                page.OnPageDeselected(playAnimation);
+            }
         }
         currentPage = null;
     }

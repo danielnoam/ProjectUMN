@@ -21,8 +21,12 @@ public class PlayerInMenuState : PlayerBaseState
     
     public override void ExitState()
     {
-        CurrentPage = null;
-        MenuController.DeselectAllPages(true);
+        // When exiting, only deselect the current page
+        if (CurrentPage)
+        {
+            MenuController.DeselectAllPages(true);
+            CurrentPage = null;
+        }
     }
 
     public override void UpdateState()
@@ -59,7 +63,7 @@ public class PlayerInMenuState : PlayerBaseState
 
     public void SelectPage(MenuPage page)
     {
-        if (CurrentPage == page) return;
+        if (CurrentPage == page || !page) return;
         
         CurrentPage = page;
         MenuController.SelectPage(page);
