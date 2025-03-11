@@ -5,34 +5,14 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using PrimeTween;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using VInspector;
 
 public class MenuPage : MonoBehaviour
 {
     
-    [Header("Selectable Settings")] 
+    [Header("Page Settings")] 
     [SerializeField] private List<Selectable> selectables = new List<Selectable>();
-    
-    [Foldout("Audio")]
-    [SerializeField] private SOAudioEvent sfxSelectableSelected;
-    [SerializeField] private SOAudioEvent sfxButtonClick;
-    [EndFoldout]
-    
-    [Foldout("Page Animations")]
-    [Header("Selected")]
-    [SerializeField] private Vector3 moveInFromDirection = new Vector3(0, -700f, 0);
-    [SerializeField] private float moveInDuration = 0.3f;
-    [SerializeField] private float moveInDelay = 0.2f;
-    [SerializeField] private Ease moveInEase = Ease.OutSine;
-    [SerializeField] private List<GameObject> moveInObjects = new List<GameObject>();
-    
-    [Header("DeSelected")]
-    [SerializeField] private Vector3 moveOutToDirection = new Vector3(0, 700f, 0);
-    [SerializeField] private float moveOutDuration = 0.3f;
-    [SerializeField] private float moveOutDelay = 0.2f;
-    [SerializeField] private Ease moveOutEase = Ease.OutSine;
-    [SerializeField] private List<GameObject> moveOutObjects = new List<GameObject>();
-    [EndFoldout]
     
     [Foldout("Selectables Animations")]
     [Header("Scale")]
@@ -63,20 +43,47 @@ public class MenuPage : MonoBehaviour
     [EndIf]
     [EndFoldout]
     
+    [Foldout("Page Animations")]
+    [Header("Selected")]
+    [SerializeField] private float selectedAnimationDuration = 0.3f;
+    [SerializeField] private float selectedAnimationDelay = 0.2f;
+    [SerializeField] private Vector3 moveInFromDirection = new Vector3(0, -700f, 0);
+    [SerializeField] private Ease moveInEase = Ease.OutSine;
+    [SerializeField] private List<GameObject> moveInObjects = new List<GameObject>();
+    [SerializeField] private List<GameObject> fadeInObjects = new List<GameObject>();
+    [Header("DeSelected")]
+    [SerializeField] private float deSelectedAnimationDuration = 0.3f;
+    [SerializeField] private float deSelectedAnimationDelay = 0.2f;
+    [SerializeField] private Vector3 moveOutToDirection = new Vector3(0, 700f, 0);
+    [SerializeField] private Ease moveOutEase = Ease.OutSine;
+    [SerializeField] private List<GameObject> moveOutObjects = new List<GameObject>();
+    [SerializeField] private List<GameObject> fadeOutObjects = new List<GameObject>();
+    [EndFoldout]
+    
+    [Foldout("Audio")]
+    [SerializeField] private SOAudioEvent sfxSelectableSelected;
+    [SerializeField] private SOAudioEvent sfxButtonClick;
+    [EndFoldout]
+    
+    
     [Space(10)]
     [CustomAttribute.ReadOnly] public Selectable currentSelectable;
     [CustomAttribute.ReadOnly] public Selectable previousSelectable;
     [CustomAttribute.ReadOnly] public bool canSelect;
     
+    
     private MenuController _menuController;
-    private bool _pageIsActive = false; 
-    public bool PageIsActive => _pageIsActive;
+    private bool _pageIsActive = false;
+    private Sequence _animationSequence;
     private readonly Dictionary<GameObject, Vector3> _moveInObjectsOriginalPositions = new Dictionary<GameObject, Vector3>();
     private readonly Dictionary<Selectable, Vector3> _selectableOriginalScales = new Dictionary<Selectable, Vector3>();
     private readonly Dictionary<Selectable, Vector3> _selectableOriginalRotations = new Dictionary<Selectable, Vector3>();
     private readonly Dictionary<Selectable, Vector3> _selectableOriginalPositions = new Dictionary<Selectable, Vector3>();
     private readonly Dictionary<Selectable, bool> _selectableOriginalState = new Dictionary<Selectable, bool>();
+    private readonly Dictionary<GameObject, CanvasGroup> _canvasGroups = new Dictionary<GameObject, CanvasGroup>();
     private readonly List<LayoutGroup> _layoutGroups = new List<LayoutGroup>();
+    
+    public bool PageIsActive => _pageIsActive;
     
     private void Awake()
     {
@@ -106,6 +113,10 @@ public class MenuPage : MonoBehaviour
             }
         }
         
+        // Setup canvas groups for fade animations
+        SetupCanvasGroups(fadeInObjects);
+        SetupCanvasGroups(fadeOutObjects);
+        
         // Save layout groups for animation
         AddLayoutGroupsRecursively(transform);
         OnPageDeselected(false);
@@ -118,11 +129,11 @@ public class MenuPage : MonoBehaviour
         
         if (playAnimation)
         {
-            AnimateMoveIn();
+            AnimateSelected();
         }
         else
         {
-            SetMoveInPositionsInstantly();
+            SetSelectedInstantly();
         }
     }
     
@@ -133,11 +144,11 @@ public class MenuPage : MonoBehaviour
         
         if (playAnimation)
         {
-            AnimateMoveOut();
+            AnimateDeselected();
         }
         else
         {
-            SetMoveOutPositionsInstantly();
+            SetDeselectedInstantly();
         }
     }
 
@@ -253,6 +264,22 @@ public class MenuPage : MonoBehaviour
         }
     }
     
+    private void SetupCanvasGroups(List<GameObject> objects)
+    {
+        if (objects.Count == 0) return;
+        
+        foreach (GameObject obj in objects)
+        {
+            // Get or add a canvas group component
+            if (!obj.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                canvasGroup = obj.AddComponent<CanvasGroup>();
+            }
+            
+            _canvasGroups[obj] = canvasGroup;
+        }
+    }
+    
     private void AddEventTriggerEntry(EventTrigger eventTrigger, EventTriggerType type, UnityEngine.Events.UnityAction<BaseEventData> callback)
     {
         EventTrigger.Entry entry = new EventTrigger.Entry();
@@ -278,7 +305,7 @@ public class MenuPage : MonoBehaviour
         
         // Just resetting the position bugs the selectables that are in a layout group
         // so find the layout group if it exists and restart it to fix the positions
-        ResetLayoutGroups();
+        // ResetLayoutGroups();
     }
     
     private void DisableAllSelectables()
@@ -402,86 +429,188 @@ public class MenuPage : MonoBehaviour
     }
     
 
-    private void AnimateMoveIn()
+    private void AnimateSelected()
     {
-        if (moveInObjects.Count == 0) 
-        {
-            canSelect = true;
-            return;
-        }
+        _animationSequence.Stop();
+        _animationSequence = Sequence.Create();
+        
+        float totalAnimationTime = 0f;
         
         // Animate the movement
-        for (int i = 0; i < moveInObjects.Count; i++)
+        if (moveInObjects.Count > 0) 
         {
-            GameObject currentObject = moveInObjects[i];
-            currentObject.transform.localPosition = moveInFromDirection;
-            Tween.LocalPosition(
-                currentObject.transform, 
-                startValue: moveInFromDirection, 
-                endValue: _moveInObjectsOriginalPositions[currentObject], 
-                moveInDuration, 
-                ease: moveInEase, 
-                startDelay: i * moveInDelay, 
-                useUnscaledTime: true
-            );
+            for (int i = 0; i < moveInObjects.Count; i++)
+            {
+                GameObject currentObject = moveInObjects[i];
+                currentObject.transform.localPosition = moveInFromDirection;
+                _animationSequence.Group(
+                    Tween.LocalPosition(
+                    currentObject.transform, 
+                    startValue: moveInFromDirection, 
+                    endValue: _moveInObjectsOriginalPositions[currentObject], 
+                    selectedAnimationDuration, 
+                    ease: moveInEase, 
+                    startDelay: i * selectedAnimationDelay
+                ));
+            }
+            
+            // Calculate total animation time for movement
+            totalAnimationTime = selectedAnimationDuration + (selectedAnimationDelay * (moveInObjects.Count - 1));
         }
         
-        // Calculate total animation time and enable selection after it completes
-        float totalAnimationTime = moveInDuration + (moveInDelay * (moveInObjects.Count - 1));
-        StartCoroutine(SetCanSelect(true, totalAnimationTime));
+        // Animate the fade in
+        if (fadeInObjects.Count > 0)
+        {
+            for (int i = 0; i < fadeInObjects.Count; i++)
+            {
+                GameObject currentObject = fadeInObjects[i];
+                if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
+                {
+                    canvasGroup.alpha = 0f;
+                    _animationSequence.Group(
+                        Tween.Alpha(
+                        canvasGroup, 
+                        startValue: 0f, 
+                        endValue: 1f, 
+                        selectedAnimationDuration, 
+                        ease: moveInEase, 
+                        startDelay: i * selectedAnimationDelay
+                    ));
+                }
+            }
+            
+            // Update total animation time if fade takes longer
+            float fadeTotalTime = selectedAnimationDuration + (selectedAnimationDelay * (fadeInObjects.Count - 1));
+            totalAnimationTime = Mathf.Max(totalAnimationTime, fadeTotalTime);
+        }
+        
+        // Enable selection after all animations complete
+        if (totalAnimationTime > 0f)
+        {
+            StartCoroutine(SetCanSelect(true, totalAnimationTime));
+        }
+        else
+        {
+            canSelect = true;
+        }
     }
     
 
-    private void SetMoveInPositionsInstantly()
+    private void SetSelectedInstantly()
     {
-        if (moveInObjects.Count == 0) 
+        bool hasAnimations = false;
+        
+        // Set position instantly for move in objects
+        if (moveInObjects.Count > 0)
         {
-            canSelect = true;
-            return;
+            hasAnimations = true;
+            for (int i = 0; i < moveInObjects.Count; i++)
+            {
+                GameObject currentObject = moveInObjects[i];
+                currentObject.transform.localPosition = _moveInObjectsOriginalPositions[currentObject];
+            }
         }
         
-        // Set position instantly
-        for (int i = 0; i < moveInObjects.Count; i++)
+        // Set alpha instantly for fade in objects
+        if (fadeInObjects.Count > 0)
         {
-            GameObject currentObject = moveInObjects[i];
-            currentObject.transform.localPosition = _moveInObjectsOriginalPositions[currentObject];
+            hasAnimations = true;
+            for (int i = 0; i < fadeInObjects.Count; i++)
+            {
+                GameObject currentObject = fadeInObjects[i];
+                if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
+                {
+                    canvasGroup.alpha = 1f;
+                }
+            }
         }
         
         canSelect = true;
-        ResetAllSelectables();
-    }
-    
-
-    private void AnimateMoveOut()
-    {
-        if (moveOutObjects.Count == 0) return;
-        
-        // Animate the movement
-        for (int i = 0; i < moveOutObjects.Count; i++)
+        if (hasAnimations)
         {
-            GameObject currentObject = moveOutObjects[i];
-            Tween.LocalPosition(
-                currentObject.transform, 
-                startValue: _moveInObjectsOriginalPositions[currentObject], 
-                endValue: moveOutToDirection, 
-                moveOutDuration, 
-                ease: moveOutEase, 
-                startDelay: i * moveOutDelay, 
-                useUnscaledTime: true
-            );
+            ResetAllSelectables();
         }
     }
     
 
-    private void SetMoveOutPositionsInstantly()
+    private void AnimateDeselected()
     {
-        if (moveOutObjects.Count == 0) return;
+        _animationSequence.Stop();
+        _animationSequence = Sequence.Create();
         
-        // Set position instantly
-        for (int i = 0; i < moveOutObjects.Count; i++)
+        float totalAnimationTime = 0f;
+        
+        // Animate the movement out
+        if (moveOutObjects.Count > 0)
         {
-            GameObject currentObject = moveOutObjects[i];
-            currentObject.transform.localPosition = moveOutToDirection;
+            for (int i = 0; i < moveOutObjects.Count; i++)
+            {
+                GameObject currentObject = moveOutObjects[i];
+                _animationSequence.Group(
+                    Tween.LocalPosition(
+                    currentObject.transform, 
+                    startValue: currentObject.transform.localPosition, 
+                    endValue: moveOutToDirection, 
+                    deSelectedAnimationDuration, 
+                    ease: moveOutEase, 
+                    startDelay: i * deSelectedAnimationDelay
+                ));
+            }
+            
+            // Calculate total animation time for movement
+            totalAnimationTime = deSelectedAnimationDuration + (deSelectedAnimationDelay * (moveOutObjects.Count - 1));
+        }
+        
+        // Animate the fade out
+        if (fadeOutObjects.Count > 0)
+        {
+            for (int i = 0; i < fadeOutObjects.Count; i++)
+            {
+                GameObject currentObject = fadeOutObjects[i];
+                if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
+                {
+                    _animationSequence.Group(
+                        Tween.Alpha(
+                        canvasGroup, 
+                        startValue: canvasGroup.alpha, 
+                        endValue: 0f, 
+                        deSelectedAnimationDuration, 
+                        ease: moveOutEase, 
+                        startDelay: i * deSelectedAnimationDelay
+                    ));
+                }
+            }
+            
+            // Update total animation time if fade takes longer
+            float fadeTotalTime = deSelectedAnimationDuration + (deSelectedAnimationDelay * (fadeOutObjects.Count - 1));
+            totalAnimationTime = Mathf.Max(totalAnimationTime, fadeTotalTime);
+        }
+    }
+    
+
+    private void SetDeselectedInstantly()
+    {
+        // Set position instantly for move out objects
+        if (moveOutObjects.Count > 0)
+        {
+            for (int i = 0; i < moveOutObjects.Count; i++)
+            {
+                GameObject currentObject = moveOutObjects[i];
+                currentObject.transform.localPosition = moveOutToDirection;
+            }
+        }
+        
+        // Set alpha instantly for fade out objects
+        if (fadeOutObjects.Count > 0)
+        {
+            for (int i = 0; i < fadeOutObjects.Count; i++)
+            {
+                GameObject currentObject = fadeOutObjects[i];
+                if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
+                {
+                    canvasGroup.alpha = 0f;
+                }
+            }
         }
     }
     

@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 
+[SelectionBase]
+[RequireComponent(typeof(Interactable))]
 public class PillerButton : MonoBehaviour
 {
     [Header("Button Visuals")]

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[SelectionBase]
 public class SpawnPlatform : MonoBehaviour
 {
     [SerializeField] private Transform spawnPosition;

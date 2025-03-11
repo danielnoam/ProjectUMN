@@ -28,7 +28,7 @@ public class PlayerAnimationHandler : MonoBehaviour
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
     private readonly int _verticalHash = Animator.StringToHash("VerticalValue");
     private readonly int _horizontalHash = Animator.StringToHash("HorizontalValue");
-    private readonly int _moveTypeHash = Animator.StringToHash("MoveTypeValue");
+    private readonly int _gaitTypeHash = Animator.StringToHash("GaitTypeValue");
     private readonly int _fallTimeHash = Animator.StringToHash("FallTime");
     private readonly int _rotationMismatchHash = Animator.StringToHash("RotationMismatch");
     private readonly int _isRotatingToTargetHash = Animator.StringToHash("IsRotatingToTarget");
@@ -116,7 +116,7 @@ public class PlayerAnimationHandler : MonoBehaviour
         // Apply values to animator with smoothing
         _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
         _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
-        _animator.SetFloat(_moveTypeHash, moveType, animationSmoothTime, Time.deltaTime);
+        _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime, Time.deltaTime);
     }
 
     private void UpdateRotationAnimation()

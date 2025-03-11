@@ -3,6 +3,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using UnityEngine.Serialization;
 
+[SelectionBase]
 [RequireComponent(typeof(Interactable))]
 public class PressurePlate : MonoBehaviour
 {

@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.Events;
 
 
+[SelectionBase]
+[RequireComponent(typeof(Interactable))]
 public class TouchPanel : MonoBehaviour
 {
 

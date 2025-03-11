@@ -8,6 +8,8 @@ using VInspector;
 [CreateAssetMenu(fileName = "AudioEvent", menuName = "SO Audio/Audio Event")]
 public class SOAudioEvent : ScriptableObject
 {
+    public string aoName = "Name";
+    public string aoAuthor = "Author";
     public AudioClip[] clips;
     public AudioMixerGroup mixerGroup;
     [MinMaxRange(0f, 1f)] public RangedFloat volume = 1f;

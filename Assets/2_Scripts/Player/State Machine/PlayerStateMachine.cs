@@ -11,6 +11,7 @@ public enum CameraMode
     ExplorationAndAim   
 }
 
+[SelectionBase]
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(PlayerInputHandler))]
 [RequireComponent(typeof(CharacterController))]

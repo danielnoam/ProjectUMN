@@ -66,7 +66,7 @@ public class PlayerInMenuState : PlayerBaseState
         if (CurrentPage == page || !page) return;
         
         CurrentPage = page;
-        MenuController.SelectPage(page);
+        MenuController.SelectPage(page, true);
     }
 
     public void SetupPages(MenuController menuController, MenuPage pauseCategory, MenuPage debugCategory)

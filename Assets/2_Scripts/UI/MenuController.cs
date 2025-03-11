@@ -27,7 +27,6 @@ public class MenuController : MonoBehaviour
         if (player != null && player.InMenuState != null)
         {
             player.InMenuState.SetupPages(this, pausePage, debugPage);
-            DeselectAllPages(false);
         }
     }
 
@@ -58,7 +57,7 @@ public class MenuController : MonoBehaviour
     
 #region Page Management //-------------------------------------------------------------
 
-    public void SelectPage(MenuPage page, bool playAnimation = true)
+    public void SelectPage(MenuPage page, bool playAnimation)
     {
         if (!page) return;
 

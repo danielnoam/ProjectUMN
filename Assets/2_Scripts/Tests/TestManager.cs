@@ -5,21 +5,25 @@ using UnityEngine;
 using UnityEngine.Events;
 using VInspector;
 
+[SelectionBase]
+[RequireComponent(typeof(AudioSource))]
 public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
 
+    [Header("Settings")]
     [SerializeField] private bool debugMode = true;
     [SerializeField] private SOTest[] tests;
     
     [Header("Current test")]
-    [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private GameObject robotPrefab;
+    [SerializeField, ReadOnly] private GameObject playerPrefab;
+    [SerializeField, ReadOnly] private GameObject robotPrefab;
     [SerializeField, ReadOnly] private SOTest currentTest;
     [SerializeField, ReadOnly] private GameObject currentEnvironment;
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
+    [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
 
     [Header("Events")]
     public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
@@ -31,11 +35,13 @@ public class TestManager : MonoBehaviour
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
+    public SOAudioEvent CurrentTheme => currentTheme;
     
     
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
+    private  AudioSource _audioSource;
     
     
     
@@ -49,6 +55,8 @@ public class TestManager : MonoBehaviour
         {
             Instance = this;
         }
+        
+        _audioSource = GetComponent<AudioSource>();
     }
     
     private void Start()
@@ -61,6 +69,19 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F1))
         {
             ToggleDebugMode();
+        }
+        
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            StartTest(0);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            StartTest(1);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            StartTest(2);
         }
     }
     
@@ -172,6 +193,8 @@ public class TestManager : MonoBehaviour
         return currentTest.GetPlayerSpawnPoint();
     }
     
+    
+    
 
     
     #endregion Public methods ----------------------------------------------------------------------------
@@ -254,6 +277,8 @@ public class TestManager : MonoBehaviour
         Debug.Log("Loaded " + tests[testIndex].GetName());
         currentTest = tests[testIndex];
         currentEnvironment = Instantiate(currentTest.GetPrefab());
+        currentTheme = currentTest.GetTheme();
+        currentTheme?.Play(_audioSource);
 
         if (currentTest.HasRobot()) // The new test has a robot in it
         {

@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Unity.Cinemachine;
 
+[SelectionBase]
 public class CameraManager : MonoBehaviour
 {
     public static CameraManager Instance { get; private set; }

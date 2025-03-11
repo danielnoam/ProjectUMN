@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[SelectionBase]
 public class CheckpointPlatform : MonoBehaviour
 {
     [SerializeField] private Transform spawnPosition;

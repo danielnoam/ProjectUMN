@@ -14,6 +14,7 @@ public enum RobotState
     Off = 5,
 }
 
+[SelectionBase]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(SphereCollider))]
 public class RobotCompanion : MonoBehaviour, Iinteractor

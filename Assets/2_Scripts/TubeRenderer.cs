@@ -5,6 +5,7 @@ using UnityEngine.Serialization;
 /// Renders a tube-like mesh along a path of positions with various options for radius control.
 /// </summary>
 [ExecuteInEditMode]
+[SelectionBase]
 public class TubeRenderer : MonoBehaviour
 {
     [Tooltip("Array of points defining the tube's path")]

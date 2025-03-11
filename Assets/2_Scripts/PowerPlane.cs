@@ -5,6 +5,7 @@ using VInspector;
 using UnityEditor;
 #endif
 
+[SelectionBase]
 [ExecuteInEditMode]
 public class PowerPlane : MonoBehaviour
 {
