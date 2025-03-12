@@ -19,8 +19,6 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.CheckEnvironmentCollisions();
-        StateMachine.CheckForInteractable();
         StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
         StateMachine.AirTime += Time.deltaTime;
@@ -29,6 +27,8 @@ public class PlayerFallingState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
+        StateMachine.CheckForInteractable();
         StateMachine.ApplyGravity(false);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: true);
         StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: false);

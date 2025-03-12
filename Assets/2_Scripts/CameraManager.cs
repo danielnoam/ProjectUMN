@@ -8,8 +8,6 @@ public class CameraManager : MonoBehaviour
     public static CameraManager Instance { get; private set; }
     
     [Header("Postion/Rotation Settings")]
-    [SerializeField, Range(0.1f, 2f)] private float freeCameraSensitivity = 1f;
-    [SerializeField, Range(0.1f, 2f)] private float aimCameraSensitivity = 0.5f;
     [SerializeField] private float aimMaxPitch = 80f;
     [SerializeField] private float crouchVerticalOffset = -0.3f;
     
@@ -203,8 +201,8 @@ public class CameraManager : MonoBehaviour
 
         // Get the appropriate sensitivity based on current camera state
         float cameraSensitivity = IsAimCameraActive() 
-            ? aimCameraSensitivity 
-            : freeCameraSensitivity;
+            ? _playerInputHandler.AimCameraSensitivity 
+            : _playerInputHandler.FreeCameraSensitivity;
 
         // Accumulate rotation values from mouse input
         _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity;

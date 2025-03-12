@@ -16,8 +16,6 @@ public class PlayerGroundedState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.CheckEnvironmentCollisions();
-        StateMachine.CheckForInteractable();
         StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
         CheckStateTransitions();
@@ -25,6 +23,8 @@ public class PlayerGroundedState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
+        StateMachine.CheckForInteractable();
         StateMachine.ApplyGravity(true);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: false);
         StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: false);

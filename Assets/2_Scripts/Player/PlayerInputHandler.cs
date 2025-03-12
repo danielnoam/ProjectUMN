@@ -1,45 +1,71 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
+
+
+[Serializable]
+public class InputSettings
+{
+    public bool toggleMoveSpeed = false;
+    public bool toggleCrouch = false;
+    public bool toggleSprint = false;
+    public bool toggleAimInput = false;
+    [Tooltip("Minimum movement input to register sprint")]
+    [Range(0f, 1f)] public float sprintInputThreshold = 0.01f;
+    [Tooltip("Minimum movement input to register movement")] 
+    [Range(0f, 1f)] public float movementInputThreshold = 0.01f;
+    [Range(0.1f, 2f)] public float mouseSensitivity = 1f;
+    [Range(0.1f, 2f)] public float freeCameraSensitivity = 1f;
+    [Range(0.1f, 2f)] public float aimCameraSensitivity = 0.5f;
+}
+
 
 public class PlayerInputHandler : MonoBehaviour
 {
     [Header("Settings")] 
     [SerializeField] private SOInputReader inputReader;
-    [SerializeField] private bool toggleMoveSpeed = true;
-    [SerializeField] private bool toggleCrouch = true;
-    [SerializeField] private bool toggleSprint = false;
-    [SerializeField] private bool toggleAimInput = false;
     [SerializeField, Min(0f)] private float jumpBufferTime = 0.2f;
     [SerializeField, Min(0f)] private float interactBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float toggleMenuBufferTime = 0.15f;
-    [SerializeField, Range(0.1f, 2f)] private float mouseSensitivity = 1f;
-    [Tooltip("Minimum movement input to register sprint")]
-    [SerializeField, Range(0f, 1f)] private float sprintInputThreshold = 0.01f;
-    [Tooltip("Minimum movement input to register movement")]
-    [SerializeField, Range(0f, 1f)] private float movementInputThreshold = 0.01f;
+    [SerializeField] private InputSettings mouseKeyboardSettings = new InputSettings();
+    [SerializeField] private InputSettings gamepadSettings = new InputSettings();
+    
+    private InputSettings _activeSettings;
+    private bool _toggleMoveSpeed;
+    private bool _toggleCrouch;
+    private bool _toggleSprint;
+    private bool _toggleAimInput;
+    private float _mouseSensitivity;
+    private float _sprintInputThreshold;
+    private float _movementInputThreshold;
+    private float _freeCameraSensitivity;
+    private float _aimCameraSensitivity;
+    
+    private float _jumpBufferCounter;
+    private float _interactBufferCounter;
+    private float _commandRobotBufferCounter;
+    private float _toggleMenuBufferCounter;
+
+    
     
     public Vector2 MovementInput { get; private set; }
     public Vector2 MouseDelta { get; private set; }
     public bool JumpInput { get; private set; }
     public bool SprintInput { get; private set; }
     public bool CrouchInput { get; private set; }
-    public bool MoveSpeedInput { get; private set; } = true;
+    public bool MoveSpeedInput { get; private set; }
     public bool InteractInput { get; private set; }
     public bool CommandRobotInput { get; private set; }
     public bool AimInput { get; private set; }
     public bool ToggleMenuInput { get; private set; }
-    public float MovementInputThreshold => movementInputThreshold;
-    public float SprintInputThreshold => sprintInputThreshold;
-    public float MouseSensitivity => mouseSensitivity;
-    public bool IsCrouchToggle => toggleCrouch;
+    public float MovementInputThreshold => _movementInputThreshold;
+    public float SprintInputThreshold => _sprintInputThreshold;
+    public float MouseSensitivity => _mouseSensitivity;
+    public float FreeCameraSensitivity => _freeCameraSensitivity;
+    public float AimCameraSensitivity => _aimCameraSensitivity;
+    public bool IsCrouchToggle => _toggleCrouch;
     
-    // Buffer timers
-    private float _jumpBufferCounter;
-    private float _interactBufferCounter;
-    private float _commandRobotBufferCounter;
-    private float _toggleMenuBufferCounter; // Added buffer counter for toggle menu
+
 
     private void OnEnable()
     {
@@ -53,6 +79,9 @@ public class PlayerInputHandler : MonoBehaviour
         inputReader.MoveSpeedEvent += OnMoveSpeedInput;
         inputReader.AimEvent += OnAimInput;
         inputReader.ToggleMenuEvent += OnToggleMenuInput;
+        inputReader.ControlSchemeChangedEvent += OnControlSchemeChanged;
+        
+        OnControlSchemeChanged(inputReader.CurrentControlScheme);
     }
     
     private void OnDisable()
@@ -67,6 +96,7 @@ public class PlayerInputHandler : MonoBehaviour
         inputReader.MoveSpeedEvent -= OnMoveSpeedInput;
         inputReader.AimEvent -= OnAimInput;
         inputReader.ToggleMenuEvent -= OnToggleMenuInput;
+        inputReader.ControlSchemeChangedEvent -= OnControlSchemeChanged;
     }
 
     private void Update()
@@ -76,6 +106,24 @@ public class PlayerInputHandler : MonoBehaviour
 
 
     #region Input events -------------------------------------------------------------------------------------------
+    
+    private void OnControlSchemeChanged(ControlType controlType)
+    {
+        // Set the active settings based on the control type
+        _activeSettings = controlType == ControlType.KeyboardMouse ? 
+            mouseKeyboardSettings : gamepadSettings;
+    
+        // Update the local variables to match the active settings
+        _toggleMoveSpeed = _activeSettings.toggleMoveSpeed;
+        _toggleCrouch = _activeSettings.toggleCrouch;
+        _toggleSprint = _activeSettings.toggleSprint;
+        _toggleAimInput = _activeSettings.toggleAimInput;
+        _mouseSensitivity = _activeSettings.mouseSensitivity;
+        _sprintInputThreshold = _activeSettings.sprintInputThreshold;
+        _movementInputThreshold = _activeSettings.movementInputThreshold;
+        _freeCameraSensitivity = _activeSettings.freeCameraSensitivity;
+        _aimCameraSensitivity = _activeSettings.aimCameraSensitivity;
+    }
     
     private void OnToggleMenuInput(InputAction.CallbackContext context)
     {
@@ -98,7 +146,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnAimInput(InputAction.CallbackContext context)
     {
-        if (toggleAimInput)
+        if (_toggleAimInput)
         {
             if (context.started) 
             {
@@ -139,7 +187,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnCrouchInput(InputAction.CallbackContext context)
     {
-        if (toggleCrouch)
+        if (_toggleCrouch)
         {
             if (context.started) 
             {
@@ -154,7 +202,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnSprintInput(InputAction.CallbackContext context)
     {
-        if (toggleSprint)
+        if (_toggleSprint)
         {
             if (context.started) 
             {
@@ -169,7 +217,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnMoveSpeedInput(InputAction.CallbackContext context)
     {
-        if (toggleMoveSpeed)
+        if (_toggleMoveSpeed)
         {
             if (context.started) 
             {

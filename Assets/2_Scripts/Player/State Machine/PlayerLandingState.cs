@@ -20,12 +20,12 @@ public class PlayerLandingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.CheckEnvironmentCollisions();
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.ApplyGravity(true);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: false);
         StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);

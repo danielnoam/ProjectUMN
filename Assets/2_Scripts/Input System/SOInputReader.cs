@@ -172,7 +172,44 @@ public class SOInputReader : ScriptableObject
         
         CurrentControlScheme = newScheme;
         ControlSchemeChangedEvent?.Invoke(CurrentControlScheme);
-        //if (printDebug) Debug.Log($"Control Scheme: {CurrentControlScheme}");
+        if (printDebug) Debug.Log($"Control Scheme changed to: {CurrentControlScheme}");
+    }
+    
+    private void CheckInputControlScheme(InputAction.CallbackContext context)
+    {
+        // Only check for device changes on 'started' phase
+        if (!context.started)
+            return;
+            
+        var device = context.control?.device;
+        if (device == null)
+            return;
+            
+        ControlType detectedScheme = CurrentControlScheme; // Default to current
+        
+        // Determine the control scheme based on the device used
+        if (device is Keyboard || device is Mouse)
+        {
+            detectedScheme = ControlType.KeyboardMouse;
+        }
+        else if (device is Gamepad)
+        {
+            detectedScheme = ControlType.Gamepad;
+        }
+        else if (device is Touchscreen)
+        {
+            detectedScheme = ControlType.Touch;
+        }
+        else if (device is XRController)
+        {
+            detectedScheme = ControlType.XR;
+        }
+        
+        // Update the control scheme if it changed
+        if (detectedScheme != CurrentControlScheme)
+        {
+            SetControlScheme(detectedScheme);
+        }
     }
 
     #endregion Control Scheme -----------------------------------------------------------------------------------------------------------------
@@ -182,57 +219,69 @@ public class SOInputReader : ScriptableObject
 
     private void OnToggleMenu(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         ToggleMenuEvent?.Invoke(context);
     }
     
     private void OnNavigate(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         NavigateEvent?.Invoke(context);
     }
+    
     private void OnMove(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         MoveEvent?.Invoke(context);
         CurrentMoveInput = context.ReadValue<Vector2>();
     }
     
     private void OnLook(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         LookEvent?.Invoke(context);
         CurrentLookInput = context.ReadValue<Vector2>();
     }
     
     private void OnJump(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         JumpEvent?.Invoke(context);
     }
     
     private void OnSprint(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         SprintEvent?.Invoke(context);
     }
     
     private void OnCrouch(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         CrouchEvent?.Invoke(context);
     }
     
     private void OnToggleMoveSpeed(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         MoveSpeedEvent?.Invoke(context);
     }
     
     private void OnPlayerInteract(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         PlayerInteractEvent?.Invoke(context);
     }
     
     private void OnRobotInteract(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         RobotInteractEvent?.Invoke(context);
     }
     
     private void OnAim(InputAction.CallbackContext context)
     {
+        CheckInputControlScheme(context);
         AimEvent?.Invoke(context);
     }
     
@@ -630,6 +679,3 @@ public enum ControlType
 }
 
 #endregion Extension  -----------------------------------------------------------------------------------------------------------------
-
-
-

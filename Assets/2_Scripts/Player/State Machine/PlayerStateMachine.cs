@@ -122,12 +122,16 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public Interactable CurrentAimedInteractable { get; private set; }
     public float RotationMismatch { get; private set; }
     public bool IsRotatingToTarget { get; private set; }
+    public RobotCompanion robot { get; private set; }
+    public CameraManager cameraManager { get; private set; }
     
 
+    private CharacterController _controller;
+    private LineRenderer _lineRenderer;
     private float _defaultCharacterHeight;
     private Vector3 _defaultCharacterCenter;
     private readonly float _crouchCharacterHeight = 1.2333f;
-    private readonly Vector3 _crouchCharacterCenter = new Vector3(0, -0.3f, 0.2f);
+    private readonly Vector3 _crouchCharacterCenter = new Vector3(0, -0.3f, 0f);
     private float _rotatingToTargetTimer = 0f;
     private Vector3 _lastCameraForward;
     private bool _isMovingLaterally = false;
@@ -138,10 +142,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private Quaternion _targetIdleRotation = Quaternion.identity;
     private float _rotationProgress = 1.0f; 
     
-    private CharacterController _controller;
-    private LineRenderer _lineRenderer;
-    private RobotCompanion _robot;
-    private CameraManager _cameraManager;
+
+    
     
 
 
@@ -177,9 +179,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private void Start()
     {
-        if (!_robot) _robot = FindFirstObjectByType<RobotCompanion>();
-        if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
-        _cameraManager.Initialize(this);
+        if (!robot) robot = FindFirstObjectByType<RobotCompanion>();
+        if (!cameraManager) cameraManager = FindFirstObjectByType<CameraManager>();
+        cameraManager.Initialize(this);
 
         if (TestManager.Instance)
         {
@@ -213,7 +215,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private void OnTestLoaded(SOTest test)
     {
-        _robot = TestManager.Instance.Robot;
+        robot = TestManager.Instance.Robot;
         SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f));
     }
     
@@ -271,11 +273,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private Vector3 CalculateMoveDirection()
     {
-        if (!_cameraManager) return transform.forward;
+        if (!cameraManager) return transform.forward;
         
         // Get camera forward and right
-        var forward = _cameraManager.freeLookCamera.transform.forward;
-        var right = _cameraManager.freeLookCamera.transform.right;
+        var forward = cameraManager.freeLookCamera.transform.forward;
+        var right = cameraManager.freeLookCamera.transform.right;
     
         // Project onto horizontal plane
         forward.y = 0;
@@ -300,16 +302,26 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (!lockSprintGait)
         {
             if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+            {
                 baseSpeed = sprintSpeed;
+            }
             else
+            {
                 baseSpeed = runSpeed;
+            }
+                
         }
         else
         {
             if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+            {
                 baseSpeed = runSpeed;
+            }
             else
+            {
                 baseSpeed = walkSpeed;
+            }
+                
         }
     
         // Apply direction multipliers based on movement input
@@ -338,8 +350,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private Vector3 GetCameraAimDirection()
     {
-        if (!_cameraManager) return transform.forward;
-        return _cameraManager.GetCameraAimDirection(true);
+        if (!cameraManager) return transform.forward;
+        return cameraManager.GetCameraAimDirection(true);
     }
     
         
@@ -464,13 +476,13 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private void CheckForAimInteractable()
     {
-        if (!_robot) return;
+        if (!robot) return;
         
         // Set ray origin 
         Vector3 rayOrigin = aimRayStartPosition.position;
 
         // Get ray direction from camera
-        Vector3 rayDirection = _cameraManager.GetCameraAimDirection() + new Vector3(0, +0.1f,0);
+        Vector3 rayDirection = cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0);
 
         // Set first point of line renderer
         _lineRenderer.SetPosition(0, rayOrigin);
@@ -503,7 +515,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
                         // Set new target and enter it
                         CurrentAimedInteractable = hitInteractable;
-                        CurrentAimedInteractable.MarkForRobotInteraction(_robot);
+                        CurrentAimedInteractable.MarkForRobotInteraction(robot);
                     }
                 }
                 else if (CurrentAimedInteractable)
@@ -637,9 +649,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             return;
         
         // Calculate camera-to-player rotation mismatch
-        if (_cameraManager)
+        if (cameraManager)
         {
-            Vector3 cameraForward = _cameraManager.GetCameraAimDirection(true);
+            Vector3 cameraForward = cameraManager.GetCameraAimDirection(true);
             Vector3 cameraForwardFlat = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
             Vector3 playerForward = transform.forward;
             
@@ -907,7 +919,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     public void CommandRobot()
     {
-        if (!_robot || !_robot.CanCommend()) return;
+        if (!robot || !robot.CanCommend()) return;
         
         
         
@@ -917,17 +929,17 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             
             if (CurrentAimedInteractable)
             {
-                _robot.CommandInteractWith(CurrentAimedInteractable);
+                robot.CommandInteractWith(CurrentAimedInteractable);
                 return;
             }
             
-            if (_robot.CurrentState != RobotState.FollowingPlayer)
+            if (robot.CurrentState != RobotState.FollowingPlayer)
             {
-                _robot.CommandFollowPlayer();
+                robot.CommandFollowPlayer();
                 return;
             }
             
-            _robot.CommandIdle();
+            robot.CommandIdle();
         }
     }
     
@@ -969,7 +981,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         {
             if (debugText)
             {
-                string robotInfo = _robot ? $"Robot: {_robot}, {_robot.CurrentState}" : "Robot: null";
+                string robotInfo = robot ? $"Robot: {robot}, {robot.CurrentState}" : "Robot: null";
             
                 debugText.text = $"State: {CurrentState.GetType().Name}\n" +
                                  $"IsGrounded: {IsGrounded}\n" +

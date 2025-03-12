@@ -17,13 +17,13 @@ public class PlayerInteractingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.CheckEnvironmentCollisions();
         StateMachine.HandleAiming(allowAiming: true);
         CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.ApplyGravity(true);
         StateMachine.HandleMovement(allowMovement: false, isAirborne: false);
         StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);

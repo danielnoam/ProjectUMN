@@ -18,8 +18,6 @@ public class PlayerCrouchingState : PlayerBaseState
 
     public override void UpdateState()
     {
-        StateMachine.CheckEnvironmentCollisions();
-        StateMachine.CheckForInteractable();
         StateMachine.HandleAiming(allowAiming: true);
         StateMachine.CommandRobot();
         CheckStateTransitions();
@@ -27,6 +25,8 @@ public class PlayerCrouchingState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
+        StateMachine.CheckForInteractable();
         StateMachine.ApplyGravity(true);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: false);
         StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: true);

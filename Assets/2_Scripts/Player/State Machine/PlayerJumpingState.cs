@@ -20,7 +20,6 @@ public class PlayerJumpingState : PlayerBaseState
     {
 
         StateMachine.AirTime += Time.deltaTime;
-        StateMachine.CheckEnvironmentCollisions();
         StateMachine.HandleAiming(true);
         StateMachine.CommandRobot();
         CheckStateTransitions();
@@ -28,6 +27,7 @@ public class PlayerJumpingState : PlayerBaseState
 
     public override void FixedUpdateState()
     {
+        StateMachine.CheckEnvironmentCollisions();
         StateMachine.ApplyGravity(false);
         StateMachine.HandleMovement(allowMovement: true, isAirborne: true);
         StateMachine.HandleRotation(allowRotation: true, alignWithCameraWhenIdle: false);

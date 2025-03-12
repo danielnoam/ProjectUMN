@@ -12,6 +12,7 @@ public enum RobotState
     Sitting = 3,
     Interacting = 4,
     Off = 5,
+    Dead = 6,
 }
 
 [SelectionBase]
@@ -162,15 +163,25 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
        _playerFollowPosition = _player.transform.GetChild(2);
-       
+
+       if (_player)
+       {
+           _player.onPlayerSpawned.AddListener(OnPlayerSpawned);
+       }
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
        }
    }
+   
 
    private void OnDisable()
    {
+       if (_player)
+       {
+           _player.onPlayerSpawned.RemoveListener(OnPlayerSpawned);
+       }
+       
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
@@ -227,6 +238,11 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        _playerFollowPosition = _player.transform.GetChild(2);
        
        if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
+   }
+   
+   private void OnPlayerSpawned()
+   {
+       if (currentState != RobotState.Off) Teleport(_player.transform.position, Quaternion.identity);
    }
    
       
@@ -887,8 +903,9 @@ private void OnDrawGizmos()
    
    private void Teleport(Vector3 position, Quaternion rotation)
    {
+       Vector3 offset = new Vector3(-1, 0f, -1);
        sphereCollider.enabled = false;
-       transform.position = position;
+       transform.position = position + offset;
        transform.rotation = rotation;
        sphereCollider.enabled = true;
    }
@@ -954,6 +971,7 @@ private void OnDrawGizmos()
        if (currentBattery <= 0)
        {
            TurnOff();
+           currentState = RobotState.Dead;
        }
    }
 
@@ -983,7 +1001,7 @@ private void OnDrawGizmos()
 
    public bool IsOn()
    {
-       return  currentState != RobotState.Off && currentBattery > 0;
+       return  currentState != RobotState.Dead && currentState != RobotState.Off && currentBattery > 0;
    }
 
    public bool CanCommend()

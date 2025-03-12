@@ -183,14 +183,12 @@ public class TestManager : MonoBehaviour
 
     public Vector3 GetCheckPoint()
     {
-        if (!currentCheckpoint) return Vector3.zero;
-        return GetSpawnPoint();
+        return currentCheckpoint ? currentCheckpoint.position : GetSpawnPoint();
     }
 
     public Vector3 GetSpawnPoint()
     {
-        if (!currentTest) return Vector3.zero;
-        return currentTest.GetPlayerSpawnPoint();
+        return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
     }
     
     

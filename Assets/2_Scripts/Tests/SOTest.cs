@@ -68,8 +68,6 @@ public class SOTest : ScriptableObject
     
     public Vector3 GetRobotSpawnPoint()
     {
-        Vector3 offset = new Vector3(1, 1f, 2);
-        
         if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
@@ -84,7 +82,7 @@ public class SOTest : ScriptableObject
         }
 
 
-        return spawnPlatform.GetSpawnPosition() + offset;
+        return spawnPlatform.GetSpawnPosition();
     }
 
     public bool HasRobot()
