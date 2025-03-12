@@ -1229,7 +1229,6 @@ MonoBehaviour:
     toggleCrouch: 1
     toggleSprint: 0
     toggleAimInput: 0
-    sprintInputThreshold: 0.01
     movementInputThreshold: 0.01
     mouseSensitivity: 1
     freeCameraSensitivity: 1
@@ -1239,7 +1238,6 @@ MonoBehaviour:
     toggleCrouch: 1
     toggleSprint: 0
     toggleAimInput: 0
-    sprintInputThreshold: 0.01
     movementInputThreshold: 0.01
     mouseSensitivity: 1
     freeCameraSensitivity: 1
@@ -1295,9 +1293,9 @@ MonoBehaviour:
   cameraMode: 1
   walkSpeed: 4
   runSpeed: 8
-  sprintSpeed: 12
-  strafeSpeedMultiplier: 0.8
-  backwardSpeedMultiplier: 0.7
+  sprintSpeed: 10
+  strafeSpeedMultiplier: 0.7
+  backwardSpeedMultiplier: 0.6
   acceleration: 10
   groundDrag: 10
   antiBumpForce: 4
@@ -1585,7 +1583,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1, y: 2}
+  m_AnchoredPosition: {x: 1, y: 1}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &425317240483522548
