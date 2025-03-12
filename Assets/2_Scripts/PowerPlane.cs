@@ -1,6 +1,7 @@
 using UnityEngine;
-using System.Collections;
 using VInspector;
+using PrimeTween;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -9,40 +10,62 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class PowerPlane : MonoBehaviour
 {
-    [Header("Plane Points")]
-    public Transform startPoint;
-    public Transform endPoint;
-    
     [Header("Plane Settings")]
-    [Range(0.5f, 10f)]
-    [Tooltip("Width of the plane")]
-    public float planeWidth = 2f;
+    [SerializeField, Range(0.5f, 10f), Tooltip("Width of the plane")]
+    private float planeWidth = 2f;
     
-    [Range(0.1f, 5f)]
-    [Tooltip("Height/thickness of the plane")]
-    public float planeHeight = 0.2f;
+    [SerializeField, Range(0.1f, 5f), Tooltip("Height/thickness of the plane")]
+    private float planeHeight = 0.2f;
     
-    [Range(0.1f, 5f)]
-    [Tooltip("Time to fully activate or deactivate the plane")]
-    public float activationTime = 1.0f;
+    [SerializeField, Range(0.1f, 5f), Tooltip("Time to fully activate or deactivate the plane")]
+    private float animationTime = 1.0f;
+
+    [SerializeField, Tooltip("Ease function to use for the animation")]
+    private Ease animationEase = Ease.Linear;
+    [SerializeField, Tooltip("Whether to use a delay before changing the power plane state")]
+    private bool useDelay = false;
     
-    public Material planeMaterial;
+    [EnableIf("useDelay")]
+    [SerializeField, Range(0f, 10f), Tooltip("Delay in seconds before the plane changes state")]
+    private float stateChangeDelay = 0.5f;
+    [EndIf]
+    
+
     
     [Header("Runtime")]
-    [Tooltip("Toggle to activate/deactivate the plane (works in editor and play mode)")]
-    public bool isActive = false;
+    [SerializeField, Tooltip("Toggle to activate/deactivate the plane (works in editor and play mode)")]
+    private bool isActive;
     
-    // Components
-    private MeshFilter _meshFilter;
-    private MeshRenderer _meshRenderer;
-    private MeshCollider _meshCollider;
-    private Mesh _mesh;
+    [SerializeField, Tooltip("When toggled on, activation calls will turn the plane on. When toggled off, activation calls will turn the plane off.")]
+    private bool toggledState = true;
     
-    private Coroutine _activationCoroutine;
-    private float _currentAnimationProgress = 0f; // 0 = fully inactive, 1 = fully active
-    private bool _targetState = false; // The state we're animating towards
-    private bool _meshNeedsRebuild = true;
-    private bool _colliderNeedsUpdate = true; // New flag to ensure collider is updated
+    
+    [Header("References")]
+    [SerializeField, Tooltip("Starting point of the plane")]
+    private Transform startPoint;
+    
+    [SerializeField, Tooltip("Ending point of the plane")]
+    private Transform endPoint;
+    
+    [SerializeField, Tooltip("Reference to the visual GameObject that will be scaled between start and end points")]
+    private Transform planeVisualRef;
+    
+    [SerializeField, Tooltip("Material to apply to the plane visual")]
+    private Material planeMaterial;
+    
+    
+    private GameObject _planeObject;
+    private BoxCollider _boxCollider;
+    private Renderer _renderer;
+    
+    private Tween _activationTween;
+    private Tween _delayTween;
+    private float _currentLength;
+    
+    // HashSet to track which objects have activated the plane
+    private readonly HashSet<Object> _activatingObjects = new HashSet<Object>();
+    
+    
     
     private void Awake()
     {
@@ -51,434 +74,312 @@ public class PowerPlane : MonoBehaviour
     
     private void Start()
     {
+        // Only proceed if we have a valid visual reference
+        if (!planeVisualRef) return;
+        
         // Set initial state without animation
-        _currentAnimationProgress = isActive ? 1f : 0f;
-        _targetState = isActive;
-        UpdateMesh();
+        _currentLength = isActive ? GetFullLength() : 0f;
+        UpdatePlaneTransform(_currentLength);
         
-        // Force an immediate collider update
-        _colliderNeedsUpdate = true;
-        UpdateCollider();
-        
-        // Set collider and renderer state
+        // Set renderer state
         UpdateComponentStates();
     }
     
     private void Update()
     {
+        // Only proceed if we have a valid visual reference
+        if (!planeVisualRef) return;
+        
         // Only update if points exist and if positions have changed
-        if (startPoint != null && endPoint != null && 
+        if (startPoint && endPoint && 
            (startPoint.hasChanged || endPoint.hasChanged))
         {
-            _meshNeedsRebuild = true;
-            UpdateMesh();
+            if (isActive)
+            {
+                _currentLength = GetFullLength();
+            }
+            
+            UpdatePlaneTransform(_currentLength);
             startPoint.hasChanged = false;
             endPoint.hasChanged = false;
-        }
-        
-        // Check if collider needs update
-        if (_colliderNeedsUpdate)
-        {
-            UpdateCollider();
-            _colliderNeedsUpdate = false;
-        }
-    }
-    
-    private void LateUpdate()
-    {
-        // Extra safety check to make sure collider has mesh
-        if (isActive && _currentAnimationProgress > 0.01f && 
-            _meshCollider != null && _meshCollider.enabled &&
-            (_meshCollider.sharedMesh == null || _meshCollider.sharedMesh != _mesh))
-        {
-            UpdateCollider();
         }
     }
     
     private void OnEnable()
     {
-        if (_meshRenderer != null)
-            _meshRenderer.enabled = true;
-            
-        _meshNeedsRebuild = true;
-        _colliderNeedsUpdate = true;
+        if (_planeObject)
+            _planeObject.SetActive(true);
     }
     
     private void OnDisable()
     {
-        if (_meshRenderer != null)
-            _meshRenderer.enabled = false;
+        if (_planeObject)
+            _planeObject.SetActive(false);
     }
     
-    private void OnDestroy()
-    {
-        if (_mesh != null)
-        {
-            if (Application.isPlaying)
-                Destroy(_mesh);
-            else
-                DestroyImmediate(_mesh);
-                
-            _mesh = null;
-        }
-    }
     
-    private void InitializeComponents()
-    {
-        // Get or add MeshFilter
-        _meshFilter = GetComponent<MeshFilter>();
-        if (_meshFilter == null)
-            _meshFilter = gameObject.AddComponent<MeshFilter>();
-            
-        // Get or add MeshRenderer
-        _meshRenderer = GetComponent<MeshRenderer>();
-        if (_meshRenderer == null)
-            _meshRenderer = gameObject.AddComponent<MeshRenderer>();
-            
-        // Get or add MeshCollider
-        _meshCollider = GetComponent<MeshCollider>();
-        if (_meshCollider == null)
-            _meshCollider = gameObject.AddComponent<MeshCollider>();
-            
-        // Create mesh if needed
-        if (_mesh == null)
-        {
-            _mesh = new Mesh();
-            _mesh.name = "PlaneMesh_" + gameObject.name;
-            _meshFilter.sharedMesh = _mesh;
-        }
         
-        // Set material
-        if (planeMaterial != null && _meshRenderer != null)
-        {
-            if (Application.isPlaying)
-                _meshRenderer.material = planeMaterial;
-            else
-                _meshRenderer.sharedMaterial = planeMaterial;
-        }
-    }
-    
-    private void UpdateMesh()
-    {
-        if (startPoint == null || endPoint == null || _mesh == null)
-            return;
-            
-        // Skip mesh generation if not needed
-        if (!_meshNeedsRebuild && !Application.isPlaying)
-            return;
-            
-        // Calculate plane parameters
-        Vector3 direction = endPoint.position - startPoint.position;
-        float fullLength = direction.magnitude;
-        
-        // If points are too close, don't rebuild the mesh
-        if (fullLength < 0.001f)
-            return;
-            
-        direction.Normalize();
-        
-        // Calculate the actual length based on animation progress
-        float currentLength = fullLength * _currentAnimationProgress;
-        
-        // Calculate start position
-        Vector3 startPos = startPoint.position;
-        
-        // Create local axes for the plane orientation
-        Vector3 forward = direction;
-        Vector3 up = Vector3.up;
-        Vector3 right = Vector3.Cross(up, forward).normalized;
-        up = Vector3.Cross(forward, right).normalized;
-        
-        // Calculate half width and height for vertex positions
-        float halfWidth = planeWidth * 0.5f;
-        float halfHeight = planeHeight * 0.5f;
-        
-        // Create vertices
-        Vector3[] vertices = new Vector3[8];
-        
-        // Bottom vertices at start
-        vertices[0] = transform.InverseTransformPoint(startPos + right * -halfWidth - up * halfHeight);
-        vertices[1] = transform.InverseTransformPoint(startPos + right * halfWidth - up * halfHeight);
-        
-        // Top vertices at start
-        vertices[2] = transform.InverseTransformPoint(startPos + right * -halfWidth + up * halfHeight);
-        vertices[3] = transform.InverseTransformPoint(startPos + right * halfWidth + up * halfHeight);
-        
-        // Bottom vertices at end
-        vertices[4] = transform.InverseTransformPoint(startPos + forward * currentLength + right * -halfWidth - up * halfHeight);
-        vertices[5] = transform.InverseTransformPoint(startPos + forward * currentLength + right * halfWidth - up * halfHeight);
-        
-        // Top vertices at end
-        vertices[6] = transform.InverseTransformPoint(startPos + forward * currentLength + right * -halfWidth + up * halfHeight);
-        vertices[7] = transform.InverseTransformPoint(startPos + forward * currentLength + right * halfWidth + up * halfHeight);
-        
-        // Define triangles (indices for each face)
-        int[] triangles = new int[]
-        {
-            // Left side
-            0, 2, 4,
-            2, 6, 4,
-            
-            // Right side
-            1, 5, 3,
-            3, 5, 7,
-            
-            // Bottom
-            0, 4, 1,
-            1, 4, 5,
-            
-            // Top
-            2, 3, 6,
-            3, 7, 6,
-            
-            // Back
-            0, 1, 2,
-            1, 3, 2,
-            
-            // Front
-            4, 6, 5,
-            5, 6, 7
-        };
-        
-        // Define UVs
-        Vector2[] uvs = new Vector2[8];
-        uvs[0] = new Vector2(0, 0);
-        uvs[1] = new Vector2(1, 0);
-        uvs[2] = new Vector2(0, 1);
-        uvs[3] = new Vector2(1, 1);
-        uvs[4] = new Vector2(0, 0);
-        uvs[5] = new Vector2(1, 0);
-        uvs[6] = new Vector2(0, 1);
-        uvs[7] = new Vector2(1, 1);
-        
-        // Clear and set mesh data
-        _mesh.Clear();
-        _mesh.vertices = vertices;
-        _mesh.triangles = triangles;
-        _mesh.uv = uvs;
-        
-        // Recalculate normals and bounds
-        _mesh.RecalculateNormals();
-        _mesh.RecalculateBounds();
-        
-        // Flag that collider needs to be updated
-        _colliderNeedsUpdate = true;
-        
-        _meshNeedsRebuild = false;
-    }
-    
-    private void UpdateCollider()
-    {
-        if (_meshCollider == null || _mesh == null)
-            return;
-            
-        try
-        {
-            // Only update collider if plane is active
-            if (isActive && _currentAnimationProgress > 0.01f)
-            {
-                // Check if the mesh is valid for collider
-                if (_mesh.vertexCount > 0 && _mesh.triangles.Length > 0)
-                {
-                    // Disable temporarily - helps avoid PhysX errors
-                    bool wasEnabled = _meshCollider.enabled;
-                    _meshCollider.enabled = false;
-                    
-                    // Clear and set the mesh with a small delay
-                    _meshCollider.sharedMesh = null;
-                    
-                    // Force Unity to process this first
-                    if (Application.isPlaying)
-                    {
-                        // Use a coroutine in play mode
-                        StartCoroutine(DelayedSetColliderMesh(wasEnabled));
-                    }
-                    else
-                    {
-                        // Immediate in edit mode
-                        _meshCollider.sharedMesh = _mesh;
-                        
-                        // Only try to make convex if we have enough volume
-                        Bounds bounds = _mesh.bounds;
-                        float minDimension = Mathf.Min(bounds.size.x, bounds.size.y, bounds.size.z);
-                        
-                        if (minDimension > 0.05f)
-                        {
-                            _meshCollider.convex = true;
-                        }
-                        else
-                        {
-                            _meshCollider.convex = false;
-                        }
-                        
-                        _meshCollider.enabled = wasEnabled && isActive;
-                    }
-                }
-            }
-            else
-            {
-                _meshCollider.enabled = false;
-            }
-        }
-        catch (System.Exception e)
-        {
-            // Log error but don't crash
-            Debug.LogWarning("PowerPlane: Error updating collider: " + e.Message);
-            _meshCollider.enabled = false;
-        }
-    }
-    
-    // Coroutine to delay setting the collider mesh for better stability
-    private IEnumerator DelayedSetColliderMesh(bool wasEnabled)
-    {
-        // Wait a frame for Unity to process the null assignment
-        yield return null;
-        
-        if (_meshCollider == null || _mesh == null) 
-            yield break;
-            
-        try
-        {
-            // Now assign the actual mesh
-            _meshCollider.sharedMesh = _mesh;
-            
-            // Only try to make convex if we have enough volume
-            Bounds bounds = _mesh.bounds;
-            float minDimension = Mathf.Min(bounds.size.x, bounds.size.y, bounds.size.z);
-            
-            if (minDimension > 0.05f)
-            {
-                _meshCollider.convex = true;
-            }
-            else
-            {
-                _meshCollider.convex = false;
-            }
-            
-            // Re-enable if needed
-            _meshCollider.enabled = wasEnabled && isActive;
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning("PowerPlane: Error in delayed collider update: " + e.Message);
-        }
-    }
-    
-    private void UpdateComponentStates()
-    {
-        if (_meshRenderer != null)
-            _meshRenderer.enabled = isActive;
-            
-        if (_meshCollider != null)
-            _meshCollider.enabled = isActive && _currentAnimationProgress > 0.01f;
-            
-        // Ensure we update the collider when the component states change
-        _colliderNeedsUpdate = true;
-    }
+    #region Control Methods -----------------------------------------------------------------------------------
     
     [Button]
     public void TogglePlane()
     {
-        SetPlaneActive(!isActive);
+        // When called from inspector, use this component as the caller
+        TogglePlane(this);
+    }
+    
+    public void TogglePlane(Object caller)
+    {
+        if (_activatingObjects.Contains(caller))
+        {
+            DeactivatePlane(caller);
+        }
+        else
+        {
+            ActivatePlane(caller);
+        }
     }
     
     [Button]
     public void ActivatePlane()
     {
-        SetPlaneActive(true);
+        // When called from inspector, use this component as the caller
+        ActivatePlane(this);
+    }
+    
+    public void ActivatePlane(Object caller)
+    {
+        if (caller == null)
+        {
+            Debug.LogWarning("PowerPlane: Caller cannot be null when activating");
+            return;
+        }
+        
+        // Add to the set of activating objects
+        _activatingObjects.Add(caller);
+        
+        // Update the activation state based on toggledState
+        UpdateActivationState();
     }
     
     [Button]
     public void DeactivatePlane()
     {
-        SetPlaneActive(false);
+        // When called from inspector, use this component as the caller
+        DeactivatePlane(this);
     }
     
-    // Activate or deactivate the plane
-    public void SetPlaneActive(bool active)
+    public void DeactivatePlane(Object caller)
     {
-        // Check if the GameObject is active before starting a coroutine
-        if (!gameObject.activeInHierarchy && Application.isPlaying)
+        if (caller == null)
         {
-            Debug.LogWarning("Cannot toggle plane on inactive GameObject. Please activate the GameObject first.");
+            Debug.LogWarning("PowerPlane: Caller cannot be null when deactivating");
             return;
         }
         
-        // Skip if already in desired state
-        if (isActive == active && _currentAnimationProgress == (active ? 1f : 0f))
+        // Remove from the set of activating objects
+        _activatingObjects.Remove(caller);
+        
+        // Update the activation state
+        UpdateActivationState();
+    }
+    
+    private void UpdateActivationState()
+    {
+        bool shouldBeActive = _activatingObjects.Count > 0;
+        
+        // If toggledState is false, we invert the activation logic
+        if (!toggledState)
+            shouldBeActive = !shouldBeActive;
+            
+        SetPlaneActive(shouldBeActive);
+    }
+    
+    [Button]
+    public void ToggleGlobalState()
+    {
+        toggledState = !toggledState;
+        UpdateActivationState();
+    }
+    
+    #endregion Control Methods -----------------------------------------------------------------------------------
+    
+    
+    
+    #region Setup Methods --------------------------------------------------------------------------------------
+    
+    private void InitializeComponents()
+    {
+        if (planeVisualRef)
+        {
+            _planeObject = planeVisualRef.gameObject;
+            
+            // Get the existing renderer if any
+            _renderer = _planeObject.GetComponent<Renderer>();
+            if (!_renderer)
+            {
+                // Try to find renderer in children
+                _renderer = _planeObject.GetComponentInChildren<Renderer>();
+            }
+            
+            // Only use existing BoxCollider, don't add our own
+            _boxCollider = _planeObject.GetComponentInChildren<BoxCollider>();
+            
+            // Set material if provided
+            if (planeMaterial && _renderer)
+            {
+                if (Application.isPlaying)
+                    _renderer.material = planeMaterial;
+                else
+                    _renderer.sharedMaterial = planeMaterial;
+            }
+        }
+    }
+    
+    private float GetFullLength()
+    {
+        if (!startPoint || !endPoint)
+            return 0f;
+            
+        return Vector3.Distance(startPoint.position, endPoint.position);
+    }
+    
+    private void UpdatePlaneTransform(float length)
+    {
+        if (!startPoint || !endPoint || !planeVisualRef)
             return;
             
+        // Calculate direction and position
+        Vector3 startPos = startPoint.position;
+        Vector3 direction = endPoint.position - startPos;
+        
+        // If points are too close, set a minimal size
+        if (direction.magnitude < 0.001f)
+        {
+            planeVisualRef.localScale = new Vector3(planeWidth, planeHeight, 0.001f);
+            planeVisualRef.position = startPos;
+            
+            if (_boxCollider)
+            {
+                _boxCollider.size = Vector3.one;
+                _boxCollider.center = Vector3.zero;
+            }
+            
+            return;
+        }
+        
+        // Normalize direction
+        direction.Normalize();
+        
+        // Set the position to be at the midpoint of the visible part
+        Vector3 midPoint = startPos + direction * (length * 0.5f);
+        planeVisualRef.position = midPoint;
+        
+        // Set the rotation to look at the end point
+        planeVisualRef.rotation = Quaternion.LookRotation(direction);
+        
+        // Set the scale
+        planeVisualRef.localScale = new Vector3(planeWidth, planeHeight, length);
+        
+        // Update the collider if it exists
+        if (_boxCollider)
+        {
+            _boxCollider.size = Vector3.one; // The collider automatically scales with the transform
+            _boxCollider.center = Vector3.zero;
+        }
+    }
+    
+    private void UpdateComponentStates()
+    {
+        if (_renderer)
+            _renderer.enabled = isActive || _activationTween is { isAlive: true, progress: > 0 };
+    }
+    
+    private void SetPlaneActive(bool active)
+    {
+        // Skip if no visual reference is set
+        if (!planeVisualRef)
+        {
+            Debug.LogWarning("PowerPlane: Cannot activate/deactivate - no planeVisualRef assigned");
+            return;
+        }
+            
+        // Skip if already in desired state and no animation is running
+        if (isActive == active && !_activationTween.isAlive && !_delayTween.isAlive)
+            return;
+            
+        // Stop any running animations
+        _activationTween.Stop();
+        _delayTween.Stop();
+        
         // Update the target state
-        _targetState = active;
         isActive = active;
+        
+        // Make sure the renderer is enabled during animation
+        if (_renderer)
+            _renderer.enabled = true;
         
         // Only animate in play mode
         if (Application.isPlaying && gameObject.activeInHierarchy)
         {
-            // If there's no active animation, start a new one
-            if (_activationCoroutine == null)
+            // If using delay, wait before starting the state change
+            if (useDelay && stateChangeDelay > 0)
             {
-                _activationCoroutine = StartCoroutine(AnimatePlane());
+                // Create delay tween
+                _delayTween = Tween.Delay(stateChangeDelay)
+                    .OnComplete(() => {
+                        // Start the state change animation
+                        StartStateChangeAnimation(active);
+                    });
             }
-            // Otherwise, the existing animation will continue but with the new target state
+            else
+            {
+                // No delay, start the state change immediately
+                StartStateChangeAnimation(active);
+            }
         }
         else
         {
             // Immediately set the state without animation
-            _currentAnimationProgress = active ? 1f : 0f;
-            _meshNeedsRebuild = true;
-            UpdateMesh();
+            _currentLength = active ? GetFullLength() : 0f;
+            UpdatePlaneTransform(_currentLength);
             UpdateComponentStates();
         }
     }
     
-    // Animate the plane activation/deactivation
-    private IEnumerator AnimatePlane()
+    private void StartStateChangeAnimation(bool active)
     {
-        // Show the renderer during animation
-        if (_meshRenderer != null)
-            _meshRenderer.enabled = true;
-        
-        // Get a smaller step size for smoother animation
-        float smallStep = 0.05f;
-        
-        // Animate until we reach the target state
-        while ((_targetState && _currentAnimationProgress < 1f) || (!_targetState && _currentAnimationProgress > 0f))
-        {
-            // Calculate the current target value
-            float targetValue = _targetState ? 1f : 0f;
-            
-            // Calculate step based on the direction we're going, with a limit
-            float step = (targetValue - _currentAnimationProgress) > 0 ? 
-                Mathf.Min(Time.deltaTime / activationTime, smallStep) : 
-                Mathf.Max(-Time.deltaTime / activationTime, -smallStep);
-                
-            // Update progress
-            _currentAnimationProgress = Mathf.Clamp01(_currentAnimationProgress + step);
-            
-            // Mark mesh for rebuild and update
-            _meshNeedsRebuild = true;
-            UpdateMesh();
-            
-            // Wait for next frame
-            yield return null;
-        }
-        
-        // Set final state
-        UpdateComponentStates();
-        
-        // Force one final collider update
-        _colliderNeedsUpdate = true;
-        
-        _activationCoroutine = null;
+        float fullLength = GetFullLength();
+        _activationTween = Tween.Custom(
+            startValue: _currentLength,
+            endValue: active ? fullLength : 0f,
+            duration: animationTime,
+            ease: animationEase,
+            onValueChange: val => {
+                _currentLength = val;
+                UpdatePlaneTransform(val);
+            }
+        );
+        _activationTween.OnComplete(UpdateComponentStates);
     }
     
-    private void OnValidate()
+
+    
+    #endregion Setup Methods --------------------------------------------------------------------------------------
+
+    
+    #region Editor -----------------------------------------------------------------------------------
+
+        private void OnValidate()
     {
-        // Mark mesh for rebuild
-        _meshNeedsRebuild = true;
+        // If the visual reference changed, reinitialize
+        if (planeVisualRef && (_planeObject == null || planeVisualRef.gameObject != _planeObject))
+        {
+            _planeObject = null; // Force reinitialization
+            InitializeComponents();
+        }
         
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         // Queue delayed update to avoid "SendMessage cannot be called during" errors
         if (!Application.isPlaying)
         {
@@ -486,35 +387,22 @@ public class PowerPlane : MonoBehaviour
             {
                 if (this == null || gameObject == null) return;
                 
-                InitializeComponents();
-                
-                // Set proper animation progress based on current state
-                _currentAnimationProgress = isActive ? 1f : 0f;
-                _targetState = isActive;
-                
-                UpdateMesh();
-                UpdateComponentStates();
+                // Update based on current state
+                if (planeVisualRef)
+                {
+                    _currentLength = isActive ? GetFullLength() : 0f;
+                    UpdatePlaneTransform(_currentLength);
+                    UpdateComponentStates();
+                }
             };
         }
-        #endif
-    }
-    
-    // Public method to force collider refresh
-    [Button]
-    public void RefreshCollider()
-    {
-        if (_mesh != null && _meshCollider != null)
-        {
-            _colliderNeedsUpdate = true;
-            UpdateCollider();
-        }
+#endif
     }
     
     #if UNITY_EDITOR
-    // Draw gizmos to show the plane in Scene view
     private void OnDrawGizmos()
     {
-        if (startPoint == null || endPoint == null)
+        if (!startPoint || !endPoint)
             return;
             
         // Draw a line showing the plane path
@@ -525,25 +413,34 @@ public class PowerPlane : MonoBehaviour
         Gizmos.DrawSphere(startPoint.position, 0.2f);
         Gizmos.DrawSphere(endPoint.position, 0.2f);
         
-        // Draw the plane bounds if inactive or in editor
-        if (!isActive || !Application.isPlaying)
-        {
-            // Draw wireframe
-            Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
-            Vector3 direction = endPoint.position - startPoint.position;
-            float distance = direction.magnitude;
-            Vector3 center = startPoint.position + direction * 0.5f;
-            
-            // Draw plane bounds
-            Matrix4x4 originalMatrix = Gizmos.matrix;
-            Gizmos.matrix = Matrix4x4.TRS(
-                center,
-                Quaternion.LookRotation(direction),
-                Vector3.one
-            );
-            Gizmos.DrawWireCube(Vector3.zero, new Vector3(planeWidth, planeHeight, distance));
-            Gizmos.matrix = originalMatrix;
-        }
+        // Draw the plane bounds
+        Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
+        Vector3 direction = endPoint.position - startPoint.position;
+        float fullLength = direction.magnitude;
+        Vector3 center = startPoint.position + direction.normalized * (isActive ? fullLength * 0.5f : 0f);
+        
+        // Draw plane bounds
+        Matrix4x4 originalMatrix = Gizmos.matrix;
+        Gizmos.matrix = Matrix4x4.TRS(
+            center,
+            Quaternion.LookRotation(direction.normalized),
+            new Vector3(planeWidth, planeHeight, isActive ? fullLength : 0f)
+        );
+        Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+        Gizmos.matrix = originalMatrix;
+        
+        // Show visual indicator for delay setting
+        // if (useDelay && stateChangeDelay > 0)
+        // {
+        //     Gizmos.color = Color.yellow;
+        //     Gizmos.DrawWireSphere(startPoint.position, 0.25f);
+        // }
     }
     #endif
+    
+
+    #endregion Editor -----------------------------------------------------------------------------------
+    
+    
+
 }
