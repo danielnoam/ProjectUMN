@@ -11,14 +11,14 @@ using UnityEditor;
 public class PowerPlane : MonoBehaviour
 {
     [Header("Plane Settings")]
-    [SerializeField, Range(0.5f, 10f), Tooltip("Width of the plane")]
+    [SerializeField, Range(0.1f, 15f), Tooltip("Width of the plane")]
     private float planeWidth = 2f;
     
-    [SerializeField, Range(0.1f, 5f), Tooltip("Height/thickness of the plane")]
+    [SerializeField, Range(0.1f, 15f), Tooltip("Height/thickness of the plane")]
     private float planeHeight = 0.2f;
     
     [SerializeField, Range(0.1f, 5f), Tooltip("Time to fully activate or deactivate the plane")]
-    private float animationTime = 1.0f;
+    private float animationTime = 2.0f;
 
     [SerializeField, Tooltip("Ease function to use for the animation")]
     private Ease animationEase = Ease.Linear;

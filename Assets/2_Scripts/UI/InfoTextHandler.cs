@@ -102,9 +102,10 @@ public class InfoTextHandler : MonoBehaviour
         musicAuthorText.alpha = 0f;
         
         _textSequence = Sequence.Create()
+            
             .ChainDelay(initialDelay)
+            
             // Show text
-            .ChainCallback(() => { _testNameWriter.RestartWriter(); Debug.Log("ShowInfoText"); })
             .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
             .ChainDelay(textTransitionDelay)
             .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
@@ -119,8 +120,7 @@ public class InfoTextHandler : MonoBehaviour
             // Wait between show and hide
             .ChainDelay(displayDuration)
             
-            // Hide text - this now happens at runtime with current alpha values
-            .ChainCallback(() => { Debug.Log("HideInfoText"); })
+            // Hide text 
             .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: textFadeOutDuration))
             .ChainDelay(textTransitionDelay)
             .Chain(Tween.Alpha(testDescriptionText, endValue: 0f, duration: textFadeOutDuration))
