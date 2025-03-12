@@ -2,18 +2,20 @@ using UnityEngine;
 using PrimeTween;
 using TMPEffects.Components;
 using TMPro;
+using UnityEngine.Serialization;
 using VInspector;
 
 public class InfoTextHandler : MonoBehaviour
 {
 
     [Header("Animation")] 
-    [SerializeField] private float fadeInTime = 2f;
-    [SerializeField] private float fadeOutTime = 1f;
-    [SerializeField] private float startDelay = 2f;
-    [SerializeField] private float delayBetweenFadesTime = 2f;
+    [SerializeField] private float textFadeInDuration = 2f;
+    [SerializeField] private float textFadeOutDuration = 1f;
+    [SerializeField] private float textTransitionDelay = 2f;
+    [SerializeField] private float initialDelay = 2f;
+    [SerializeField] private float displayDuration = 1f;
+    [SerializeField,ReadOnly] private float animationTime;
     
-
     [Header("References")] 
     [SerializeField] private PlayerStateMachine player;
     [SerializeField] private TextMeshProUGUI testNameText;
@@ -27,7 +29,6 @@ public class InfoTextHandler : MonoBehaviour
     private TMPWriter _musicNameWriter;
     private TMPWriter _musicAuthorWriter;
     
-
     private void Awake()
     {
         _testNameWriter = testNameText.GetComponent<TMPWriter>();
@@ -66,15 +67,25 @@ public class InfoTextHandler : MonoBehaviour
             player.onPlayerSpawned.RemoveListener(PlayTextAnimation);
             player.onPlayerOpenedMenu.RemoveListener(ForceHideAnimation);
         }
-        
     }
     
     private void OnTestLoaded(SOTest test)
     {
         testNameText.text = $"{test.GetName()}";
         testDescriptionText.text = $"{test.GetDescription()}";
-        musicNameText.text = $"{TestManager.Instance.CurrentTheme.aoName}";
-        musicAuthorText.text = $"{TestManager.Instance.CurrentTheme.aoAuthor}";
+        musicNameText.text = $"'{test.GetTheme().aoName}'";
+        musicAuthorText.text = $"By {test.GetTheme().aoAuthor}";
+    }
+
+    private float GetAnimationTime()
+    {
+        // Initial delay + time for all 4 fade ins with delays between them
+        float totalTime = initialDelay + (textFadeInDuration * 4) + (textTransitionDelay * 3);
+    
+        // Delay before hide + time for all 4 fade outs with delays between them
+        totalTime += displayDuration + (textFadeOutDuration * 4) + (textTransitionDelay * 3);
+    
+        return totalTime;
     }
 
     [Button]
@@ -85,14 +96,38 @@ public class InfoTextHandler : MonoBehaviour
             _textSequence.Stop();
         }
         
-
+        testNameText.alpha = 0f;
+        testDescriptionText.alpha = 0f;
+        musicNameText.alpha = 0f;
+        musicAuthorText.alpha = 0f;
+        
         _textSequence = Sequence.Create()
-            .ChainDelay(startDelay)
-            .Chain(ShowInfoText())
-            .ChainDelay(delayBetweenFadesTime)
-            .Chain(HideInfoText())
+            .ChainDelay(initialDelay)
+            // Show text
+            .ChainCallback(() => { _testNameWriter.RestartWriter(); Debug.Log("ShowInfoText"); })
+            .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
+            .ChainDelay(textTransitionDelay)
+            .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
+            .ChainDelay(textTransitionDelay)
+            .ChainCallback(() => { _musicNameWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(musicNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
+            .ChainDelay(textTransitionDelay)
+            .ChainCallback(() => { _musicAuthorWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(musicAuthorText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
             
-            ;
+            // Wait between show and hide
+            .ChainDelay(displayDuration)
+            
+            // Hide text - this now happens at runtime with current alpha values
+            .ChainCallback(() => { Debug.Log("HideInfoText"); })
+            .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: textFadeOutDuration))
+            .ChainDelay(textTransitionDelay)
+            .Chain(Tween.Alpha(testDescriptionText, endValue: 0f, duration: textFadeOutDuration))
+            .ChainDelay(textTransitionDelay)
+            .Chain(Tween.Alpha(musicNameText, endValue: 0f, duration: textFadeOutDuration))
+            .ChainDelay(textTransitionDelay)
+            .Chain(Tween.Alpha(musicAuthorText, endValue: 0f, duration: textFadeOutDuration));
     }
 
     [Button]
@@ -104,9 +139,13 @@ public class InfoTextHandler : MonoBehaviour
         }
         
         _textSequence = Sequence.Create()
-            .Group(HideInfoText())
-            
-            ;
+            .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: textFadeOutDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .Chain(Tween.Alpha(testDescriptionText, endValue: 0f, duration: textFadeOutDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .Chain(Tween.Alpha(musicNameText, endValue: 0f, duration: textFadeOutDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .Chain(Tween.Alpha(musicAuthorText, endValue: 0f, duration: textFadeOutDuration/2));
     }
     
     [Button]
@@ -118,45 +157,23 @@ public class InfoTextHandler : MonoBehaviour
         }
         
         _textSequence = Sequence.Create()
-            .Group(ShowInfoText())
+            .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .ChainCallback(() => { _musicNameWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(musicNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
+            .ChainDelay(textTransitionDelay/2)
+            .ChainCallback(() => { _musicAuthorWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(musicAuthorText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2));
+    }
 
-            ;
-    }
-    
-    
-    private Sequence ShowInfoText()
+
+#if UNITY_EDITOR
+    private void OnValidate()
     {
-        Sequence showSequence = Sequence.Create()
-                .ChainCallback(() => { _testNameWriter.RestartWriter(); Debug.Log("ShowInfoText");})
-                .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: fadeInTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .ChainCallback(() => { _testDescriptionWriter.RestartWriter();})
-                .Group(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: fadeInTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .ChainCallback(() => { _musicNameWriter.RestartWriter();})
-                .Group(Tween.Alpha(musicNameText, startValue: 0f, endValue: 1f, duration: fadeInTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .ChainCallback(() => { _musicAuthorWriter.RestartWriter();})
-                .Group(Tween.Alpha(musicAuthorText, startValue: 0f, endValue: 1f, duration: fadeInTime/2))
-            ;
-        
-        return  showSequence;
+        animationTime = GetAnimationTime();
     }
-    
-    private Sequence HideInfoText()
-    {
-        Sequence hideSequence = Sequence.Create()
-                .ChainCallback(() => { Debug.Log("HideInfoText");})
-                .Group(Tween.Alpha(testNameText, startValue: testNameText.alpha, endValue: 0f, duration: fadeOutTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(testDescriptionText, startValue: testDescriptionText.alpha, endValue: 0f, duration: fadeOutTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(musicNameText, startValue: musicNameText.alpha, endValue: 0f, duration: fadeOutTime/2))
-                .ChainDelay(delayBetweenFadesTime/4)
-                .Group(Tween.Alpha(musicAuthorText, startValue: musicAuthorText.alpha, endValue: 0f, duration: fadeOutTime/2))
-            
-            ;
-        ;
-        return hideSequence;
-    }
+#endif
 }

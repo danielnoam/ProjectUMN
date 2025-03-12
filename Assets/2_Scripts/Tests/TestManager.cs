@@ -278,7 +278,7 @@ public class TestManager : MonoBehaviour
         currentTest = tests[testIndex];
         currentEnvironment = Instantiate(currentTest.GetPrefab());
         currentTheme = currentTest.GetTheme();
-        currentTheme?.Play(_audioSource);
+        currentTheme?.CrossFade(_audioSource,3f,3f);
 
         if (currentTest.HasRobot()) // The new test has a robot in it
         {

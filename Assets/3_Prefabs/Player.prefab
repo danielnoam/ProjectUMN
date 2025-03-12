@@ -1665,10 +1665,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f18510d5e6276e54c8dd09dfb53fa24f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fadeInTime: 2
-  fadeOutTime: 1
-  startDelay: 2
-  delayBetweenFadesTime: 2
+  textFadeInDuration: 0.7
+  textFadeOutDuration: 0.3
+  textTransitionDelay: 1
+  initialDelay: 2
+  displayDuration: 0.5
+  animationTime: 12.5
   player: {fileID: 7928860610601458710}
   testNameText: {fileID: 189160361643950420}
   testDescriptionText: {fileID: 4404764537264227128}

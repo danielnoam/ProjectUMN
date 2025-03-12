@@ -37,9 +37,14 @@ public class SOAudioEvent : ScriptableObject
     
 
 
+
+
+
+    #region Play AE ----------------------------------------------------------------------------
+
     public void Play(AudioSource source)
     {
-        if (clips.Length == 0) // Make sure there are clips
+        if (clips.Length == 0) 
         {
             #if UNITY_EDITOR
             Debug.Log("No clips found");
@@ -47,14 +52,79 @@ public class SOAudioEvent : ScriptableObject
             return;
         }
         
-        // Set settings to audio source and play
+
         SetAudioSourceSettings(source);
         source.Play();
     }
+
+    public void Play(AudioSource source, float delay)
+    {
+        if (clips.Length == 0) 
+        {
+            #if UNITY_EDITOR
+            Debug.Log("No clips found");
+            #endif
+            return;
+        }
+        
+        SetAudioSourceSettings(source);
+        source.PlayDelayed(delay);
+    }
+    
+    
+    public void CrossFade(AudioSource source, float fadeDuration, float delay = 0)
+    {
+        if (clips.Length == 0) 
+        {
+#if UNITY_EDITOR
+            Debug.Log("No clips found");
+#endif
+            return;
+        }
+    
+        // Get or add AudioFadeController to the AudioSource's GameObject
+        AudioFadeController controller = source.gameObject.GetComponent<AudioFadeController>();
+        if (controller == null)
+        {
+            controller = source.gameObject.AddComponent<AudioFadeController>();
+        }
+    
+        // Store the current volume to return to after fade completes
+        float targetVolume = Random.Range(volume.minValue, volume.maxValue);
+    
+        // If audio is already playing, start full crossfade
+        if (source.isPlaying)
+        {
+            // Start at current volume
+            float startVolume = source.volume;
+        
+            // Choose the new clip
+            AudioClip newClip = clips[Random.Range(0, clips.Length)];
+            controller.CrossFade(source, newClip, this, fadeDuration, startVolume, targetVolume, delay);
+        }
+        else
+        {
+            // Just fade in the new clip
+            SetAudioSourceSettings(source);
+            source.volume = 0f;
+        
+            if (delay > 0f)
+            {
+                source.PlayDelayed(delay);
+                controller.FadeInDelayed(source, fadeDuration, targetVolume, delay);
+            }
+            else
+            {
+                source.Play();
+                controller.FadeIn(source, fadeDuration, targetVolume);
+            }
+        }
+    }
+    
     
     public void PlayAtPoint(Vector3 position = new Vector3())
     {
-        if (clips.Length == 0) // Make sure there are clips
+        if (clips.Length == 0)
         {
             #if UNITY_EDITOR
             Debug.Log("No clips found");
@@ -71,35 +141,14 @@ public class SOAudioEvent : ScriptableObject
         Destroy(source.gameObject, source.clip.length);
     }
 
-    public void PlayDelayed(AudioSource source, float delay)
-    {
-        if (clips.Length == 0) // Make sure there are clips
-        {
-            #if UNITY_EDITOR
-            Debug.Log("No clips found");
-            #endif
-            return;
-        }
-        
-        SetAudioSourceSettings(source);
-        source.PlayDelayed(delay);
-    }
+
+    #endregion Play AE ----------------------------------------------------------------------------
+
+
+
     
-    public void Stop(AudioSource source)
-    {
-        source.Stop();
-    }
-
-    public void Pause(AudioSource source)
-    {
-        source.Pause();
-    }
-
-    public void Continue(AudioSource source)
-    {
-        source.UnPause();
-    }
-
+    #region Autdio source controll ------------------------------------------------------------------------------------------------
+    
     public void SetAudioSourceSettings(AudioSource source)
     {
         source.clip = clips[Random.Range(0, clips.Length)];
@@ -124,14 +173,33 @@ public class SOAudioEvent : ScriptableObject
         }
     }
     
-    
+    public void Stop(AudioSource source)
+    {
+        source.Stop();
+    }
+
+    public void Pause(AudioSource source)
+    {
+        source.Pause();
+    }
+
+    public void Continue(AudioSource source)
+    {
+        
+        source.UnPause();
+    }
+
+    #endregion Autdio source controll ------------------------------------------------------------------------------------------------
 
     
     
 }
 
 
+#region Editor ------------------------------------------------------------------------------------------------
 #if UNITY_EDITOR
+
+
 // Preview button
 [CustomEditor(typeof(SOAudioEvent), true)]
 public class AudioEventEditor : Editor
@@ -170,3 +238,8 @@ public class AudioEventEditor : Editor
     }
 }
 #endif
+#endregion Editor ------------------------------------------------------------------------------------------------
+
+    
+    
+

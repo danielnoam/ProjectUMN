@@ -123,7 +123,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float RotationMismatch { get; private set; }
     public bool IsRotatingToTarget { get; private set; }
     
-    private bool _lockSprinting;
+
     private float _defaultCharacterHeight;
     private Vector3 _defaultCharacterCenter;
     private readonly float _crouchCharacterHeight = 1.2333f;
@@ -290,14 +290,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private float CalculateTargetSpeed(float movementIntensity)
     {
-        _lockSprinting = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
+        bool lockSprintGait = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
 
         if (movementIntensity < InputHandler.MovementInputThreshold)
             return 0f;
 
         // Determine base speed based on input and state
         float baseSpeed;
-        if (!_lockSprinting)
+        if (!lockSprintGait)
         {
             if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
                 baseSpeed = sprintSpeed;
