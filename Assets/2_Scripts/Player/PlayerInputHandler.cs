@@ -10,9 +10,6 @@ public class InputSettings
     public bool toggleCrouch = false;
     public bool toggleSprint = false;
     public bool toggleAimInput = false;
-    [Tooltip("Minimum movement input to register sprint")]
-    [Range(0f, 1f)] public float sprintInputThreshold = 0.01f;
-    [Tooltip("Minimum movement input to register movement")] 
     [Range(0f, 1f)] public float movementInputThreshold = 0.01f;
     [Range(0.1f, 2f)] public float mouseSensitivity = 1f;
     [Range(0.1f, 2f)] public float freeCameraSensitivity = 1f;
@@ -36,11 +33,9 @@ public class PlayerInputHandler : MonoBehaviour
     private bool _toggleSprint;
     private bool _toggleAimInput;
     private float _mouseSensitivity;
-    private float _sprintInputThreshold;
     private float _movementInputThreshold;
     private float _freeCameraSensitivity;
     private float _aimCameraSensitivity;
-    
     private float _jumpBufferCounter;
     private float _interactBufferCounter;
     private float _commandRobotBufferCounter;
@@ -59,7 +54,6 @@ public class PlayerInputHandler : MonoBehaviour
     public bool AimInput { get; private set; }
     public bool ToggleMenuInput { get; private set; }
     public float MovementInputThreshold => _movementInputThreshold;
-    public float SprintInputThreshold => _sprintInputThreshold;
     public float MouseSensitivity => _mouseSensitivity;
     public float FreeCameraSensitivity => _freeCameraSensitivity;
     public float AimCameraSensitivity => _aimCameraSensitivity;
@@ -119,7 +113,6 @@ public class PlayerInputHandler : MonoBehaviour
         _toggleSprint = _activeSettings.toggleSprint;
         _toggleAimInput = _activeSettings.toggleAimInput;
         _mouseSensitivity = _activeSettings.mouseSensitivity;
-        _sprintInputThreshold = _activeSettings.sprintInputThreshold;
         _movementInputThreshold = _activeSettings.movementInputThreshold;
         _freeCameraSensitivity = _activeSettings.freeCameraSensitivity;
         _aimCameraSensitivity = _activeSettings.aimCameraSensitivity;

@@ -72,52 +72,78 @@ public class PlayerAnimationHandler : MonoBehaviour
         _animator.SetInteger(_stateHash, (int)currentAnimState);
     }
     
-    private void UpdateMovementAnimation()
+private void UpdateMovementAnimation()
+{
+    // Get current movement data
+    Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
+    float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
+    bool isAiming = _stateMachine.IsAiming;
+
+    // Initialize animation values
+    float horizontalValue = 0f;
+    float verticalValue = 0f;
+
+    // Handle movement animation if we're actually moving
+    if (moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
     {
-        // Get current movement data
-        Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
-        float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
-        bool isAiming = _stateMachine.IsAiming;
-    
-        // Initialize animation values
-        float horizontalValue = 0f;
-        float verticalValue = 0f;
-    
-        // Handle movement animation if we're actually moving
-        if (moveDirection.sqrMagnitude > 0.01f && activeSpeed > 0.01f)
+        // Get local movement direction relative to player's facing direction
+        Vector3 localMoveDir = transform.InverseTransformDirection(moveDirection);
+        if (localMoveDir.sqrMagnitude > 0.01f)
         {
-            // Get local movement direction relative to player's facing direction
-            Vector3 localMoveDir = transform.InverseTransformDirection(moveDirection);
-            if (localMoveDir.sqrMagnitude > 0.01f)
+            localMoveDir.Normalize();
+            
+            // Set base horizontal/vertical values
+            horizontalValue = localMoveDir.x;
+            verticalValue = localMoveDir.z;
+            
+            // When aiming, we might want to enhance diagonal movement
+            if (isAiming && Mathf.Abs(horizontalValue) > 0.1f && Mathf.Abs(verticalValue) > 0.1f)
             {
-                localMoveDir.Normalize();
-            
-                // Set base horizontal/vertical values
-                horizontalValue = localMoveDir.x;
-                verticalValue = localMoveDir.z;
-            
-                // When aiming, we might want to enhance diagonal movement
-                if (isAiming && Mathf.Abs(horizontalValue) > 0.1f && Mathf.Abs(verticalValue) > 0.1f)
-                {
-                    float correctionFactor = 1.414f; // sqrt(2) for diagonal correction
-                    horizontalValue *= correctionFactor;
-                    verticalValue *= correctionFactor;
+                float correctionFactor = 1.414f; // sqrt(2) for diagonal correction
+                horizontalValue *= correctionFactor;
+                verticalValue *= correctionFactor;
                 
-                    // Clamp values to avoid exceeding range
-                    horizontalValue = Mathf.Clamp(horizontalValue, -1f, 1f);
-                    verticalValue = Mathf.Clamp(verticalValue, -1f, 1f);
-                }
+                // Clamp values to avoid exceeding range
+                horizontalValue = Mathf.Clamp(horizontalValue, -1f, 1f);
+                verticalValue = Mathf.Clamp(verticalValue, -1f, 1f);
             }
         }
-    
-        // Calculate moveType value based on speed (linear)
-        float moveType = CalculateMoveTypeValue(activeSpeed);
-    
-        // Apply values to animator with smoothing
-        _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
-        _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
-        _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime, Time.deltaTime);
+
+        // Compensate for direction multipliers when strafing or moving backward
+        if (isAiming)
+        {
+            // Check if moving backward
+            if (verticalValue < -0.3f)
+            {
+                // Calculate approximate compensation for backward movement
+                float backwardFactor = Mathf.Abs(verticalValue);
+                float compensationFactor = 1f / Mathf.Lerp(1f, _stateMachine.backwardSpeedMultiplier, backwardFactor);
+                
+                // Apply compensation to movement type calculation but keep direction values
+                activeSpeed *= compensationFactor;
+            }
+            
+            // Check if strafing
+            if (Mathf.Abs(horizontalValue) > 0.3f)
+            {
+                // Calculate approximate compensation for strafing
+                float strafeFactor = Mathf.Abs(horizontalValue);
+                float compensationFactor = 1f / Mathf.Lerp(1f, _stateMachine.strafeSpeedMultiplier, strafeFactor);
+                
+                // Apply compensation to movement type calculation but keep direction values
+                activeSpeed *= compensationFactor;
+            }
+        }
     }
+
+    // Calculate moveType value based on compensated speed
+    float moveType = CalculateMoveTypeValue(activeSpeed);
+
+    // Apply values to animator with smoothing
+    _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
+    _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
+    _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime, Time.deltaTime);
+}
 
     private void UpdateRotationAnimation()
     {

@@ -301,47 +301,51 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         float baseSpeed;
         if (!lockSprintGait)
         {
-            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+            if (InputHandler.SprintInput)
             {
-                baseSpeed = sprintSpeed;
+                baseSpeed = Mathf.Lerp(runSpeed, sprintSpeed, movementIntensity);
             }
             else
             {
-                baseSpeed = runSpeed;
+                baseSpeed = Mathf.Lerp(0, runSpeed, movementIntensity);
             }
                 
         }
         else
         {
-            if (InputHandler.SprintInput && movementIntensity > InputHandler.SprintInputThreshold)
+            if (InputHandler.SprintInput)
             {
-                baseSpeed = runSpeed;
+                baseSpeed = Mathf.Lerp(walkSpeed, runSpeed, movementIntensity);
             }
             else
             {
-                baseSpeed = walkSpeed;
+                baseSpeed = Mathf.Lerp(0, walkSpeed, movementIntensity);
             }
                 
         }
     
         // Apply direction multipliers based on movement input
         float directionMultiplier = 1.0f;
-    
-        // Check for backward movement (negative Y input)
-        if (InputHandler.MovementInput.y < -0.3f)
+
+        if (IsAiming)
         {
-            // More negative Y = more backward movement effect
-            float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
-            directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
-        }
+            // Check for backward movement (negative Y input)
+            if (InputHandler.MovementInput.y < -0.3f)
+            {
+                // More negative Y = more backward movement effect
+                float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
+                directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
+            }
     
-        // Check for strafing movement (X input)
-        if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
-        {
-            // Stronger X input = more strafe effect
-            float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
-            directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
+            // Check for strafing movement (X input)
+            if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
+            {
+                // Stronger X input = more strafe effect
+                float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
+                directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
+            }
         }
+
     
         // Return the modified speed
         return baseSpeed * directionMultiplier;
@@ -994,7 +998,18 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  $"Interactable: {CurrentInteractable}\n" +
                                  $"AimedInteractable: {CurrentAimedInteractable}\n" +
                                  $"ActiveHorizontalSpeed: {ActiveHorizontalVelocity}\n" +
-                                 $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n";
+                                 $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n" + 
+                                 
+                                 // Get input
+                                 $"\nMovementInput: {InputHandler.MovementInput}\n" +
+                                 $"AimInput: {InputHandler.AimInput}\n" +
+                                 $"CommandRobotInput: {InputHandler.CommandRobotInput}\n" +
+                                 $"InteractInput: {InputHandler.InteractInput}\n"
+                                 
+                                 
+                                 
+                                 
+                                 ;
             }
     
     
