@@ -69,11 +69,12 @@ public class PlayerInMenuState : PlayerBaseState
         MenuController.SelectPage(page, true);
     }
 
-    public void SetupPages(MenuController menuController, MenuPage pauseCategory, MenuPage debugCategory)
+    public void SetupPages(MenuController menuController ,MenuPage startPage, MenuPage pausePage, MenuPage debugPage)
     {
         MenuController = menuController;
-        PausePage = pauseCategory;
-        DebugPage = debugCategory;
+        StartPage = startPage;
+        PausePage = pausePage;
+        DebugPage = debugPage;
     }
 
     public void ExitMenu()

@@ -473,7 +473,7 @@ public class MenuPage : MonoBehaviour
                         endValue: 1f, 
                         selectedAnimationDuration, 
                         ease: moveInEase, 
-                        startDelay: i * selectedAnimationDelay
+                        startDelay: i * selectedAnimationDelay + -0.5f
                     ));
                 }
             }

@@ -26,7 +26,7 @@ public class MenuController : MonoBehaviour
     {
         if (player != null && player.InMenuState != null)
         {
-            player.InMenuState.SetupPages(this, pausePage, debugPage);
+            player.InMenuState.SetupPages(this,startPage, pausePage, debugPage);
         }
     }
 

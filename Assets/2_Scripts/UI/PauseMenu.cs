@@ -1,9 +1,12 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class PauseMenu : MonoBehaviour
 {
     [Header("Buttons")]
+    [SerializeField] private Button resumeButton;
+    [SerializeField] private Button startMenuButton;
     [SerializeField] private Button debugMenuButton;
     [SerializeField] private Button restartTestButton; 
     [SerializeField] private Button quitSimulationButton;
@@ -15,6 +18,18 @@ public class PauseMenu : MonoBehaviour
     {
         if (TestManager.Instance)
         {
+            resumeButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.ExitMenu();
+            });
+            
+            
+            startMenuButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.SelectPage(player.InMenuState.StartPage);
+            });
+            
+            
             debugMenuButton.onClick.AddListener(() =>
             {
                 player.InMenuState.SelectPage(player.InMenuState.DebugPage);

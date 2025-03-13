@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 using VInspector;
 
 [SelectionBase]
@@ -13,12 +15,14 @@ public class TestManager : MonoBehaviour
     public static TestManager Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private bool debugMode = true;
     [SerializeField] private SOTest[] tests;
+    [SerializeField] private GameObject playerPrefab;
+    [SerializeField] private GameObject robotPrefab;
+    [SerializeField] private bool debugMode = true;
+    [SerializeField] private TextMeshProUGUI debugTextRight;
+    [SerializeField] private TextMeshProUGUI debugTextLeft;
     
     [Header("Current test")]
-    [SerializeField, ReadOnly] private GameObject playerPrefab;
-    [SerializeField, ReadOnly] private GameObject robotPrefab;
     [SerializeField, ReadOnly] private SOTest currentTest;
     [SerializeField, ReadOnly] private GameObject currentEnvironment;
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
@@ -42,7 +46,8 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
-    private  AudioSource _audioSource;
+    private AudioSource _audioSource;
+    private CameraManager _cameraManager;
     
     
     
@@ -63,36 +68,46 @@ public class TestManager : MonoBehaviour
     private void Start()
     {
         currentPlayer = FindFirstObjectByType<PlayerStateMachine>();
+        currentRobot = FindFirstObjectByType<RobotCompanion>();
+        _cameraManager = FindFirstObjectByType<CameraManager>();
+
+        if (SceneManager.GetActiveScene().buildIndex == 0)
+        {
+            StartIntroSequence();   
+        }
     }
     
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F1))
+        if (Input.GetKeyDown(KeyCode.Keypad0))
         {
             ToggleDebugMode();
         }
         
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetKeyDown(KeyCode.Keypad1))
         {
             StartTest(0);
         }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
+        if (Input.GetKeyDown(KeyCode.Keypad2))
         {
             StartTest(1);
         }
-        if (Input.GetKeyDown(KeyCode.Alpha3))
+        if (Input.GetKeyDown(KeyCode.Keypad3))
         {
             StartTest(2);
         }
-        if (Input.GetKeyDown(KeyCode.Alpha4))
+        if (Input.GetKeyDown(KeyCode.Keypad4))
         {
-            RenderSettings.ambientIntensity = 0f;
-            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+            StartTest(3);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad5))
+        {
+            StartTest(4);
         }
     }
     
 
-    #region Public methods ----------------------------------------------------------------------------
+    #region Test control ----------------------------------------------------------------------------
 
     [Button]
     public void StartTest(int testIndex)
@@ -155,14 +170,6 @@ public class TestManager : MonoBehaviour
     }
     
     [Button]
-    public void QuitApplication()
-    {
-        Application.Quit();
-        #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-        #endif
-    }
-
     public void RestartCurrentTest()
     {
         if (!currentTest) return;
@@ -176,12 +183,43 @@ public class TestManager : MonoBehaviour
         }
         StartTest(testIndex);
     }
+    
+    [Button]
+    public void QuitApplication()
+    {
+        Application.Quit();
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
+    }
+
+
+    [Button]
+    public void StartIntroSequence()
+    {
+        if (!_cameraManager || !currentPlayer) return;
+        
+        currentPlayer.SwitchState(currentPlayer.GroundedState);
+        _cameraManager.StartIntroSequenceCamera();
+    }
 
     public void ToggleDebugMode()
     {
         debugMode = !debugMode;
+
+        if (debugMode == false)
+        {
+            debugTextLeft.text = "";
+            debugTextRight.text = "";
+        }
     }
     
+    #endregion Test control ----------------------------------------------------------------------------
+    
+    
+    
+    #region Information methods ----------------------------------------------------------------------------
+
     public void SetCheckpointPosition(Transform checkpoint)
     {
         currentCheckpoint = checkpoint;
@@ -197,11 +235,14 @@ public class TestManager : MonoBehaviour
         return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
     }
     
+    public TextMeshProUGUI GetDebugText()
+    {
+        return debugTextLeft;
+    }
     
     
-
+    #endregion Information methods ----------------------------------------------------------------------------
     
-    #endregion Public methods ----------------------------------------------------------------------------
     
     
     
@@ -328,4 +369,7 @@ public class TestManager : MonoBehaviour
     
 
     #endregion Private methods ----------------------------------------------------------------------------
+    
+    
+    
 }

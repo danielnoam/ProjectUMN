@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Unity.Cinemachine;
+using VInspector;
 
 [SelectionBase]
 public class CameraManager : MonoBehaviour
@@ -21,14 +22,13 @@ public class CameraManager : MonoBehaviour
     
     
     [Header("Cameras Priority")]
-    [SerializeField] private int freeLookCameraPriority = 10;
-    [SerializeField] private int aimCameraPriority = 15;
-    [SerializeField] private int menuCameraPriority = 20;
     
     [Header("References")]
     public CinemachineCamera freeLookCamera;
     public CinemachineCamera aimCamera;
     public CinemachineCamera menuCamera;
+    public CinemachineCamera startMenuCamera;
+    public CinemachineCamera introCamera;
     public GameObject aimCore;
     public Transform targetTransform;
 
@@ -39,6 +39,7 @@ public class CameraManager : MonoBehaviour
     private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
     private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
     private CinemachineInputAxisController _freeLookCameraInput;
+    private CinemachineSplineDolly _introCameraDolly;
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
     private Vector3 _lastAimDirection = Vector3.forward;
@@ -50,6 +51,11 @@ public class CameraManager : MonoBehaviour
     private bool IsMenuActive => _player && _player.CurrentState == _player.InMenuState;
     private bool IsPlayerAiming => _player && _player.IsAiming;
     private bool IsAimOnlyMode => _player && _player.CurrentCameraMode == CameraMode.AimOnly;
+    private int _freeLookCameraPriority;
+    private int _aimCameraPriority;
+    private int _menuCameraPriority;
+    private int _startMenuCameraPriority;
+    private int _introCameraPriority;
     
 
     private void Awake()
@@ -73,25 +79,47 @@ public class CameraManager : MonoBehaviour
 
         _freeLookInitialFOV = freeLookCamera.Lens.FieldOfView;
         _aimInitialFOV = aimCamera.Lens.FieldOfView;
+        _freeLookCameraPriority = freeLookCamera.Priority;
+        _aimCameraPriority = aimCamera.Priority;
+        _menuCameraPriority = menuCamera.Priority;
+        _startMenuCameraPriority = startMenuCamera.Priority;
+        _introCameraPriority = introCamera.Priority;
         _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
-        
-        if (IsAimOnlyMode) SwitchToAimCamera();
-        else SwitchToFreeLookCamera();
+        _introCameraDolly = introCamera.GetComponent<CinemachineSplineDolly>();
     }
     
     
     private void Update()
     {
+        if (IsIntroCameraActive())
+        {
+
+            if (_introCameraDolly.CameraPosition >= 1)
+            {
+                _introCameraDolly.AutomaticDolly.Enabled = false;
+                SwitchToCamera(startMenuCamera, true);
+            }
+            else if (_introCameraDolly.CameraPosition >= 0.9f && _player.CurrentState != _player.InMenuState)
+            {
+                _player.SwitchState(_player.InMenuState);
+                _player.InMenuState.SelectPage(_player.InMenuState.StartPage);
+            }
+            
+            return;
+        }
+        
+        HandleCameraSwitching();
         UpdateCameraFOV();
         UpdateCameraNoise();
-        HandleCameraSwitching();
+        
     }
 
     private void LateUpdate()
     {
+        
         UpdateAimCore();
     }
 
@@ -103,6 +131,7 @@ public class CameraManager : MonoBehaviour
         _player = player;
         _playerInputHandler = _player.InputHandler;
         menuCamera.Follow = _player.transform;
+        startMenuCamera.Follow = _player.transform;
         freeLookCamera.Follow = aimCore.transform;
         aimCamera.Follow = aimCore.transform;
         
@@ -110,18 +139,29 @@ public class CameraManager : MonoBehaviour
     
     public bool IsAimCameraActive()
     {
-        return aimCamera.Priority > freeLookCamera.Priority && aimCamera.Priority > menuCamera.Priority;
-    }
-
-    public bool IsMenuCameraActive()
-    {
-        return menuCamera.Priority > freeLookCamera.Priority && menuCamera.Priority > aimCamera.Priority;
+        return aimCamera.Priority == 10;
     }
     
     public bool IsFreeLookCameraActive()
     {
-        return freeLookCamera.Priority > aimCamera.Priority && freeLookCamera.Priority > menuCamera.Priority;
+        return freeLookCamera.Priority == 10;
     }
+
+    public bool IsMenuCameraActive()
+    {
+        return menuCamera.Priority == 10;
+    }
+    
+    public bool IsStartMenuCameraActive()
+    {
+        return startMenuCamera.Priority == 10;
+    }
+    
+    public bool IsIntroCameraActive()
+    {
+        return introCamera.Priority == 10;
+    }
+    
     
     public Vector3 GetCameraAimDirection(bool flatenY = false)
     {
@@ -155,6 +195,14 @@ public class CameraManager : MonoBehaviour
         cameraForward.Normalize();
         _lastAimDirection = cameraForward;
         return cameraForward;
+    }
+
+
+    public void StartIntroSequenceCamera()
+    {
+        SwitchToCamera(introCamera, false);
+        _introCameraDolly.CameraPosition = 0;
+        _introCameraDolly.AutomaticDolly.Enabled = true;
     }
     
 
@@ -263,7 +311,7 @@ public class CameraManager : MonoBehaviour
     private void UpdateCameraFOV()
     {
         // Skip if player reference is missing or menu camera is active
-        if (!_player || IsMenuCameraActive()) return;
+        if (!_player || IsMenuCameraActive()|| IsStartMenuCameraActive()) return;
 
         // Determine which camera is active and its initial FOV
         var initialFOV = IsAimCameraActive() ? _aimInitialFOV : _freeLookInitialFOV;
@@ -299,9 +347,12 @@ public class CameraManager : MonoBehaviour
     {
         if (IsMenuActive)
         {
-            if (!IsMenuCameraActive())
+            if (!IsMenuCameraActive() && _player.InMenuState.CurrentPage != _player.InMenuState.StartPage)
             {
-                SwitchToMenuCamera();
+                SwitchToCamera(menuCamera, true);
+            } else if (!IsStartMenuCameraActive() && _player.InMenuState.CurrentPage == _player.InMenuState.StartPage)
+            {
+                SwitchToCamera(startMenuCamera, true);
             }
 
             if (_player.InMenuState.CurrentPage == _player.InMenuState.DebugPage && _menuCameraFollow.CameraSide != 0)
@@ -314,59 +365,37 @@ public class CameraManager : MonoBehaviour
             }
             else if (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage)
             {
+                
             }
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())
         {
-            SwitchToAimCamera();
+            SwitchToCamera(aimCamera, false);
         }
         else if (!IsAimOnlyMode && !IsPlayerAiming &&!IsFreeLookCameraActive())
         {
-            SwitchToFreeLookCamera();
+            SwitchToCamera(freeLookCamera, false);
         }
     }
     
-    private void SwitchToAimCamera()
-    {
-        
-        aimCamera.Priority = aimCameraPriority;
-        freeLookCamera.Priority = freeLookCameraPriority;
-        menuCamera.Priority = freeLookCameraPriority;
-        _freeLookCameraInput.enabled = false;
-        _currentCamera = aimCamera;
-
-        
-        // Hide cursor
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-    }
-
-    private void SwitchToFreeLookCamera()
-    {
-        
-        freeLookCamera.Priority = aimCameraPriority;
-        aimCamera.Priority = freeLookCameraPriority;
-        menuCamera.Priority = freeLookCameraPriority;
-        _freeLookCameraInput.enabled = true;
-        _currentCamera = freeLookCamera;
-        
-        // Hide cursor
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-    }
-
-    private void SwitchToMenuCamera()
-    {
-        menuCamera.Priority = menuCameraPriority;
-        freeLookCamera.Priority = freeLookCameraPriority;
-        aimCamera.Priority = freeLookCameraPriority;
-        _freeLookCameraInput.enabled = false;
-        _currentCamera = menuCamera;
-        
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-    }
     
+
+   
+    private void SwitchToCamera(CinemachineCamera cam, bool enableCursor)
+    {
+        menuCamera.Priority = _menuCameraPriority;
+        freeLookCamera.Priority = _freeLookCameraPriority;
+        aimCamera.Priority = _aimCameraPriority;
+        startMenuCamera.Priority = _startMenuCameraPriority;
+        introCamera.Priority = _introCameraPriority;
+
+        _currentCamera = cam;
+        _freeLookCameraInput.enabled = cam == freeLookCamera;
+        cam.Priority = 10;
+        Cursor.lockState = enableCursor ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = enableCursor;
+        
+    }
     
     #endregion Private methods ----------------------------------------------------------------------------
 

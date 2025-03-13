@@ -102,7 +102,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public Transform aimRayStartPosition;
 
     [Header("References")] 
-    public TextMeshProUGUI debugText;
     public GameObject menu;
 
     [Header("Events")] 
@@ -127,6 +126,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public bool IsRotatingToTarget { get; private set; }
     public RobotCompanion robot { get; private set; }
     public CameraManager cameraManager { get; private set; }
+    public TextMeshProUGUI debugText { get; private set; }
     
 
     private CharacterController _controller;
@@ -189,6 +189,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+            debugText = TestManager.Instance.GetDebugText();
         }
         
     }
@@ -199,6 +200,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+            debugText = null;
         }
     }
     
@@ -1023,8 +1025,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  
                                  ;
             }
-    
-    
+            
             if (!_lineRenderer.enabled)
             {
                 _lineRenderer.enabled = true;
@@ -1033,11 +1034,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
         else
         {
-            if (debugText)
-            {
-                debugText.text = "";
-            }
-
             if (_lineRenderer.enabled)
             {
                 _lineRenderer.enabled = false;
