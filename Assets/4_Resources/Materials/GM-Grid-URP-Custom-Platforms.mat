@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7042822320246468941
+--- !u!114 &-8597609426550157861
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: TransparentGroundMAT
-  m_Shader: {fileID: -6465566751694194690, guid: c3b82f343029ec24898ee99f4a88e6e4, type: 3}
+  m_Name: GM-Grid-URP-Custom-Platforms
+  m_Shader: {fileID: -6465566751694194690, guid: 44f8dfd6d74d14469bb0ef07b544f59e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -37,6 +37,22 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Base_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Emission_Texture:
+        m_Texture: {fileID: 2800000, guid: 21dde9b6a63a84eadba0a7681b526b66, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Metallic_Texture:
+        m_Texture: {fileID: 2800000, guid: 2280b8795bb4644f9a7791f51aa21be8, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture:
+        m_Texture: {fileID: 2800000, guid: a839cc2fd4502488bb0e69e39496f5c3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -51,12 +67,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Intersection_Intensity: 2.88
-    - _Intersection_Thickness: 0.387
+    - _Blend: 1
+    - _Emission: 1
+    - _Metallic: 1
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _Smoothness: 0.5
+    - _Tile: 1
+    - _Tiling: 1
     m_Colors:
-    - _Ground_Color: {r: 1, g: 1, b: 1, a: 0}
-    - _Intersection_Color: {r: 1, g: 0, b: 0.14509821, a: 1}
+    - _Base_Color: {r: 0.2735849, g: 0.2735849, b: 0.2735849, a: 0}
+    - _Emission_Color: {r: 6.88318, g: 3.1457925, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

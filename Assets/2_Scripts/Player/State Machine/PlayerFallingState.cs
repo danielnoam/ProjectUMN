@@ -52,6 +52,7 @@ public class PlayerFallingState : PlayerBaseState
         
         if (StateMachine.IsGrounded)
         {
+
             StateMachine.SwitchState(StateMachine.GroundedState);
         }
     }

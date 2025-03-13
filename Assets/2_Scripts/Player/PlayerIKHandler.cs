@@ -124,8 +124,9 @@ public class PlayerIKHandler : MonoBehaviour
         
         bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && 
                             _stateMachine.CurrentState != _stateMachine.CrouchingState && 
+                            _stateMachine.CurrentState != _stateMachine.JumpingState && 
                             _stateMachine.CurrentState != _stateMachine.FallingState &&
-                            _stateMachine.ActiveHorizontalVelocity < _stateMachine.runSpeed - 2f &&
+                            Mathf.Abs(_stateMachine.ActiveHorizontalVelocity) < _stateMachine.runSpeed &&
                             _currentIKTarget != IKTarget.Robot;
 
         if (allowedState)
@@ -142,13 +143,19 @@ public class PlayerIKHandler : MonoBehaviour
     {
         if (!rig || !headIK) return;
         
-        if (_currentIKTarget != IKTarget.None)
+        bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && 
+                            _stateMachine.CurrentState != _stateMachine.CrouchingState && 
+                            _stateMachine.CurrentState != _stateMachine.FallingState &&
+                            Mathf.Abs(_stateMachine.ActiveHorizontalVelocity) < _stateMachine.runSpeed + 0.5f &&
+                            _currentIKTarget != IKTarget.None;
+        
+        if (allowedState)
         {
             headIK.weight = UpdateIKWeight(ref _targetHeadWeight, headIK.weight, maxHeadWeight, headIKSmoothTime);
         }
         else
         {
-            headIK.weight = Mathf.MoveTowards(headIK.weight, 0f, Time.deltaTime * headIKSmoothTime / 4);
+            headIK.weight = Mathf.MoveTowards(headIK.weight, 0f, Time.deltaTime * headIKSmoothTime);
         }
     }
     

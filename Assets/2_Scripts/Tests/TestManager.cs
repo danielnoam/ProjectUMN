@@ -274,7 +274,8 @@ public class TestManager : MonoBehaviour
         yield return new WaitForSeconds(tests[testIndex].GetTimeToLoad());
         Debug.Log("Loaded " + tests[testIndex].GetName());
         currentTest = tests[testIndex];
-        currentEnvironment = Instantiate(currentTest.GetPrefab());
+        // currentEnvironment = Instantiate(currentTest.GetPrefab());
+        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.05f,0),quaternion.identity ); // a bit of offset for the intersection effect
         currentTheme = currentTest.GetTheme();
         currentTheme?.CrossFade(_audioSource,3f,3f);
 

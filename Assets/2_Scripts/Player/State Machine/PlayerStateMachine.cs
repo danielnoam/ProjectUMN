@@ -3,6 +3,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using VInspector;
 
 
 public enum CameraMode
@@ -37,12 +38,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float walkSpeed = 4f;
     [Tooltip("Default running speed")]
     public float runSpeed = 8f;
-    [Tooltip("Maximum speed when sprinting with sufficient input")]
-    public float sprintSpeed = 12f;
+    [Tooltip("If sprint gait is allowed")]
+    public bool allowSprint = true;
+    [EnableIf("allowSprint"), Tooltip("Maximum speed when sprinting with sufficient input")]
+    public float sprintSpeed = 10f; [EndIf]
     [Tooltip("Speed multiplier when strafing (moving sideways)")]
-    public float strafeSpeedMultiplier = 0.8f;
+    public float strafeSpeedMultiplier = 0.7f;
     [Tooltip("Speed multiplier when moving backward")]
-    public float backwardSpeedMultiplier = 0.7f;
+    public float backwardSpeedMultiplier = 0.6f;
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
     [Tooltip("Drag force applied to movement on ground")]
@@ -211,6 +214,23 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         CurrentState.FixedUpdateState();
         MoveCharacter(); 
+        
+        
+        
+        if (CurrentState == FallingState) // Ripple effect
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position + groundCheckOffset, Vector3.down, out hit, 0.5f, environmentLayer))
+            {
+            
+                var ground = hit.transform.GetComponent<GroundRipple>();
+
+                if (ground)
+                {
+                    ground.GetHit(hit);
+                }
+            }
+        }
     }
     
     private void OnTestLoaded(SOTest test)
@@ -292,37 +312,29 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private float CalculateTargetSpeed(float movementIntensity)
     {
-        bool lockSprintGait = InputHandler.MoveSpeedInput || IsAiming || CurrentState == CrouchingState;
+        bool lockSprintGait = InputHandler.MoveSpeedInput || !allowSprint || IsAiming || CurrentState == CrouchingState;
 
         if (movementIntensity < InputHandler.MovementInputThreshold)
             return 0f;
 
         // Determine base speed based on input and state
         float baseSpeed;
+        float startSpeed;
+        float targetSpeed;
+        
         if (!lockSprintGait)
         {
-            if (InputHandler.SprintInput)
-            {
-                baseSpeed = Mathf.Lerp(runSpeed, sprintSpeed, movementIntensity);
-            }
-            else
-            {
-                baseSpeed = Mathf.Lerp(0, runSpeed, movementIntensity);
-            }
+            startSpeed = InputHandler.SprintInput ? runSpeed : 0;
+            targetSpeed = InputHandler.SprintInput ? sprintSpeed : runSpeed;
                 
         }
         else
         {
-            if (InputHandler.SprintInput)
-            {
-                baseSpeed = Mathf.Lerp(walkSpeed, runSpeed, movementIntensity);
-            }
-            else
-            {
-                baseSpeed = Mathf.Lerp(0, walkSpeed, movementIntensity);
-            }
-                
+            startSpeed = InputHandler.SprintInput ? walkSpeed : 0;
+            targetSpeed = InputHandler.SprintInput ? runSpeed : walkSpeed;
         }
+        
+        baseSpeed = Mathf.Lerp(startSpeed, targetSpeed, movementIntensity);
     
         // Apply direction multipliers based on movement input
         float directionMultiplier = 1.0f;

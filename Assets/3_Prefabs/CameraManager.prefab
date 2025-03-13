@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 950367796465062814}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 27.25, y: 5.55, z: -65.82}
+  m_LocalPosition: {x: 0, y: 0.9150999, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -61,7 +61,7 @@ Transform:
   m_GameObject: {fileID: 1234978658529574233}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.7916126, y: 7.274065, z: -56.409378}
+  m_LocalPosition: {x: 13.75, y: 5.8500004, z: -90.82}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -348,8 +348,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7572823565956892122}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.009589601, y: 0, z: 0, w: 0.99995404}
-  m_LocalPosition: {x: 6.2916126, y: 7.4131145, z: -57.586876}
+  m_LocalRotation: {x: -0.00958962, y: 0, z: 0, w: 0.99995404}
+  m_LocalPosition: {x: 13.25, y: 5.98905, z: -91.9975}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -616,8 +616,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7702849316814007445}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.009589601, y: 0, z: 0, w: 0.99995404}
-  m_LocalPosition: {x: 6.2916126, y: 7.4131145, z: -57.586876}
+  m_LocalRotation: {x: -0.00958962, y: 0, z: 0, w: 0.99995404}
+  m_LocalPosition: {x: 13.25, y: 5.98905, z: -91.9975}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -807,14 +807,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 928d92d537407964ebcc114cea86935c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  freeCameraSensitivity: 1
-  aimCameraSensitivity: 0.5
   aimMaxPitch: 80
   crouchVerticalOffset: -0.3
   minFov: 40
   maxFov: 65
-  maxAmplitude: 0.3
-  maxFrequency: 5
+  maxAmplitude: 0.2
+  maxFrequency: 4
   freeLookCameraPriority: 10
   aimCameraPriority: 15
   menuCameraPriority: 20

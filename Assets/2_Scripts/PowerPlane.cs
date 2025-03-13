@@ -61,6 +61,7 @@ public class PowerPlane : MonoBehaviour
     private Tween _activationTween;
     private Tween _delayTween;
     private float _currentLength;
+    private float _targetLength;
     
     // HashSet to track which objects have activated the plane
     private readonly HashSet<Object> _activatingObjects = new HashSet<Object>();
@@ -79,6 +80,7 @@ public class PowerPlane : MonoBehaviour
         
         // Set initial state without animation
         _currentLength = isActive ? GetFullLength() : 0f;
+        _targetLength = _currentLength; // Initialize target length
         UpdatePlaneTransform(_currentLength);
         
         // Set renderer state
@@ -94,9 +96,25 @@ public class PowerPlane : MonoBehaviour
         if (startPoint && endPoint && 
            (startPoint.hasChanged || endPoint.hasChanged))
         {
+            // Update full length measurement
+            float fullLength = GetFullLength();
+            
+            // If active or animating to active, update target and current length proportionally
             if (isActive)
             {
-                _currentLength = GetFullLength();
+                _targetLength = fullLength;
+                
+                // If not in the middle of an animation, update current length too
+                if (!_activationTween.isAlive)
+                {
+                    _currentLength = fullLength;
+                }
+                else
+                {
+                    // Maintain the same animation progress when endpoints move during animation
+                    float animProgress = _activationTween.progress;
+                    _currentLength = Mathf.Lerp(0f, fullLength, animProgress);
+                }
             }
             
             UpdatePlaneTransform(_currentLength);
@@ -308,9 +326,10 @@ public class PowerPlane : MonoBehaviour
         if (isActive == active && !_activationTween.isAlive && !_delayTween.isAlive)
             return;
             
-        // Stop any running animations
-        _activationTween.Stop();
-        _delayTween.Stop();
+        // Calculate target length based on the new state
+        float fullLength = GetFullLength();
+        float newTargetLength = active ? fullLength : 0f;
+        _targetLength = newTargetLength;
         
         // Update the target state
         isActive = active;
@@ -322,6 +341,9 @@ public class PowerPlane : MonoBehaviour
         // Only animate in play mode
         if (Application.isPlaying && gameObject.activeInHierarchy)
         {
+            // Stop any running delay
+            _delayTween.Stop();
+            
             // If using delay, wait before starting the state change
             if (useDelay && stateChangeDelay > 0)
             {
@@ -341,7 +363,7 @@ public class PowerPlane : MonoBehaviour
         else
         {
             // Immediately set the state without animation
-            _currentLength = active ? GetFullLength() : 0f;
+            _currentLength = newTargetLength;
             UpdatePlaneTransform(_currentLength);
             UpdateComponentStates();
         }
@@ -349,11 +371,31 @@ public class PowerPlane : MonoBehaviour
     
     private void StartStateChangeAnimation(bool active)
     {
+        // Calculate animation duration based on current progress
         float fullLength = GetFullLength();
+        float targetLength = active ? fullLength : 0f;
+        
+        // Stop current animation if running
+        _activationTween.Stop();
+        
+        // Calculate remaining animation time based on how far we need to go
+        float remainingDistance = Mathf.Abs(targetLength - _currentLength);
+        float totalDistance = fullLength; // Total possible distance to travel
+        
+        // Calculate what percentage of the total animation we need to perform
+        float animationPercentage = totalDistance > 0 ? remainingDistance / totalDistance : 0;
+        
+        // Scale animation time by the percentage of distance we need to cover
+        float scaledAnimTime = animationTime * animationPercentage;
+        
+        // Ensure we have a minimum animation time to avoid visual glitches
+        scaledAnimTime = Mathf.Max(scaledAnimTime, 0.05f);
+        
+        // Start the animation
         _activationTween = Tween.Custom(
             startValue: _currentLength,
-            endValue: active ? fullLength : 0f,
-            duration: animationTime,
+            endValue: targetLength,
+            duration: scaledAnimTime,
             ease: animationEase,
             onValueChange: val => {
                 _currentLength = val;
@@ -391,6 +433,7 @@ public class PowerPlane : MonoBehaviour
                 if (planeVisualRef)
                 {
                     _currentLength = isActive ? GetFullLength() : 0f;
+                    _targetLength = _currentLength; // Set target length as well
                     UpdatePlaneTransform(_currentLength);
                     UpdateComponentStates();
                 }

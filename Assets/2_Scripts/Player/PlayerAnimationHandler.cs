@@ -72,7 +72,30 @@ public class PlayerAnimationHandler : MonoBehaviour
         _animator.SetInteger(_stateHash, (int)currentAnimState);
     }
     
+
+    private void UpdateRotationAnimation()
+    {
+        _animator.SetFloat(_rotationMismatchHash, _stateMachine.RotationMismatch);
+        _animator.SetBool(_isRotatingToTargetHash, _stateMachine.IsRotatingToTarget);
+    }
+    
+
+    private void UpdateFallAnimation()
+    {
+        float fallBlend = Mathf.Clamp01(_stateMachine.ActiveVerticalVelocity / _stateMachine.maxVerticalVelocity);
+        _animator.SetFloat(_fallTimeHash, fallBlend);
+    }
+    
 private void UpdateMovementAnimation()
+{
+    // Update direction values
+    UpdateMovementDirectionAnimation();
+    
+    // Update gait type separately
+    UpdateGaitTypeAnimation();
+}
+
+private void UpdateMovementDirectionAnimation()
 {
     // Get current movement data
     Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
@@ -108,57 +131,62 @@ private void UpdateMovementAnimation()
                 verticalValue = Mathf.Clamp(verticalValue, -1f, 1f);
             }
         }
-
-        // Compensate for direction multipliers when strafing or moving backward
-        if (isAiming)
-        {
-            // Check if moving backward
-            if (verticalValue < -0.3f)
-            {
-                // Calculate approximate compensation for backward movement
-                float backwardFactor = Mathf.Abs(verticalValue);
-                float compensationFactor = 1f / Mathf.Lerp(1f, _stateMachine.backwardSpeedMultiplier, backwardFactor);
-                
-                // Apply compensation to movement type calculation but keep direction values
-                activeSpeed *= compensationFactor;
-            }
-            
-            // Check if strafing
-            if (Mathf.Abs(horizontalValue) > 0.3f)
-            {
-                // Calculate approximate compensation for strafing
-                float strafeFactor = Mathf.Abs(horizontalValue);
-                float compensationFactor = 1f / Mathf.Lerp(1f, _stateMachine.strafeSpeedMultiplier, strafeFactor);
-                
-                // Apply compensation to movement type calculation but keep direction values
-                activeSpeed *= compensationFactor;
-            }
-        }
     }
-
-    // Calculate moveType value based on compensated speed
-    float moveType = CalculateMoveTypeValue(activeSpeed);
-
+    
     // Apply values to animator with smoothing
     _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
     _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
-    _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime, Time.deltaTime);
 }
 
-    private void UpdateRotationAnimation()
+private void UpdateGaitTypeAnimation()
+{
+    bool isAiming = _stateMachine.IsAiming;
+    
+    // Get input for gait calculation - Using direct input from PlayerStateMachine
+    // rather than the modified speed
+    float inputIntensity = Mathf.Clamp01(
+        Mathf.Abs(_stateMachine.InputHandler.MovementInput.x) + 
+        Mathf.Abs(_stateMachine.InputHandler.MovementInput.y)
+    );
+    
+    // Determine base speed based on input and flags
+    float speedForAnimation = 0f;
+    bool lockSprintGait = _stateMachine.InputHandler.MoveSpeedInput || 
+                          !_stateMachine.allowSprint || 
+                          isAiming || 
+                          _stateMachine.CurrentState is PlayerCrouchingState;
+    
+    if (inputIntensity > _stateMachine.InputHandler.MovementInputThreshold)
     {
-        _animator.SetFloat(_rotationMismatchHash, _stateMachine.RotationMismatch);
-        _animator.SetBool(_isRotatingToTargetHash, _stateMachine.IsRotatingToTarget);
+        if (!lockSprintGait)
+        {
+            // Can sprint, determine speed based on sprint input
+            float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : 0;
+            float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.sprintSpeed : _stateMachine.runSpeed;
+            speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+        }
+        else
+        {
+            // Cannot sprint, use walk/run only
+            float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.walkSpeed : 0;
+            float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : _stateMachine.walkSpeed;
+            speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+        }
     }
     
+    // Calculate gait type value based on this determined speed, IGNORING direction multipliers
+    float moveType = CalculateMoveTypeValue(speedForAnimation);
+    
+    // Apply gait value to animator with smoothing
+    _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime * 5, Time.deltaTime);
+}
+    
+    #endregion Animator -------------------------------------------------------------------------------------------------------
 
-    private void UpdateFallAnimation()
-    {
-        float fallBlend = Mathf.Clamp01(_stateMachine.ActiveVerticalVelocity / _stateMachine.maxVerticalVelocity);
-        _animator.SetFloat(_fallTimeHash, fallBlend);
-    }
-    
-    
+
+
+    #region Calculations -------------------------------------------------------------------------------------------------------
+
     private float CalculateMoveTypeValue(float currentSpeed)
     {
         // No movement
@@ -174,10 +202,14 @@ private void UpdateMovementAnimation()
             return 0.5f + ((currentSpeed - _stateMachine.walkSpeed) / 
                            (_stateMachine.runSpeed - _stateMachine.walkSpeed)) * 0.5f;
         
+        // Sprinting: max at 2
+        if (currentSpeed > _stateMachine.sprintSpeed)
+            return 2;
+        
         // Sprinting range: 1.0 to 2.0
         return 1.0f + ((currentSpeed - _stateMachine.runSpeed) / 
                        (_stateMachine.sprintSpeed - _stateMachine.runSpeed)) * 1.0f;
     }
 
-    #endregion Animator -------------------------------------------------------------------------------------------------------
+    #endregion Calculations -------------------------------------------------------------------------------------------------------
 }
