@@ -1,4 +1,12 @@
-﻿public interface Iinteractor
+﻿
+public enum InteractorType
+{
+    Player,
+    Robot,
+    Both,
+}
+
+public interface Iinteractor
 {
     InteractorType InteractorType { get; }
     void InteractWith();
