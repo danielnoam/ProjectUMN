@@ -1,17 +1,23 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "Test", menuName = "SO Test/New Test")]
 public class SOTest : ScriptableObject
 {
     
+    [Header("Test")]
     [SerializeField] private new string name = "Test";
     [SerializeField, Multiline(5)] private string description = "This is a test";
     [SerializeField, Min(0)] private int timeToLoad = 1;
     [SerializeField, Min(0)] private int timeToUnload = 1;
+    
+    [Header("Environment/Audio")]
     [SerializeField] private GameObject environmentPrefab;
     [SerializeField] private SOAudioEvent theme;
-    
+    [SerializeField] private float ambientIntensity = 1f;
+    [SerializeField] private DefaultReflectionMode reflectionMode = DefaultReflectionMode.Skybox;
+
     public string GetName()
     {
         return name;
@@ -65,6 +71,13 @@ public class SOTest : ScriptableObject
     {
         return theme;
     }
+    
+    public void ApplyLightingSetting()
+    {
+        RenderSettings.ambientIntensity = ambientIntensity;
+        RenderSettings.defaultReflectionMode = reflectionMode;
+    }
+    
     
     public Vector3 GetRobotSpawnPoint()
     {

@@ -3,6 +3,7 @@ using System.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
 using VInspector;
 
 [SelectionBase]
@@ -82,6 +83,11 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             StartTest(2);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            RenderSettings.ambientIntensity = 0f;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
         }
     }
     
@@ -274,7 +280,7 @@ public class TestManager : MonoBehaviour
         yield return new WaitForSeconds(tests[testIndex].GetTimeToLoad());
         Debug.Log("Loaded " + tests[testIndex].GetName());
         currentTest = tests[testIndex];
-        // currentEnvironment = Instantiate(currentTest.GetPrefab());
+        currentTest.ApplyLightingSetting();
         currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
         currentTheme = currentTest.GetTheme();
         currentTheme?.CrossFade(_audioSource,1.5f,3f);
