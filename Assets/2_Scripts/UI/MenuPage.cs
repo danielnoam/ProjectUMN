@@ -238,7 +238,6 @@ public class MenuPage : MonoBehaviour
     
 
     #endregion Selectables Events // ---------------------------------------------------------------------
-
     
     #region Page Management // ---------------------------------------------------------------------
     

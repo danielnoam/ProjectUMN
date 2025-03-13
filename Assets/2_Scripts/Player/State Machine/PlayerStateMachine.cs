@@ -35,9 +35,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Tooltip("Controls whether the player can only aim or can toggle between aim and non-aim modes")]
     [SerializeField] private CameraMode cameraMode = CameraMode.ExplorationAndAim;
     [Tooltip("Walking speed when holding the walk button")]
-    public float walkSpeed = 4f;
+    public float walkSpeed = 3f;
     [Tooltip("Default running speed")]
-    public float runSpeed = 8f;
+    public float runSpeed = 7.5f;
     [Tooltip("If sprint gait is allowed")]
     public bool allowSprint = true;
     [EnableIf("allowSprint"), Tooltip("Maximum speed when sprinting with sufficient input")]

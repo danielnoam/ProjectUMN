@@ -275,9 +275,9 @@ public class TestManager : MonoBehaviour
         Debug.Log("Loaded " + tests[testIndex].GetName());
         currentTest = tests[testIndex];
         // currentEnvironment = Instantiate(currentTest.GetPrefab());
-        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.05f,0),quaternion.identity ); // a bit of offset for the intersection effect
+        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
         currentTheme = currentTest.GetTheme();
-        currentTheme?.CrossFade(_audioSource,3f,3f);
+        currentTheme?.CrossFade(_audioSource,1.5f,3f);
 
         if (currentTest.HasRobot()) // The new test has a robot in it
         {

@@ -131,7 +131,7 @@ public class PlayerIKHandler : MonoBehaviour
 
         if (allowedState)
         {
-            spineIK.weight = UpdateIKWeight(ref _targetSpineWeight, spineIK.weight, maxSpineWeight, spineIKSmoothTime);
+            spineIK.weight = UpdateIKWeight(_targetSpineWeight, spineIK.weight, maxSpineWeight, spineIKSmoothTime);
         }
         else
         {
@@ -143,15 +143,14 @@ public class PlayerIKHandler : MonoBehaviour
     {
         if (!rig || !headIK) return;
         
-        bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && 
-                            _stateMachine.CurrentState != _stateMachine.CrouchingState && 
+        bool allowedState = _stateMachine.CurrentState != _stateMachine.CrouchingState && 
                             _stateMachine.CurrentState != _stateMachine.FallingState &&
                             Mathf.Abs(_stateMachine.ActiveHorizontalVelocity) < _stateMachine.runSpeed + 0.5f &&
                             _currentIKTarget != IKTarget.None;
         
         if (allowedState)
         {
-            headIK.weight = UpdateIKWeight(ref _targetHeadWeight, headIK.weight, maxHeadWeight, headIKSmoothTime);
+            headIK.weight = UpdateIKWeight(_targetHeadWeight, headIK.weight, maxHeadWeight, headIKSmoothTime);
         }
         else
         {
@@ -196,7 +195,7 @@ public class PlayerIKHandler : MonoBehaviour
                 return _currentIKPosition; // Return current position to avoid sudden jumps
         }
     }
-    private float UpdateIKWeight(ref float targetWeight, float currentWeight, float maxWeight, float smoothTime)
+    private float UpdateIKWeight(float targetWeight, float currentWeight, float maxWeight, float smoothTime)
     {
         // Determine target weight based on rotation mismatch
         float rotationThreshold = _currentIKTarget == IKTarget.CameraAimDir ? 140 : 180;

@@ -12,7 +12,10 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - USE_BIG_SCANLINE
+  - USE_COLLISION_RIPPLES
   - USE_EDGE_GLOW
+  - USE_HEXAGON_GLOW
   - USE_INTERSECTION
   - USE_SCANLINES
   m_InvalidKeywords: []
@@ -28,8 +31,8 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _HexagonTexture:
-        m_Texture: {fileID: 2800000, guid: d52ad59dbfa894c82a5b07aa57551f4d, type: 3}
-        m_Scale: {x: 0, y: 0}
+        m_Texture: {fileID: 2800000, guid: 3caf7d008b0124c71a072740ac78c491, type: 3}
+        m_Scale: {x: 25, y: 25}
         m_Offset: {x: 0, y: 0}
     - _ScanlineTexture:
         m_Texture: {fileID: 2800000, guid: 4efd29d02f8cf41fa8ea9a91e42d573e, type: 3}
@@ -49,18 +52,18 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - USE_BIG_SCANLINE: 0
-    - USE_COLLISION_RIPPLES: 0
+    - USE_BIG_SCANLINE: 1
+    - USE_COLLISION_RIPPLES: 1
     - USE_EDGE_GLOW: 1
-    - USE_HEXAGON_GLOW: 0
+    - USE_HEXAGON_GLOW: 1
     - USE_INTERSECTION: 1
     - USE_SCANLINES: 1
     - _AspectRatio: 0.5
-    - _BigScanlineSpeed: 1
+    - _BigScanlineSpeed: 0.1
     - _BigScanlineStrength: 0.5
-    - _BigScanlineThickness: 0.05
+    - _BigScanlineThickness: 0.01
     - _EdgeGlowStrength: 1
-    - _GlowNoiseScale: 1
+    - _GlowNoiseScale: 4
     - _GlowSpeed: 4
     - _Heightmap_Strength: 0
     - _IntersectionStrength: 1
@@ -69,8 +72,9 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _RippleSpeed: 1
-    - _RippleThickness: 0.05
-    - _RippleTime: 0.44
+    - _RippleThickness: 0.01
+    - _RippleTime: 117.57525
+    - _Ripple_Fade_Over_TIme: 0.7
     - _ScanlineStrength: 0.376
     - _Smoothness: 0
     m_Colors:
@@ -78,7 +82,7 @@ Material:
     - _EdgeGlowThickness: {r: 0.1, g: 0.05, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 1.4817692, b: 2.670157, a: 1}
     - _GlowStrengthMinMax: {r: 0, g: 0.25, b: 0, a: 0}
-    - _RippleOrigin: {r: 0.49, g: 0.43, b: 0, a: 0}
+    - _RippleOrigin: {r: 0, g: 0, b: 0, a: 0}
     - _ScrollVelocity: {r: 0.05, g: 0.05, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

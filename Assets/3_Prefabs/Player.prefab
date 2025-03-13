@@ -1291,8 +1291,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraMode: 1
-  walkSpeed: 4
-  runSpeed: 8
+  walkSpeed: 3
+  runSpeed: 7.5
   allowSprint: 0
   sprintSpeed: 10
   strafeSpeedMultiplier: 0.7
@@ -1662,9 +1662,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19fcf94e5fba85942819104f7e9ae8c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  centerObject: {fileID: 0}
   movementSmoothTime: 50
   positionOffset: {x: 1, y: 1, z: 0}
+  maintainRelativeToCameraView: 1
   useForwardDirection: 1
   rotationSmoothTime: 0
   rotationOffset: {x: 0, y: -15, z: 0}

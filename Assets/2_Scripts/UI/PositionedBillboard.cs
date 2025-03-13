@@ -4,48 +4,34 @@ using UnityEngine.SceneManagement;
 
 public class PositionedBillboard : MonoBehaviour
 {
-    public Transform centerObject; 
-    
-    
     [Header("Position Settings")]
     public float movementSmoothTime = 50f; // Lower values = faster movement
-    public Vector3 positionOffset = Vector3.up; 
+    public Vector3 positionOffset = Vector3.up;
+    public bool maintainRelativeToCameraView = true; // NEW: Keep position relative to camera view
     
     [Header("Rotation Settings")]
-    public bool useForwardDirection = true; // If true, forward direction will be based on centerObject's forward
+    public bool useForwardDirection = true; // If true, forward direction will be based on parent's forward
     public float rotationSmoothTime = 0f; // Lower values = faster rotation
     public Vector3 rotationOffset = Vector3.zero; // XYZ Euler angles to offset the rotation
     
-    
     // Internal variables
     private Camera _camera;
-    private CameraManager _cameraManager;
+    private Transform _parentTransform;
     private Vector3 _targetPosition;
     private Vector3 _currentRotationVelocity = Vector3.zero;
     
     private void Start()
     {
-        if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
         if (!_camera) _camera = Camera.main;
-        centerObject = _cameraManager.aimCore.transform;
+        _parentTransform = transform.parent;
         
         // Set initial position and rotation
         UpdatePosition(true);
     }
     
-    private void Update()
-    {
-        if (!centerObject || !_camera) return;
-            
-
-        
-        
-
-    }
-
     private void LateUpdate()
     {
-        if (!centerObject || !_camera) return;
+        if (!_parentTransform || !_camera) return;
         
         UpdatePosition(false);
         FaceCamera();
@@ -53,24 +39,43 @@ public class PositionedBillboard : MonoBehaviour
 
     private void UpdatePosition(bool instant)
     {
-        if (!centerObject) return;
+        if (!_parentTransform || !_camera) return;
         
-        // Calculate the target position based on centerObject's transform
-        Vector3 offsetDirection = positionOffset;
+        Vector3 offsetDirection;
         
-        // Apply the offset in world space if using player's transform as reference
-        if (useForwardDirection)
+        if (maintainRelativeToCameraView)
         {
-            // Transform the offset direction from local to world space
-            offsetDirection = centerObject.TransformDirection(positionOffset);
+            // Calculate offset based on camera's view direction
+            // This makes the billboard stay on the same side relative to the camera
+            Vector3 cameraForward = _camera.transform.forward;
+            cameraForward.y = 0; // Keep it horizontal
+            cameraForward.Normalize();
+            
+            // Get camera right vector (perpendicular to forward)
+            Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
+            
+            // Calculate position based on camera orientation
+            // Example: positionOffset.x controls right/left, positionOffset.z controls forward/back
+            offsetDirection = (cameraRight * positionOffset.x) + (cameraForward * positionOffset.z);
+            
+            // Add vertical offset
+            offsetDirection += Vector3.up * positionOffset.y;
+        }
+        else
+        {
+            // Use original positioning logic
+            offsetDirection = positionOffset;
+            
+            // Apply the offset in world space if using player's transform as reference
+            if (useForwardDirection)
+            {
+                // Transform the offset direction from local to world space
+                offsetDirection = _parentTransform.TransformDirection(positionOffset);
+            }
         }
         
-        // Set height separately to keep it independent of rotation
-        Vector3 worldOffset = offsetDirection;
-        worldOffset.y = 0; // Zero out y component
-        
-        // Calculate the final position with height offset
-        _targetPosition = centerObject.position + worldOffset + new Vector3(0, positionOffset.y, 0);
+        // Calculate the final position
+        _targetPosition = _parentTransform.position + offsetDirection;
         
         // Apply smoothing or set instantly
         if (instant)
@@ -133,21 +138,17 @@ public class PositionedBillboard : MonoBehaviour
         transform.rotation = Quaternion.Euler(smoothedX, smoothedY, smoothedZ);
     }
 
-
 #if UNITY_EDITOR
     private void OnValidate()
     {
         if (Application.isPlaying || SceneManager.GetActiveScene().buildIndex != 0) return;
         
-        if (centerObject)
+        if (!_parentTransform) _parentTransform = transform.parent;
+        if (!_camera) _camera = Camera.main;
+        
+        if (_parentTransform && _camera)
         {
             UpdatePosition(true);
-        }
-        else
-        {
-            if (!_cameraManager) _cameraManager = FindFirstObjectByType<CameraManager>();
-            if (!_camera) _camera = Camera.main;
-            centerObject = _cameraManager.aimCore.transform;
         }
     }
 #endif

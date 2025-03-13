@@ -1,5 +1,6 @@
 
 
+using System;
 using UnityEngine;
 using VInspector;
 
@@ -187,6 +188,21 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
        }
        
+   }
+
+   private void OnCollisionEnter(Collision other)
+   {
+       RaycastHit hit;
+       if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.5f, environmentLayer))
+       {
+            
+           var ground = hit.transform.GetComponent<GroundRipple>();
+        
+           if (ground)
+           {
+               ground.GetHit(hit);
+           }
+       }
    }
 
 
