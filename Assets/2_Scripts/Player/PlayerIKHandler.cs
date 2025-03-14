@@ -70,7 +70,7 @@ public class PlayerIKHandler : MonoBehaviour
             return;
         }
         
-        if (_stateMachine.robot && !_stateMachine.IsAiming)
+        if (_stateMachine.robot && !_stateMachine.IsAiming && false)
         {
             float distanceToRobot = Vector3.Distance(transform.position, _stateMachine.robot.transform.position);
             if (distanceToRobot < robotDistanceThreshold)

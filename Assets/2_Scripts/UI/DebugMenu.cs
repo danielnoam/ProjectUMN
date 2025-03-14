@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class DebugMenu : MonoBehaviour
@@ -49,8 +50,7 @@ public class DebugMenu : MonoBehaviour
             
             restartSimulationButton.onClick.AddListener(() =>
             {
-                TestManager.Instance.StartTest(0); 
-                player.InMenuState.ExitMenu();
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             });
         }
     }

@@ -1,6 +1,7 @@
 
 
 using System;
+using TMPro;
 using UnityEngine;
 using VInspector;
 
@@ -122,6 +123,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Foldout("Eye")] 
     [SerializeField] private GameObject eye;
     [SerializeField] private Light eyeLight;
+    [SerializeField] private Light eyeAreaLight;
     [EndFoldout]
     
     [Foldout("SFX")] 
@@ -139,7 +141,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     
     private PlayerStateMachine _player;
     private Transform _playerFollowPosition;
+    private Transform _playerAimingFollowPosition;
     private Transform _target;
+    private TextMeshProUGUI _debugText;
     private float _lastHeightAdjustmentTime;
     private float _lastTargetHeight;
     private float _currentHoverOffset;
@@ -151,6 +155,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     private Quaternion _rightEarBaseRotation;
     private Color _defaultEyeLightColor;
     private float _fullEyeLightIntensity;
+    private float _defaultInnerSpotAngle;
+    private float _defaultOuterSpotAngle;
     
     public RobotState CurrentState => currentState;
     public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
@@ -167,23 +173,31 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        {
            _defaultEyeLightColor = eyeLight.color;
            _fullEyeLightIntensity = eyeLight.intensity;
+           _defaultInnerSpotAngle = eyeLight.spotAngle;
+           _defaultOuterSpotAngle = eyeLight.innerSpotAngle;
        }
        currentBattery = fullBattery;
    }
 
-   private void OnEnable()
+   private void Start()
    {
-       _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
-       _playerFollowPosition = _player.transform.GetChild(2);
 
+       
+       _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
+       _playerFollowPosition = _player.transform.GetChild(1);
+       _playerAimingFollowPosition = _player.transform.GetChild(2);
        if (_player)
        {
            _player.onPlayerSpawned.AddListener(OnPlayerSpawned);
        }
+
+       
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+           _debugText = TestManager.Instance.GetDebugTextRight();
        }
+
    }
    
 
@@ -194,16 +208,40 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            _player.onPlayerSpawned.RemoveListener(OnPlayerSpawned);
        }
        
+       
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+           _debugText = null;
        }
        
+   }
+   
+   private void OnTestLoaded(SOTest test)
+   {
+       _player = TestManager.Instance.Player;
+       _playerFollowPosition = _player.transform.GetChild(1);
+       _playerAimingFollowPosition = _player.transform.GetChild(2);
+       
+       if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
+   }
+   
+   private void OnPlayerSpawned()
+   {
+       if (currentState != RobotState.Off)
+       {
+           Teleport(_player.transform.position, Quaternion.identity);
+           FollowPlayer();
+       }
    }
 
    private void OnCollisionEnter(Collision other)
    {
-       if (CurrentState != RobotState.Dead && CurrentState != RobotState.Off && CurrentState != RobotState.Sitting)
+       bool allowSfx = CurrentState != RobotState.Dead && 
+                       CurrentState != RobotState.Off &&
+                       CurrentState != RobotState.Sitting &&
+                       (rigidBody.linearVelocity.x > 4f || rigidBody.linearVelocity.y > 4f || rigidBody.linearVelocity.z > 4f);
+       if (allowSfx)
        {
            sfxImpact?.Play(audioSource);
        }
@@ -227,6 +265,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        UpdateEye();
        UpdateEarRotation();
+       UpdateDebugInformation();
        
        if (IsOn())
        {
@@ -265,18 +304,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        }
    }
 
-   private void OnTestLoaded(SOTest test)
-   {
-       _player = TestManager.Instance.Player;
-       _playerFollowPosition = _player.transform.GetChild(2);
-       
-       if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
-   }
-   
-   private void OnPlayerSpawned()
-   {
-       if (currentState != RobotState.Off) Teleport(_player.transform.position, Quaternion.identity);
-   }
+
    
       
    [Button]
@@ -319,7 +347,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    [Button]
    public void CommandFollowPlayer()
    {
-       if (!_player || !IsOn()) return;
+       if (!_player || !IsOn() || currentState == RobotState.FollowingPlayer) return;
        
        sfxReceiveCommand?.Play(audioSource);
        rigidBody.isKinematic = false;
@@ -330,7 +358,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    [Button]
    public void CommandIdle()
    {
-       if (!CanCommend()) return;
+       if (!CanCommend() || currentState == RobotState.Idle) return;
        
        sfxReceiveCommand?.Play(audioSource);
        _target = null;
@@ -342,7 +370,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    [Button]
    public void CommandSitDown()
    {
-       if (!CanCommend()) return;
+       if (!CanCommend() || currentState == RobotState.Sitting) return;
 
        sfxReceiveCommand?.Play(audioSource);
        currentState = RobotState.Sitting;
@@ -717,13 +745,24 @@ private void OnDrawGizmos()
    
    private void FollowPlayer()
    {
-       if (!_playerFollowPosition) return;
-       
-        // Calculate the direction to the target in the horizontal plane only
-        Vector3 targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
-        Vector3 directionToTarget = (targetPosition - transform.position);
+       if (!_playerFollowPosition || !_playerAimingFollowPosition) return;
+
+       // Calculate the direction to the target in the horizontal plane only
+       Vector3 targetPosition;
+       if (_player.IsAiming)
+       {
+           targetPosition = new Vector3(_playerAimingFollowPosition.position.x, transform.position.y, _playerAimingFollowPosition.position.z);
+       }
+       else
+       {
+           targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
+           Debug.Log("Following player");
+       }
+
+        
 
         // Calculate distance to target
+        Vector3 directionToTarget = (targetPosition - transform.position);
         float distanceToTarget = directionToTarget.magnitude;
 
         // Get current horizontal velocity
@@ -839,7 +878,17 @@ private void OnDrawGizmos()
     
        if (currentState == RobotState.FollowingPlayer)
        {
-           Vector3 directionToTarget = ((_player.transform.position + new Vector3(0,0.5f, 0)) - transform.position).normalized;
+           Vector3 directionToTarget;
+           
+           if (_player.IsAiming)
+           {
+               directionToTarget = (_player.cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0)).normalized;
+           }
+           else
+           {
+               directionToTarget = (_player.transform.position + new Vector3(0,0.5f, 0) - transform.position).normalized;
+           }
+           
            targetRotation = Quaternion.LookRotation(directionToTarget);
            
        }
@@ -906,8 +955,8 @@ private void OnDrawGizmos()
 
 
    #region Utility ------------------------------------------------------------------------
-   
-   
+
+
    private void MoveToTarget(Transform target)
    {
        // Calculate distance to target
@@ -1036,7 +1085,34 @@ private void OnDrawGizmos()
            float minIntensity = _fullEyeLightIntensity * 0.5f;
            eyeLight.intensity = Mathf.Lerp(minIntensity, _fullEyeLightIntensity, normalizedBattery);
        }
+
+
+       if (RenderSettings.ambientIntensity == 0 && !eyeAreaLight.gameObject.activeSelf) 
+       {
+           eyeAreaLight.gameObject.SetActive(true);
+       }
+       else if (RenderSettings.ambientIntensity > 0 && eyeAreaLight.gameObject.activeSelf)
+       {
+           eyeAreaLight.gameObject.SetActive(false);
+       }
+
+
+       if (currentState == RobotState.FollowingPlayer && _player.IsAiming)
+       {
+           eyeLight.range = 90;
+           eyeLight.intensity = _fullEyeLightIntensity * 3;
+           eyeLight.innerSpotAngle = _defaultInnerSpotAngle * 2;
+           eyeLight.spotAngle = _defaultOuterSpotAngle * 2;
+       }
+       else
+       {
+           eyeLight.range = 5;
+           eyeLight.innerSpotAngle = _defaultInnerSpotAngle;
+           eyeLight.spotAngle = _defaultOuterSpotAngle;
+       }
    }
+   
+   
    
 
    public bool IsOn()
@@ -1048,6 +1124,23 @@ private void OnDrawGizmos()
    {
        return IsOn();
    }
+   
+   
+       private void UpdateDebugInformation()
+    {
+        if (TestManager.Instance && TestManager.Instance.DebugMode)
+        {
+            if (_debugText)
+            {
+            
+                _debugText.text = $"State: {CurrentState}\n" +
+                                  $"Battery: {currentBattery}\n" +
+                                  $"Velocity: {rigidBody.linearVelocity}"
+                          ;
+            }
+        }
+
+    }
    
 
    #endregion Utility ------------------------------------------------------------------------

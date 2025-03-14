@@ -126,7 +126,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public bool IsRotatingToTarget { get; private set; }
     public RobotCompanion robot { get; private set; }
     public CameraManager cameraManager { get; private set; }
-    public TextMeshProUGUI debugText { get; private set; }
+    private TextMeshProUGUI _debugText;
     
 
     private CharacterController _controller;
@@ -189,7 +189,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-            debugText = TestManager.Instance.GetDebugText();
+            _debugText = TestManager.Instance.GetDebugTextLeft();
         }
         
     }
@@ -200,7 +200,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
-            debugText = null;
+            _debugText = null;
         }
     }
     
@@ -997,11 +997,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         if (TestManager.Instance && TestManager.Instance.DebugMode)
         {
-            if (debugText)
+            if (_debugText)
             {
                 string robotInfo = robot ? $"Robot: {robot}, {robot.CurrentState}" : "Robot: null";
             
-                debugText.text = $"State: {CurrentState.GetType().Name}\n" +
+                _debugText.text = $"State: {CurrentState.GetType().Name}\n" +
                                  $"IsGrounded: {IsGrounded}\n" +
                                  $"CanStand: {CanStand}\n" +
                                  $"IsAiming: {IsAiming}\n" +

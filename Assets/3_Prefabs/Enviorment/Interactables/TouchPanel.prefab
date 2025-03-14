@@ -422,13 +422,15 @@ MonoBehaviour:
   interactPosition: {fileID: 7349808501166178063}
   robotInteractPosition: {fileID: 970625739782558672}
   commandToSend: 1
-  interactPrompt: {fileID: 2892958733800288703}
+  interactPromptBackground: {fileID: 3347249118671763275}
   interactPromptText: {fileID: 976049418972350101}
   interactSfx: {fileID: 0}
   outlineObject: {fileID: 8660293208301648537}
   playerOutlineColor: {r: 0, g: 1, b: 1, a: 1}
   robotOutlineColor: {r: 1, g: 0, b: 1, a: 1}
   outlineWidth: 4
+  promptFadeDuration: 0.3
+  promptFadeEase: 3
   onInteractStartEvents:
     m_PersistentCalls:
       m_Calls: []
@@ -852,11 +854,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &2892958733800288703 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3509093658303801205, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
+--- !u!114 &3347249118671763275 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3955503963598152065, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
   m_PrefabInstance: {fileID: 1771907737773512394}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &3571677121125646143 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2956105009698499061, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}

@@ -17,11 +17,8 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private float maxFov = 65f;
     
     [Header("Noise Settings")]
-    [SerializeField] private float maxAmplitude = 0.3f;
-    [SerializeField] private float maxFrequency = 5f;
-    
-    
-    [Header("Cameras Priority")]
+    [SerializeField] private float maxAmplitude = 0.2f;
+    [SerializeField] private float maxFrequency = 4f;
     
     [Header("References")]
     public CinemachineCamera freeLookCamera;

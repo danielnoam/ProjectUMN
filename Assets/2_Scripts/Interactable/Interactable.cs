@@ -1,7 +1,10 @@
 using System.Collections;
+using System.Collections.Generic;
+using PrimeTween;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 using VInspector;
 
 public enum CommandToSend
@@ -29,19 +32,23 @@ public class Interactable : MonoBehaviour
     [EndIf]
     
     [Header("Feedback")]
-    [SerializeField] private GameObject interactPrompt;
+    [SerializeField] private Image interactPromptBackground;
     [SerializeField] private TextMeshProUGUI interactPromptText;
     [SerializeField] private SOAudioEvent interactSfx;
     [SerializeField] private Outline outlineObject;
     [SerializeField] private Color playerOutlineColor = Color.cyan;
     [SerializeField] private Color robotOutlineColor = Color.magenta;
     [SerializeField] private float outlineWidth = 4f;
-
+    
+    [Header("Prompt Animation")]
+    [SerializeField] private float promptFadeDuration = 0.3f;
+    [SerializeField] private Ease promptFadeEase = Ease.OutSine;
+    [SerializeField] private float outlineFadeDuration = 0.3f;
+    [SerializeField] private Ease outlineFadeEase = Ease.OutSine;
     
     [Header("Events")]
     public UnityEvent onInteractStartEvents;
     public UnityEvent onInteractEndEvents;
-    
 
     public bool OnlyPlayerCanInteract => allowedInteractors == InteractorType.Player;
     public bool OnlyRobotCanInteract => allowedInteractors == InteractorType.Robot;
@@ -52,38 +59,59 @@ public class Interactable : MonoBehaviour
     private bool _isInteracting = false;
     private bool _markedForInteraction = false;
     private AudioSource _audioSource;
+    private Sequence _promptSequence;
+    private Sequence _outlineSequence;
+    private float _defaultBackgroundAlpha;
+    private float _defaultTextAlpha;
     
-    
-
 
     private void Awake()
     {
         _audioSource = GetComponent<AudioSource>();
-        interactPrompt?.SetActive(false);
+        
+        // Save default alpha values
+        if (interactPromptBackground)
+        {
+            _defaultBackgroundAlpha = interactPromptBackground.color.a;
+            // Set initial alpha to 0 (invisible)
+            SetAlpha(interactPromptBackground, 0f);
+        }
+        
+        if (interactPromptText)
+        {
+            _defaultTextAlpha = interactPromptText.color.a;
+            // Set initial alpha to 0 (invisible)
+            SetAlpha(interactPromptText, 0f);
+        }
+        
         if (outlineObject)
         {
+            // Initialize outline with clear color (fully transparent)
             outlineObject.OutlineColor = Color.clear;
             outlineObject.OutlineWidth = outlineWidth;
         }
+        
+        // Initialize sequences for tweens
+        _promptSequence = Sequence.Create();
+        _outlineSequence = Sequence.Create();
     } 
 
     public void MarkForPlayerInteraction(Iinteractor interactor)
     {
-
         if (_markedForInteraction && !OnlyRobotCanInteract)
         {
-            outlineObject.OutlineColor = playerOutlineColor;
+            ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"E";
-            interactPrompt?.SetActive(true);
+            FadePrompt(true); // Fade in the prompt
         }
         // Otherwise use the normal check
         else if (CanMarkForInteraction(interactor))
         {
-            outlineObject.OutlineColor = playerOutlineColor;
+            ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"E";
-            interactPrompt?.SetActive(true);
+            FadePrompt(true); // Fade in the prompt
         }
     }
     
@@ -91,10 +119,10 @@ public class Interactable : MonoBehaviour
     {
         if (CanMarkForInteraction(interactor))
         {
-            outlineObject.OutlineColor = robotOutlineColor;
+            ChangeOutlineColor(robotOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"R";
-            interactPrompt?.SetActive(true);
+            FadePrompt(true); // Fade in the prompt
         }
     }
     
@@ -102,9 +130,15 @@ public class Interactable : MonoBehaviour
     {
         if (_markedForInteraction)
         {
-            outlineObject.OutlineColor = Color.clear;
+            // Fade out outline color
+            Color transparentOutlineColor = outlineObject.OutlineColor;
+            transparentOutlineColor.a = 0f;
+            ChangeOutlineColor(transparentOutlineColor);
+            
             _markedForInteraction = false;
-            interactPrompt?.gameObject.SetActive(false);
+            
+            // Fade out prompt
+            FadePrompt(false);
         }
     }
 
@@ -198,12 +232,82 @@ public class Interactable : MonoBehaviour
         
         return !_isInteracting && (!_interacted || allowMultipleInteractions) && !_markedForInteraction && interactorAllowed;
     }
+    
+    // Helper method to set alpha value for UI elements
+    private void SetAlpha(Graphic graphic, float alpha)
+    {
+        if (graphic == null) return;
+        
+        Color color = graphic.color;
+        color.a = alpha;
+        graphic.color = color;
+    }
+    
+
+    #region Effect --------------------------------------------------------------------------------------------------------
+
+    private void FadePrompt(bool fadeIn)
+    {
+        _promptSequence.Stop();
+        _promptSequence = Sequence.Create();
+        
+        // Tween background alpha if available
+        if (interactPromptBackground)
+        {
+            float targetAlpha = fadeIn ? _defaultBackgroundAlpha : 0f;
+            
+            _promptSequence.Group(
+                Tween.Alpha(
+                    interactPromptBackground,
+                    startValue: interactPromptBackground.color.a,
+                    endValue: targetAlpha,
+                    duration: promptFadeDuration,
+                    ease: promptFadeEase
+                )
+            );
+        }
+        
+        // Tween text alpha if available
+        if (interactPromptText)
+        {
+            float targetAlpha = fadeIn ? _defaultTextAlpha : 0f;
+            
+            _promptSequence.Group(
+                Tween.Alpha(
+                    interactPromptText,
+                    startValue: interactPromptText.color.a,
+                    endValue: targetAlpha,
+                    duration: promptFadeDuration,
+                    ease: promptFadeEase
+                )
+            );
+        }
+    }
+    
+    private void ChangeOutlineColor(Color targetColor)
+    {
+        if (!outlineObject) return;
+        
+        _outlineSequence.Stop();
+        _outlineSequence = Sequence.Create();
+        
+        _outlineSequence.Group(
+            Tween.Custom(
+                outlineObject.OutlineColor,
+                targetColor,
+                outlineFadeDuration,
+                onValueChange: newColor => outlineObject.OutlineColor = newColor,
+                ease: outlineFadeEase
+            )
+        );
+    }
+
+    #endregion Effect --------------------------------------------------------------------------------------------------------
 
 
-    
-    
-    
-    
+
+    #region Editor --------------------------------------------------------------------------------------------------------
+
 #if UNITY_EDITOR
     
     private void OnValidate()
@@ -249,14 +353,14 @@ public class Interactable : MonoBehaviour
             UnityEditor.Handles.Label(robotInteractPosition.position + new Vector3(0f, 0.1f, 0f), "Robot Interact Position", style);
         }
         
-
-        if (!interactPrompt)
+        if (!interactPromptBackground)
         {
-            Gizmos.DrawLine(transform.position, interactPrompt.transform.position);
-            Gizmos.DrawWireSphere(interactPrompt.transform.position, 0.1f);
-            UnityEditor.Handles.Label(interactPrompt.transform.position + new Vector3(0f, 0.1f, 0f), "Interact Prompt", style);
+            Gizmos.DrawLine(transform.position, interactPromptBackground.transform.position);
+            Gizmos.DrawWireSphere(interactPromptBackground.transform.position, 0.1f);
+            UnityEditor.Handles.Label(interactPromptBackground.transform.position + new Vector3(0f, 0.1f, 0f), "Interact Prompt", style);
         }
     }
 #endif
-    
+
+    #endregion Editor --------------------------------------------------------------------------------------------------------
 }

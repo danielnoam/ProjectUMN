@@ -203,9 +203,11 @@ public class TestManager : MonoBehaviour
     {
         if (!_cameraManager || !currentPlayer) return;
         
+
+        currentPlayer.SwitchState(currentPlayer.GroundedState);
+        currentPlayer.transform.position = Vector3.zero + new Vector3(0, 0.9f, 0);
         currentTheme = introTheme;
         currentTheme?.Play(_audioSource);
-        currentPlayer.SwitchState(currentPlayer.GroundedState);
         _cameraManager.StartIntroSequenceCamera();
     }
 
@@ -241,9 +243,14 @@ public class TestManager : MonoBehaviour
         return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
     }
     
-    public TextMeshProUGUI GetDebugText()
+    public TextMeshProUGUI GetDebugTextLeft()
     {
         return debugTextLeft;
+    }
+    
+    public TextMeshProUGUI GetDebugTextRight()
+    {
+        return debugTextRight;
     }
     
     
@@ -325,13 +332,9 @@ public class TestManager : MonoBehaviour
         
         Debug.Log("Loading... " + tests[testIndex].GetName());
         yield return new WaitForSeconds(tests[testIndex].GetTimeToLoad());
-        Debug.Log("Loaded " + tests[testIndex].GetName());
+        
+        
         currentTest = tests[testIndex];
-        currentTest.ApplyLightingSetting();
-        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
-        currentTheme = currentTest.GetTheme();
-        currentTheme?.CrossFade(_audioSource,1.5f,3f);
-
         if (currentTest.HasRobot()) // The new test has a robot in it
         {
             if (currentRobot) Destroy(currentRobot.gameObject);
@@ -343,9 +346,16 @@ public class TestManager : MonoBehaviour
             currentRobot = newRobot.GetComponent<RobotCompanion>();
             currentRobot.TurnOn();
         }
+        currentTest.ApplyLightingSetting();
+        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
+        currentTheme = currentTest.GetTheme();
+        currentTheme?.CrossFade(_audioSource,1.5f,3f);
+
+
         
         onTestLoaded.Invoke(currentTest);
         _activeLoadCoroutine = null;
+        Debug.Log("Loaded " + tests[testIndex].GetName());
     }
     
     
@@ -364,9 +374,11 @@ public class TestManager : MonoBehaviour
         yield return new WaitForSeconds(test.GetTimeToUnload());
         Debug.Log("Unloaded " + test.GetName());
         Destroy(currentEnvironment);
+        if (currentRobot) Destroy(currentRobot.gameObject);
         currentTest = null;
         currentEnvironment = null;
         currentCheckpoint = null;
+        currentRobot = null;
         onTestUnloaded.Invoke(test);
         
         // Clear unload coroutine reference
