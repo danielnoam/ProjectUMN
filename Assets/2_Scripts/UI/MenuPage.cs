@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using VInspector;
 
+
 public class MenuPage : MonoBehaviour
 {
     
@@ -63,6 +64,9 @@ public class MenuPage : MonoBehaviour
     [Foldout("Audio")]
     [SerializeField] private SOAudioEvent sfxSelectableSelected;
     [SerializeField] private SOAudioEvent sfxButtonClick;
+    [SerializeField] private SOAudioEvent sfxButtonMoveIn;
+    [SerializeField] private SOAudioEvent sfxButtonMoveOut;
+    
     [EndFoldout]
     
     
@@ -238,6 +242,7 @@ public class MenuPage : MonoBehaviour
     
 
     #endregion Selectables Events // ---------------------------------------------------------------------
+    
     
     #region Page Management // ---------------------------------------------------------------------
     
@@ -450,7 +455,8 @@ public class MenuPage : MonoBehaviour
                     selectedAnimationDuration, 
                     ease: moveInEase, 
                     startDelay: i * selectedAnimationDelay
-                ));
+                )
+                .OnComplete(() => sfxButtonMoveIn?.PlayAtPoint(currentObject.transform.position)));
             }
             
             // Calculate total animation time for movement
@@ -553,7 +559,7 @@ public class MenuPage : MonoBehaviour
                     deSelectedAnimationDuration, 
                     ease: moveOutEase, 
                     startDelay: i * deSelectedAnimationDelay
-                ));
+                ).OnComplete(() => sfxButtonMoveOut?.PlayAtPoint(currentObject.transform.position)));
             }
             
             // Calculate total animation time for movement

@@ -79,6 +79,7 @@ public class PlayerInMenuState : PlayerBaseState
 
     public void ExitMenu()
     {
+        StateMachine.InputHandler.ConsumeJumpBuffer();
         StateMachine.SwitchState(StateMachine.GroundedState);
     }
 }

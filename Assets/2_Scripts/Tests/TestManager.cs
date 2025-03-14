@@ -18,6 +18,9 @@ public class TestManager : MonoBehaviour
     [SerializeField] private SOTest[] tests;
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject robotPrefab;
+    [SerializeField] private SOAudioEvent introTheme;
+    
+    [Header("Debug")]
     [SerializeField] private bool debugMode = true;
     [SerializeField] private TextMeshProUGUI debugTextRight;
     [SerializeField] private TextMeshProUGUI debugTextLeft;
@@ -30,9 +33,10 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
 
-    [Header("Events")]
+    [Foldout("Events")]
     public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
     public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
+    [EndFoldout]
     
     
     
@@ -199,6 +203,8 @@ public class TestManager : MonoBehaviour
     {
         if (!_cameraManager || !currentPlayer) return;
         
+        currentTheme = introTheme;
+        currentTheme?.Play(_audioSource);
         currentPlayer.SwitchState(currentPlayer.GroundedState);
         _cameraManager.StartIntroSequenceCamera();
     }

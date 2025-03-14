@@ -107,6 +107,7 @@ public class InfoTextHandler : MonoBehaviour
             
             // Show text
             .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
+            .ChainCallback(() => { _testNameWriter.RestartWriter(); })
             .ChainDelay(textTransitionDelay)
             .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
             .Chain(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: textFadeInDuration))
@@ -158,6 +159,7 @@ public class InfoTextHandler : MonoBehaviour
         
         _textSequence = Sequence.Create()
             .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
+            .ChainCallback(() => { _testNameWriter.RestartWriter(); })
             .ChainDelay(textTransitionDelay/2)
             .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
             .Chain(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))

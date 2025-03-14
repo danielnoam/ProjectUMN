@@ -6,10 +6,12 @@ using UnityEngine.Serialization;
 
 [SelectionBase]
 [RequireComponent(typeof(Interactable))]
+[RequireComponent(typeof(AudioSource))]
 public class PillerButton : MonoBehaviour
 {
-    [Header("Button Visuals")]
-    [SerializeField] private Transform buttonTransform;            
+    [Header("Button Feedback")]
+    [SerializeField] private Transform buttonTransform;     
+    [SerializeField] private SOAudioEvent sfxButtonPress;
     [SerializeField, Min(0.1f)] private float buttonAnimationHeight = 0.1f;            
     [SerializeField] private float buttonAnimationSpeed = 5f;
     [SerializeField] private float autoReleaseDelay = 0.5f;
@@ -21,11 +23,13 @@ public class PillerButton : MonoBehaviour
     private Vector3 _initialButtonPosition;                    
     private Vector3 _pressedButtonPosition;
     private Coroutine _releaseCoroutine;
+    private AudioSource _audioSource;
 
     private void Awake()
     {
         _initialButtonPosition = buttonTransform.localPosition;
         _pressedButtonPosition = _initialButtonPosition - new Vector3(0, buttonAnimationHeight, 0);
+        _audioSource = GetComponent<AudioSource>();
     }
 
     private void Update()
@@ -46,6 +50,7 @@ public class PillerButton : MonoBehaviour
         _isPressed = true;
         
 
+        sfxButtonPress?.Play(_audioSource);
         onButtonPressed.Invoke();
         
 

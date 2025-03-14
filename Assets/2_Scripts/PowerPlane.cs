@@ -52,12 +52,21 @@ public class PowerPlane : MonoBehaviour
     
     [SerializeField, Tooltip("Material to apply to the plane visual")]
     private Material planeMaterial;
+
+    
+    [SerializeField]
+    private AudioSource audioSource;
+    
+    [SerializeField]
+    private SOAudioEvent sfxPlaneActivated;
+    
+    [SerializeField]
+    private SOAudioEvent sfxPlaneDeactivated;
     
     
     private GameObject _planeObject;
     private BoxCollider _boxCollider;
     private Renderer _renderer;
-    
     private Tween _activationTween;
     private Tween _delayTween;
     private float _currentLength;
@@ -309,8 +318,7 @@ public class PowerPlane : MonoBehaviour
     
     private void UpdateComponentStates()
     {
-        if (_renderer)
-            _renderer.enabled = isActive || _activationTween is { isAlive: true, progress: > 0 };
+        if (_renderer) _renderer.enabled = isActive || _activationTween is { isAlive: true, progress: > 0 };
     }
     
     private void SetPlaneActive(bool active)
@@ -333,6 +341,8 @@ public class PowerPlane : MonoBehaviour
         
         // Update the target state
         isActive = active;
+
+
         
         // Make sure the renderer is enabled during animation
         if (_renderer)
@@ -373,7 +383,7 @@ public class PowerPlane : MonoBehaviour
     {
         // Calculate animation duration based on current progress
         float fullLength = GetFullLength();
-        float targetLength = active ? fullLength : 0f;
+        float targetLength = active ? fullLength : 0.05f;
         
         // Stop current animation if running
         _activationTween.Stop();
@@ -401,8 +411,22 @@ public class PowerPlane : MonoBehaviour
                 _currentLength = val;
                 UpdatePlaneTransform(val);
             }
-        );
-        _activationTween.OnComplete(UpdateComponentStates);
+        )
+        .OnComplete(() =>         
+            {
+                UpdateComponentStates();
+                
+                if (active)
+                {
+                    sfxPlaneActivated?.Play(audioSource);
+                }
+                else
+                {
+                    sfxPlaneDeactivated?.Play(audioSource);
+                }
+                
+                
+            });
     }
     
 

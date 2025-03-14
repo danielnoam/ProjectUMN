@@ -19,6 +19,7 @@ public enum RobotState
 [SelectionBase]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(SphereCollider))]
+[RequireComponent(typeof(AudioSource))]
 public class RobotCompanion : MonoBehaviour, Iinteractor
 {
     [Header("State")]
@@ -122,10 +123,18 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [SerializeField] private GameObject eye;
     [SerializeField] private Light eyeLight;
     [EndFoldout]
+    
+    [Foldout("SFX")] 
+    [SerializeField] private SOAudioEvent sfxTurnOn;
+    [SerializeField] private SOAudioEvent sfxTurnOff;
+    [SerializeField] private SOAudioEvent sfxReceiveCommand;
+    [SerializeField] private SOAudioEvent sfxImpact;
+    [EndFoldout]
 
     [Header("References")]
     [SerializeField] private Rigidbody rigidBody;
     [SerializeField] private SphereCollider sphereCollider;
+    [SerializeField] private AudioSource audioSource;
     
     
     private PlayerStateMachine _player;
@@ -150,6 +159,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    private void Awake()
    {
        if (!rigidBody) rigidBody = GetComponent<Rigidbody>();
+       if (!sphereCollider) sphereCollider = GetComponent<SphereCollider>();
+       if (!audioSource) audioSource = GetComponent<AudioSource>();
        if (leftEarPivot) _leftEarBaseRotation = leftEarPivot.localRotation;
        if (rightEarPivot) _rightEarBaseRotation = rightEarPivot.localRotation;
        if (eyeLight)
@@ -192,6 +203,12 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    private void OnCollisionEnter(Collision other)
    {
+       if (CurrentState != RobotState.Dead && CurrentState != RobotState.Off && CurrentState != RobotState.Sitting)
+       {
+           sfxImpact?.Play(audioSource);
+       }
+       
+       
        RaycastHit hit;
        if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.5f, environmentLayer))
        {
@@ -265,6 +282,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    [Button]
    public void TurnOff()
    {
+       sfxTurnOff?.Play(audioSource);
        currentState = RobotState.Off;
        rigidBody.useGravity = true;
        eye.gameObject.SetActive(false);
@@ -275,6 +293,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (currentBattery <= 0) return;
        
+       sfxTurnOn?.Play(audioSource);
        currentState = RobotState.Idle;
        rigidBody.useGravity = false;
        rigidBody.isKinematic = false;
@@ -290,6 +309,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend()) return;
 
+       sfxReceiveCommand?.Play(audioSource);
        CurrentInteractable = interactable;
        _target = interactable.GetInteractPosition(this);
        currentState = RobotState.GoingToTarget;
@@ -300,6 +320,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    public void CommandFollowPlayer()
    {
        if (!_player || !IsOn()) return;
+       
+       sfxReceiveCommand?.Play(audioSource);
        rigidBody.isKinematic = false;
        rigidBody.useGravity = false;
        currentState = RobotState.FollowingPlayer;
@@ -310,6 +332,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend()) return;
        
+       sfxReceiveCommand?.Play(audioSource);
        _target = null;
        currentState = RobotState.Idle;
        rigidBody.useGravity = false;
@@ -321,6 +344,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend()) return;
 
+       sfxReceiveCommand?.Play(audioSource);
        currentState = RobotState.Sitting;
        rigidBody.useGravity = false;
        rigidBody.isKinematic = false;

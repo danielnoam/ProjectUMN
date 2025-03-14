@@ -1,0 +1,193 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f8954906cac5624daa0c6acdd895593, type: 3}
+  m_Name: Manul Toolbar
+  m_EditorClassIdentifier: 
+  settingsExpanded: 1
+  currentVersion: 1.3.3
+  settings:
+    leftBeginOffset: 10
+    rightBeginOffset: -5
+    betweenOffset: 5
+    defaultButtonStyle: 18
+    defaultToggleStyle: 37
+    defaultLabelStyle: 13
+    defaultPopupStyle: 29
+    showConsoleMessages: 1
+    disableToolbar: 0
+    mutedColor: {r: 1, g: 1, b: 1, a: 0.6}
+    overrideLeftType: 0
+    SOForLeftSide: {fileID: 0}
+    SOSetForLeftSide: {fileID: 0}
+    overrideRightType: 0
+    SOForRightSide: {fileID: 0}
+    SOSetForRightSide: {fileID: 0}
+  leftSide:
+  - isActive: 0
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: '||'
+    labelIcon: {fileID: 0}
+    useStyle: 0
+    editorStyle: 30
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 10
+    useColors: 0
+    globalColor: {r: 0.5882353, g: 0.93865013, b: 1, a: 1}
+    contentColor: {r: 1, g: 1, b: 1, a: 1}
+    backgroundColor: {r: 1, g: 1, b: 1, a: 1}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: ExampleTogglePref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 5
+      buttonObject: {fileID: 0}
+      objectName: 
+      className: ExampleStaticClass
+      methodName: CheckExampleEditorPref
+    showNameField: 0
+    intNamesList: []
+  rightSide:
+  - isActive: 1
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: '||'
+    labelIcon: {fileID: 0}
+    useStyle: 0
+    editorStyle: 30
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 10
+    useColors: 0
+    globalColor: {r: 0.5882353, g: 0.93865013, b: 1, a: 1}
+    contentColor: {r: 1, g: 1, b: 1, a: 1}
+    backgroundColor: {r: 1, g: 1, b: 1, a: 1}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: ExampleTogglePref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 5
+      buttonObject: {fileID: 0}
+      objectName: 
+      className: ExampleStaticClass
+      methodName: CheckExampleEditorPref
+    showNameField: 0
+    intNamesList: []
+  - isActive: 1
+    isExpanded: 1
+    type: 1
+    labelType: 0
+    labelText: Main Scene
+    labelIcon: {fileID: 0}
+    useStyle: 1
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 1, g: 1, b: 1, a: 1}
+    contentColor: {r: 1, g: 1, b: 1, a: 1}
+    backgroundColor: {r: 0.37058043, g: 1, b: 0, a: 1}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: fc454137dab98c74ab8ec26789975ef0, type: 3}
+      objectName: 
+      className: 
+      methodName: 
+    showNameField: 0
+    intNamesList: []
+  - isActive: 1
+    isExpanded: 0
+    type: 1
+    labelType: 0
+    labelText: Test Scene
+    labelIcon: {fileID: 0}
+    useStyle: 1
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 1, g: 1, b: 1, a: 1}
+    contentColor: {r: 1, g: 1, b: 1, a: 1}
+    backgroundColor: {r: 0.37058043, g: 1, b: 0, a: 1}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: f989c36ebac9aea4fac0e9753708a3a8, type: 3}
+      objectName: 
+      className: 
+      methodName: 
+    showNameField: 0
+    intNamesList: []
+  - isActive: 1
+    isExpanded: 0
+    type: 1
+    labelType: 0
+    labelText: Toolbar
+    labelIcon: {fileID: 0}
+    useStyle: 0
+    editorStyle: 0
+    styleName: Style Name
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 25
+    useColors: 0
+    globalColor: {r: 1, g: 0, b: 0, a: 1}
+    contentColor: {r: 0.03184688, g: 1, b: 0, a: 1}
+    backgroundColor: {r: 0, g: 0.041553974, b: 1, a: 1}
+    useTooltip: 1
+    linesCount: 2
+    labelTooltip: Opens the Manul Toolbar Settings asset in which you can add, remove,
+      and modify your toolbar buttons.
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 5
+      buttonObject: {fileID: 11400000, guid: 2fac116c5edda2d4c951022af02505a7, type: 2}
+      objectName: 
+      className: Manul.Toolbar.ManulToolbar
+      methodName: FindManulToolbar
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 4
+      buttonObject: {fileID: 11400000}
+      objectName: 
+      className: 
+      methodName: 
+    showNameField: 0
+    intNamesList: []

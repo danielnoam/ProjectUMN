@@ -6,6 +6,7 @@ public class GroundRipple : MonoBehaviour
 {
     [Header("Ripple Settings")]
     [SerializeField] private float rippleCooldown = 0.4f;
+    [SerializeField] private SOAudioEvent rippleSfx;
     
     private static readonly int RippleOrigin = Shader.PropertyToID("_RippleOrigin");
     private static readonly int RippleThickness = Shader.PropertyToID("_RippleThickness");
@@ -13,7 +14,7 @@ public class GroundRipple : MonoBehaviour
     private Material _material;
     private float _rippleTime = 100.0f;
 
-    private void Start()
+    private void Awake()
     {
         _material = GetComponent<Renderer>().material;
     }
@@ -32,6 +33,7 @@ public class GroundRipple : MonoBehaviour
         {
             return;
         }
+        rippleSfx?.PlayAtPoint(hit.point);
         _material.SetVector(RippleOrigin, hit.textureCoord);
         _rippleTime = _material.GetFloat(RippleThickness) * -2.0f;
     }

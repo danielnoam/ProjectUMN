@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEditor;
 using CustomAttribute;
 using UnityEngine.Audio;
 using VInspector;
+using Random = UnityEngine.Random;
 
 
 [CreateAssetMenu(fileName = "AudioEvent", menuName = "SO Audio/Audio Event")]
@@ -143,14 +145,15 @@ public class SOAudioEvent : ScriptableObject
 
 
     #endregion Play AE ----------------------------------------------------------------------------
-
-
+    
 
     
     #region Autdio source controll ------------------------------------------------------------------------------------------------
     
     public void SetAudioSourceSettings(AudioSource source)
     {
+        if (!source) return;
+        
         source.clip = clips[Random.Range(0, clips.Length)];
         source.outputAudioMixerGroup = mixerGroup;
         source.volume = Random.Range(volume.minValue, volume.maxValue);
@@ -227,6 +230,7 @@ public class AudioEventEditor : Editor
         if (GUILayout.Button("Preview Sound"))
         {
             ((SOAudioEvent)target).Play(previewer);
+            Debug.Log("Playing " + previewer.clip.name);
         }
         
         if (GUILayout.Button("Stop Sound"))
