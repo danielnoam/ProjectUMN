@@ -2,6 +2,7 @@ using UnityEngine;
 using VInspector;
 using PrimeTween;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -37,7 +38,7 @@ public class PowerPlane : MonoBehaviour
     private bool isActive;
     
     [SerializeField, Tooltip("When toggled on, activation calls will turn the plane on. When toggled off, activation calls will turn the plane off.")]
-    private bool toggledState = true;
+    private bool powerTurnsOn = true;
     
     
     [Header("References")]
@@ -149,7 +150,7 @@ public class PowerPlane : MonoBehaviour
     #region Control Methods -----------------------------------------------------------------------------------
     
     [Button]
-    public void TogglePlane()
+    private void TogglePlane()
     {
         // When called from inspector, use this component as the caller
         TogglePlane(this);
@@ -167,8 +168,7 @@ public class PowerPlane : MonoBehaviour
         }
     }
     
-    [Button]
-    public void ActivatePlane()
+    private void ActivatePlane()
     {
         // When called from inspector, use this component as the caller
         ActivatePlane(this);
@@ -185,12 +185,11 @@ public class PowerPlane : MonoBehaviour
         // Add to the set of activating objects
         _activatingObjects.Add(caller);
         
-        // Update the activation state based on toggledState
+        // Update the activation state based on powerTurnsOn
         UpdateActivationState();
     }
     
-    [Button]
-    public void DeactivatePlane()
+    private void DeactivatePlane()
     {
         // When called from inspector, use this component as the caller
         DeactivatePlane(this);
@@ -215,8 +214,8 @@ public class PowerPlane : MonoBehaviour
     {
         bool shouldBeActive = _activatingObjects.Count > 0;
         
-        // If toggledState is false, we invert the activation logic
-        if (!toggledState)
+        // If powerTurnsOn is false, we invert the activation logic
+        if (!powerTurnsOn)
             shouldBeActive = !shouldBeActive;
             
         SetPlaneActive(shouldBeActive);
@@ -225,7 +224,7 @@ public class PowerPlane : MonoBehaviour
     [Button]
     public void ToggleGlobalState()
     {
-        toggledState = !toggledState;
+        powerTurnsOn = !powerTurnsOn;
         UpdateActivationState();
     }
     
