@@ -471,36 +471,39 @@ public class PowerPlane : MonoBehaviour
         if (!startPoint || !endPoint)
             return;
             
-        // Draw a line showing the plane path
-        Gizmos.color = isActive ? Color.green : Color.red;
-        Gizmos.DrawLine(startPoint.position, endPoint.position);
+        
+        if (!isActive)
+        {
+            // Draw a line showing the plane path
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(startPoint.position, endPoint.position);
+            
+            // Draw the plane bounds
+            Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
+            Vector3 direction = endPoint.position - startPoint.position;
+            float fullLength = direction.magnitude;
+            Vector3 center = startPoint.position + direction.normalized * (isActive ? fullLength * 0.5f : 0f);
+        
+            // Draw plane bounds
+            Matrix4x4 originalMatrix = Gizmos.matrix;
+            Gizmos.matrix = Matrix4x4.TRS(
+                center,
+                Quaternion.LookRotation(direction.normalized),
+                new Vector3(planeWidth, planeHeight, isActive ? fullLength : 0f)
+            );
+            
+            Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+            Gizmos.matrix = originalMatrix;
+            
+            
+        }
         
         // Draw spheres at start and end
         Gizmos.DrawSphere(startPoint.position, 0.2f);
         Gizmos.DrawSphere(endPoint.position, 0.2f);
         
-        // Draw the plane bounds
-        Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan with transparency
-        Vector3 direction = endPoint.position - startPoint.position;
-        float fullLength = direction.magnitude;
-        Vector3 center = startPoint.position + direction.normalized * (isActive ? fullLength * 0.5f : 0f);
+
         
-        // Draw plane bounds
-        Matrix4x4 originalMatrix = Gizmos.matrix;
-        Gizmos.matrix = Matrix4x4.TRS(
-            center,
-            Quaternion.LookRotation(direction.normalized),
-            new Vector3(planeWidth, planeHeight, isActive ? fullLength : 0f)
-        );
-        Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
-        Gizmos.matrix = originalMatrix;
-        
-        // Show visual indicator for delay setting
-        // if (useDelay && stateChangeDelay > 0)
-        // {
-        //     Gizmos.color = Color.yellow;
-        //     Gizmos.DrawWireSphere(startPoint.position, 0.25f);
-        // }
     }
     #endif
     
