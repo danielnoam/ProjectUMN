@@ -59,6 +59,9 @@ public class PowerPlane : MonoBehaviour
     private AudioSource audioSource;
     
     [SerializeField]
+    private AudioSource audioSource2;
+    
+    [SerializeField]
     private SOAudioEvent sfxPlaneActivated;
     
     [SerializeField]
@@ -80,6 +83,7 @@ public class PowerPlane : MonoBehaviour
     
     private void Awake()
     {
+        if (!isActive) audioSource2?.Stop();
         InitializeComponents();
     }
     
@@ -376,6 +380,7 @@ public class PowerPlane : MonoBehaviour
             UpdatePlaneTransform(_currentLength);
             UpdateComponentStates();
         }
+        
     }
     
     private void StartStateChangeAnimation(bool active)
@@ -401,6 +406,8 @@ public class PowerPlane : MonoBehaviour
         scaledAnimTime = Mathf.Max(scaledAnimTime, 0.05f);
         
         // Start the animation
+        if (active) audioSource2?.Play();
+        
         _activationTween = Tween.Custom(
             startValue: _currentLength,
             endValue: targetLength,
@@ -422,6 +429,7 @@ public class PowerPlane : MonoBehaviour
                 else
                 {
                     sfxPlaneDeactivated?.Play(audioSource);
+                    audioSource2?.Stop();
                 }
                 
                 
@@ -494,8 +502,6 @@ public class PowerPlane : MonoBehaviour
             
             Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
             Gizmos.matrix = originalMatrix;
-            
-            
         }
         
         // Draw spheres at start and end

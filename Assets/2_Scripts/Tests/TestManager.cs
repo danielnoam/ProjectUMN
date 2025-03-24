@@ -338,7 +338,6 @@ public class TestManager : MonoBehaviour
         if (currentTest.HasRobot()) // The new test has a robot in it
         {
             if (currentRobot) Destroy(currentRobot.gameObject);
-            currentRobot = FindFirstObjectByType<RobotCompanion>();
             
         } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
         {
@@ -350,6 +349,10 @@ public class TestManager : MonoBehaviour
         currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
         currentTheme = currentTest.GetTheme();
         currentTheme?.CrossFade(_audioSource,1.5f,3f);
+        if (!currentRobot || currentRobot == null)
+        {
+            currentRobot = FindFirstObjectByType<RobotCompanion>();
+        }
 
 
         

@@ -28,13 +28,13 @@ public class EventTriggerObject : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        
         if ((triggerLayers.value & (1 << other.gameObject.layer)) == 0)
         {
             return;
         }
-
-        if (_triggered && triggerOnce) return;
         
+        if (_triggered && triggerOnce) return;
         
         if (other.TryGetComponent(out PlayerStateMachine player))
         {

@@ -106,6 +106,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     [Header("Events")] 
     public UnityEvent onPlayerSpawned = new UnityEvent();
+    public UnityEvent onPlayerSpawnedFromCheckpoint = new UnityEvent();
     public UnityEvent onPlayerOpenedMenu = new UnityEvent();
     
     
@@ -238,7 +239,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnTestLoaded(SOTest test)
     {
         robot = TestManager.Instance.Robot;
-        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f));
+        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f, false));
     }
     
 
@@ -284,7 +285,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         if (other.TryGetComponent(out LaserGround laserGround))
         {
-            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetCheckPoint(), Quaternion.Euler(0, 0, 0), 2f));
+            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetCheckPoint(), Quaternion.Euler(0, 0, 0), 2f, true));
         }
     }
 

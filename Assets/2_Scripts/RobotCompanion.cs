@@ -189,6 +189,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (_player)
        {
            _player.onPlayerSpawned.AddListener(OnPlayerSpawned);
+           _player.onPlayerSpawnedFromCheckpoint.AddListener(OnPlayerSpawned);
        }
 
        
@@ -206,6 +207,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (_player)
        {
            _player.onPlayerSpawned.RemoveListener(OnPlayerSpawned);
+           _player.onPlayerSpawnedFromCheckpoint.RemoveListener(OnPlayerSpawned);
        }
        
        
@@ -756,7 +758,6 @@ private void OnDrawGizmos()
        else
        {
            targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
-           Debug.Log("Following player");
        }
 
         

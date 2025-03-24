@@ -71,10 +71,14 @@ public class InfoTextHandler : MonoBehaviour
     
     private void OnTestLoaded(SOTest test)
     {
-        testNameText.text = $"{test.GetName()}";
-        testDescriptionText.text = $"{test.GetDescription()}";
-        musicNameText.text = $"'{test.GetTheme().aoName}'";
-        musicAuthorText.text = $"By {test.GetTheme().aoAuthor}";
+        string prfix = "";
+        string suffix = "";
+        
+        
+        testNameText.text = $"{prfix}{test.GetName()}{suffix}";
+        testDescriptionText.text = $"{prfix}{test.GetDescription()}{suffix}";
+        musicNameText.text = $"{prfix}'{test.GetTheme().aoName}'{suffix}";
+        musicAuthorText.text = $"{prfix}By {test.GetTheme().aoAuthor}{suffix}";
     }
 
     private float GetAnimationTime()
