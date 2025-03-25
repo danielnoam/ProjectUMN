@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Serialization;
+using VInspector;
 
 /// <summary>
 /// Renders a tube-like mesh along a path of positions with various options for radius control.
@@ -8,24 +9,25 @@ using UnityEngine.Serialization;
 [SelectionBase]
 public class TubeRenderer : MonoBehaviour
 {
+    [Header("Tube Settings")]
+    [Tooltip("Number of sides around the tube circumference")]
+    [SerializeField] private int sides = 8;
+    
     [Tooltip("Array of points defining the tube's path")]
     [SerializeField] private Vector3[] positions;
     
-    [Tooltip("Number of sides around the tube circumference")]
-    [SerializeField] private int sides = 8;
-
     [Header("Radius Control")]
     [Tooltip("How the tube's radius is determined along its length")]
     [SerializeField] private RadiusMode radiusMode = RadiusMode.Single;
     
     [Tooltip("Animation curve controlling the radius when using Curve mode")]
-    [SerializeField] private AnimationCurve radiusCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
+    [SerializeField, ShowIf("radiusMode", RadiusMode.Curve)] private AnimationCurve radiusCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
     
     [Tooltip("Base radius value")]
-    [SerializeField] private float radiusOne = 1.0f;
+    [SerializeField, HideIf("radiusMode", RadiusMode.Curve)] private float radiusOne = 1.0f;
     
     [Tooltip("End radius value (used only in StartEnd mode)")]
-    [SerializeField] private float radiusTwo = 1.0f;
+    [SerializeField, ShowIf("radiusMode", RadiusMode.StartEnd)] private float radiusTwo = 1.0f;
     
     /// <summary>
     /// How the tube's radius is determined along its length
