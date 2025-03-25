@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Unity.Cinemachine;
+using UnityEngine.SceneManagement;
 using VInspector;
 
 [SelectionBase]
@@ -403,13 +404,17 @@ public class CameraManager : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if (Application.isPlaying || !aimCore) return;
-        
+        if (Application.isPlaying || !aimCore || !SceneManager.GetActiveScene().IsValid()) return;
+
         if (!_player)
         {
             _player = FindFirstObjectByType<PlayerStateMachine>();
         }
-        aimCore.transform.position = _player.transform.position + _currentOffset;
+        else
+        {
+            aimCore.transform.position = _player.transform.position + _currentOffset;
+        }
+        
     }
 #endif
 

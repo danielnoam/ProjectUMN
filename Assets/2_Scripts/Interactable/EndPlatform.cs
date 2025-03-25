@@ -67,4 +67,17 @@ public class EndPlatform : MonoBehaviour
 
     [Button] private void SetActive() { SetActiveState(true); }
     [Button] private void SetInactive() { SetActiveState(false); }
+
+    [Button]
+    public void ToggleState()
+    {
+        if (isActive)
+        {
+            SetInactive();
+        }
+        else
+        {
+            SetActive();
+        }
+    }
 }
