@@ -117,7 +117,7 @@ MonoBehaviour:
     - Position:
         x: 0
         y: 1.7451
-        z: 2
+        z: 4.08
       TangentIn:
         x: 0
         y: 0
@@ -177,7 +177,7 @@ Transform:
   m_GameObject: {fileID: 950367796465062814}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1, y: 2.111001, z: -81.88735}
+  m_LocalPosition: {x: 21.32, y: 2.111001, z: -90.84}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -213,7 +213,7 @@ Transform:
   m_GameObject: {fileID: 1234978658529574233}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22.12, y: 1.9000001, z: -92.62}
+  m_LocalPosition: {x: 0.5, y: 1.2, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -334,8 +334,8 @@ GameObject:
   - component: {fileID: 6885369332620859518}
   - component: {fileID: 1512456869349559519}
   - component: {fileID: 5901594101349593403}
-  - component: {fileID: 4204406505375895913}
   - component: {fileID: 2790380478412153878}
+  - component: {fileID: 4204406505375895913}
   m_Layer: 0
   m_Name: IntroCamera
   m_TagString: Untagged
@@ -437,23 +437,6 @@ MonoBehaviour:
       type: {class: SplineAutoDolly/FixedSpeed, ns: Unity.Cinemachine, asm: Unity.Cinemachine}
       data:
         Speed: 0.1
---- !u!114 &4204406505375895913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2843517628145578283}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68bb026fafb42b14791938953eaace77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NoiseProfile: {fileID: 11400000, guid: 717f6ec7c523c3c47bcca0a69bcb47e2, type: 2}
-  PivotOffset: {x: 0, y: 0, z: 0}
-  AmplitudeGain: 0.1
-  FrequencyGain: 0.2
-  m_NoiseOffsets: {x: 866.1046, y: -708.8716, z: 64.753174}
 --- !u!114 &2790380478412153878
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -488,6 +471,23 @@ MonoBehaviour:
       Wait: 1
       Time: 2
     Restrictions: 0
+--- !u!114 &4204406505375895913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2843517628145578283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68bb026fafb42b14791938953eaace77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NoiseProfile: {fileID: 11400000, guid: 717f6ec7c523c3c47bcca0a69bcb47e2, type: 2}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  AmplitudeGain: 0.1
+  FrequencyGain: 0.2
+  m_NoiseOffsets: {x: 866.1046, y: -708.8716, z: 64.753174}
 --- !u!1 &4097674638430126449
 GameObject:
   m_ObjectHideFlags: 0
@@ -834,7 +834,7 @@ Transform:
   m_GameObject: {fileID: 7572823565956892122}
   serializedVersion: 2
   m_LocalRotation: {x: 0.18936205, y: 0, z: 0, w: 0.98190737}
-  m_LocalPosition: {x: 21.62, y: 3.3522313, z: -93.74588}
+  m_LocalPosition: {x: 0, y: 2.6522312, z: -3.125878}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1102,7 +1102,7 @@ Transform:
   m_GameObject: {fileID: 7702849316814007445}
   serializedVersion: 2
   m_LocalRotation: {x: 0.18936205, y: 0, z: 0, w: 0.98190737}
-  m_LocalPosition: {x: 21.62, y: 3.3522313, z: -93.74588}
+  m_LocalPosition: {x: 0, y: 2.6522312, z: -3.125878}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1273,13 +1273,13 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7284159154342728571}
   - {fileID: 4650268060158600087}
   - {fileID: 3319301787843377604}
   - {fileID: 3867703273233068918}
   - {fileID: 1672232730730348777}
   - {fileID: 7430616677687925867}
   - {fileID: 6885369332620859518}
+  - {fileID: 7284159154342728571}
   - {fileID: 299819921551763558}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

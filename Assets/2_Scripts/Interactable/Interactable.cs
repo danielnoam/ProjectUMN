@@ -110,7 +110,7 @@ public class Interactable : MonoBehaviour
         {
             ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
-            interactPromptText.text = $"E";
+            interactPromptText.text = $"E"; // <sprite name=E>
             FadePrompt(true); // Fade in the prompt
         }
     }

@@ -94,18 +94,26 @@ public class CameraManager : MonoBehaviour
     {
         if (IsIntroCameraActive())
         {
+            switch (_introCameraDolly.CameraPosition)
+            {
+                case >= 1f:
+                    SwitchToCamera(startMenuCamera, true);
+                    break;
+                case >= 0.9f when _player.CurrentState != _player.InMenuState:
+                    _player.SwitchState(_player.InMenuState);
+                    _player.InMenuState.SelectPage(_player.InMenuState.StartPage);
+                    break;            
+        
+                default:
+                    float startSpeed = 0.2f;
+                    float endSpeed = 0.03f;
+                    float t = Mathf.Clamp01(_introCameraDolly.CameraPosition / 1f);
+                    float speed = Mathf.Lerp(startSpeed, endSpeed, t);
+                    
+                    _introCameraDolly.CameraPosition += speed * Time.deltaTime;
+                    break;
+            }
 
-            if (_introCameraDolly.CameraPosition >= 1)
-            {
-                _introCameraDolly.AutomaticDolly.Enabled = false;
-                SwitchToCamera(startMenuCamera, true);
-            }
-            else if (_introCameraDolly.CameraPosition >= 0.9f && _player.CurrentState != _player.InMenuState)
-            {
-                _player.SwitchState(_player.InMenuState);
-                _player.InMenuState.SelectPage(_player.InMenuState.StartPage);
-            }
-            
             return;
         }
         
@@ -200,7 +208,6 @@ public class CameraManager : MonoBehaviour
     {
         SwitchToCamera(introCamera, false);
         _introCameraDolly.CameraPosition = 0;
-        _introCameraDolly.AutomaticDolly.Enabled = true;
     }
     
 

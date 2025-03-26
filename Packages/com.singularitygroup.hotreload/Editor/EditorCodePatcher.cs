@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using SingularityGroup.HotReload.DTO;
 using SingularityGroup.HotReload.Editor.Cli;
-using SingularityGroup.HotReload.Editor.Demo;
 using SingularityGroup.HotReload.EditorDependencies;
 using SingularityGroup.HotReload.RuntimeDependencies;
 using UnityEditor;
@@ -137,7 +136,6 @@ namespace SingularityGroup.HotReload.Editor {
             };
             DetectEditorStart();
             DetectVersionUpdate();
-            SingularityGroup.HotReload.Demo.Demo.I = new EditorDemo();
             RecordActiveDaysForRateApp();
             CodePatcher.I.fieldHandler = new FieldHandler(FieldDrawerUtil.StoreField, UnityFieldHelper.HideField);
             if (EditorApplication.isPlayingOrWillChangePlaymode) {

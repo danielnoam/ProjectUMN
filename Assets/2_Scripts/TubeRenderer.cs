@@ -1,10 +1,7 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 using VInspector;
 
-/// <summary>
-/// Renders a tube-like mesh along a path of positions with various options for radius control.
-/// </summary>
+
 [ExecuteInEditMode]
 [SelectionBase]
 public class TubeRenderer : MonoBehaviour
@@ -13,58 +10,46 @@ public class TubeRenderer : MonoBehaviour
     [Tooltip("Number of sides around the tube circumference")]
     [SerializeField] private int sides = 8;
     
-    [Tooltip("Array of points defining the tube's path")]
-    [SerializeField] private Vector3[] positions;
+    [Tooltip("Close the start cap of the tube")]
+    [SerializeField] private bool closeStartCap = false;
     
-    [Header("Radius Control")]
+    [Tooltip("Close the end cap of the tube")]
+    [SerializeField] private bool closeEndCap = false;
+    
     [Tooltip("How the tube's radius is determined along its length")]
     [SerializeField] private RadiusMode radiusMode = RadiusMode.Single;
     
     [Tooltip("Animation curve controlling the radius when using Curve mode")]
-    [SerializeField, ShowIf("radiusMode", RadiusMode.Curve)] private AnimationCurve radiusCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
+    [SerializeField, ShowIf("radiusMode", RadiusMode.Curve)] private AnimationCurve radiusCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);[EndIf]
     
     [Tooltip("Base radius value")]
-    [SerializeField, HideIf("radiusMode", RadiusMode.Curve)] private float radiusOne = 1.0f;
+    [SerializeField, HideIf("radiusMode", RadiusMode.Curve)] private float radiusOne = 1.0f;[EndIf]
     
     [Tooltip("End radius value (used only in StartEnd mode)")]
-    [SerializeField, ShowIf("radiusMode", RadiusMode.StartEnd)] private float radiusTwo = 1.0f;
+    [SerializeField, ShowIf("radiusMode", RadiusMode.StartEnd)] private float radiusTwo = 1.0f;[EndIf]
     
-    /// <summary>
-    /// How the tube's radius is determined along its length
-    /// </summary>
-    private enum RadiusMode 
-    { 
-        /// <summary>Use a single radius value for the entire tube</summary>
-        Single, 
-        
-        /// <summary>Interpolate between two radius values from start to end</summary>
-        StartEnd, 
-        
-        /// <summary>Use an animation curve to define radius along the tube</summary>
-        Curve 
-    }
+    [Tooltip("Array of points defining the tube's path")]
+    [SerializeField] private Vector3[] positions;
+
+
     
+    private enum RadiusMode { Single, StartEnd, Curve }
     private Vector3[] _vertices;
     private Mesh _mesh;
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
     private bool _meshNeedsRebuild = true;
 
-    /// <summary>
-    /// Get or set the material used for the tube renderer
-    /// </summary>
+
     public Material material
     {
-        get { return _meshRenderer.material; }
-        set { _meshRenderer.material = value; }
+        get => _meshRenderer.material;
+        set => _meshRenderer.material = value;
     }
-
-    /// <summary>
-    /// Get or set the positions that define the tube's path
-    /// </summary>
+    
     public Vector3[] Positions
     {
-        get { return positions; }
+        get => positions;
         set 
         { 
             positions = value;
@@ -72,6 +57,26 @@ public class TubeRenderer : MonoBehaviour
         }
     }
 
+    public bool CloseStartCap
+    {
+        get => closeStartCap;
+        set 
+        { 
+            closeStartCap = value;
+            _meshNeedsRebuild = true;
+        }
+    }
+
+    public bool CloseEndCap
+    {
+        get => closeEndCap;
+        set 
+        { 
+            closeEndCap = value;
+            _meshNeedsRebuild = true;
+        }
+    }
+    
     private void Awake()
     {
         InitializeComponents();
@@ -79,7 +84,6 @@ public class TubeRenderer : MonoBehaviour
 
     private void Reset()
     {
-        // Set default positions when component is first added
         positions = new Vector3[]
         {
             new Vector3(0, 0, 0),
@@ -123,14 +127,10 @@ public class TubeRenderer : MonoBehaviour
         sides = Mathf.Max(3, sides);
         _meshNeedsRebuild = true;
     }
-
-    /// <summary>
-    /// Set new positions for the tube and regenerate the mesh
-    /// </summary>
-    /// <param name="newPositions">Array of Vector3 positions defining the tube's path</param>
+    
     public void SetPositions(Vector3[] newPositions)
     {
-        this.positions = newPositions;
+        positions = newPositions;
         _meshNeedsRebuild = true;
         GenerateMesh();
     }
@@ -138,18 +138,18 @@ public class TubeRenderer : MonoBehaviour
     private void InitializeComponents()
     {
         _meshFilter = GetComponent<MeshFilter>();
-        if (_meshFilter == null)
+        if (!_meshFilter)
         {
             _meshFilter = gameObject.AddComponent<MeshFilter>();
         }
 
         _meshRenderer = GetComponent<MeshRenderer>();
-        if (_meshRenderer == null)
+        if (!_meshRenderer)
         {
             _meshRenderer = gameObject.AddComponent<MeshRenderer>();
         }
 
-        if (_mesh == null)
+        if (!_mesh)
         {
             _mesh = new Mesh();
             _mesh.name = "TubeMesh";
@@ -160,23 +160,29 @@ public class TubeRenderer : MonoBehaviour
     private void GenerateMesh()
     {
         // If we don't have enough points to create a tube
-        if (_mesh == null || positions == null || positions.Length <= 1)
+        if (!_mesh || positions == null || positions.Length <= 1)
         {
-            if (_mesh != null)
+            if (_mesh)
             {
                 _mesh.Clear();
             }
             return;
         }
         
+        // Calculate the number of additional vertices needed for caps
+        int capVertices = 0;
+        if (closeStartCap) capVertices += 1; // Center vertex for start cap
+        if (closeEndCap) capVertices += 1;   // Center vertex for end cap
+        
         // Calculate the vertices length based on positions and sides
-        var verticesLength = sides * positions.Length;
+        var verticesLength = sides * positions.Length + capVertices;
         
         // Check if we need to rebuild arrays
         if (_vertices == null || _vertices.Length != verticesLength || _meshNeedsRebuild)
         {
             _vertices = new Vector3[verticesLength];
             
+            // Generate indices and UVs with cap consideration
             var indices = GenerateIndices(positions.Length);
             var uvs = GenerateUVs(positions.Length);
             
@@ -199,6 +205,17 @@ public class TubeRenderer : MonoBehaviour
             }
         }
 
+        // Add cap center vertices
+        if (closeStartCap)
+        {
+            _vertices[currentVertIndex++] = positions[0];
+        }
+        
+        if (closeEndCap)
+        {
+            _vertices[currentVertIndex++] = positions[positions.Length - 1];
+        }
+
         _mesh.vertices = _vertices;
         _mesh.RecalculateNormals();
         _mesh.RecalculateBounds();
@@ -208,8 +225,14 @@ public class TubeRenderer : MonoBehaviour
 
     private Vector2[] GenerateUVs(int positionCount)
     {
-        var uvs = new Vector2[positionCount * sides];
+        // Calculate total vertices including caps
+        int totalVertices = positionCount * sides;
+        if (closeStartCap) totalVertices += 1;
+        if (closeEndCap) totalVertices += 1;
+        
+        var uvs = new Vector2[totalVertices];
 
+        // UVs for tube body
         for (int segment = 0; segment < positionCount; segment++)
         {
             for (int side = 0; side < sides; side++)
@@ -222,14 +245,38 @@ public class TubeRenderer : MonoBehaviour
             }
         }
 
+        // UVs for caps (center of UV space)
+        int capStartIndex = positionCount * sides;
+        if (closeStartCap)
+        {
+            uvs[capStartIndex] = new Vector2(0.5f, 0);
+        }
+        
+        if (closeEndCap)
+        {
+            int endCapIndex = capStartIndex;
+            if (closeStartCap) endCapIndex++;
+            uvs[endCapIndex] = new Vector2(0.5f, 1);
+        }
+
         return uvs;
     }
 
     private int[] GenerateIndices(int positionCount)
     {
-        // Two triangles and 3 vertices
-        var indices = new int[(positionCount - 1) * sides * 2 * 3];
+        // Calculate number of triangles
+        int tubeTriangles = (positionCount - 1) * sides * 2;
+        int capTriangles = 0;
+        
+        if (closeStartCap) capTriangles += sides;
+        if (closeEndCap) capTriangles += sides;
+        
+        int totalTriangles = tubeTriangles + capTriangles;
+        
+        // Each triangle has 3 indices
+        var indices = new int[totalTriangles * 3];
 
+        // Generate indices for tube body
         var currentIndicesIndex = 0;
         for (int segment = 1; segment < positionCount; segment++)
         {
@@ -250,41 +297,105 @@ public class TubeRenderer : MonoBehaviour
             }
         }
 
+        // Generate indices for start cap - CORRECTED WINDING ORDER
+        if (closeStartCap)
+        {
+            int centerVertexIndex = positionCount * sides;
+            
+            for (int side = 0; side < sides; side++)
+            {
+                // Reversed winding order for start cap so it faces outward
+                indices[currentIndicesIndex++] = centerVertexIndex;
+                indices[currentIndicesIndex++] = (side == sides - 1) ? 0 : (side + 1);
+                indices[currentIndicesIndex++] = side;
+            }
+        }
+
+        // Generate indices for end cap - CORRECTED WINDING ORDER
+        if (closeEndCap)
+        {
+            int centerVertexIndex = positionCount * sides;
+            if (closeStartCap) centerVertexIndex++;
+            
+            int lastRingStartIndex = (positionCount - 1) * sides;
+            
+            for (int side = 0; side < sides; side++)
+            {
+                // Correct winding order for end cap so it faces outward
+                indices[currentIndicesIndex++] = centerVertexIndex;
+                indices[currentIndicesIndex++] = lastRingStartIndex + side;
+                indices[currentIndicesIndex++] = (side == sides - 1) ? lastRingStartIndex : (lastRingStartIndex + side + 1);
+            }
+        }
+
         return indices;
     }
 
     private Vector3[] CalculateCircle(int index)
     {
-        var dirCount = 0;
         var forward = Vector3.zero;
-
-        // If not first index
-        if (index > 0)
+        
+        // Calculate forward direction
+        if (index == 0)
         {
-            forward += (positions[index] - positions[index - 1]).normalized;
-            dirCount++;
+            // First point - use direction to next point
+            forward = (positions[index + 1] - positions[index]).normalized;
+        }
+        else if (index == positions.Length - 1)
+        {
+            // Last point - use direction from previous point
+            forward = (positions[index] - positions[index - 1]).normalized;
+        }
+        else
+        {
+            // Middle points - use average of adjacent segments, but preserve length
+            var dir1 = (positions[index] - positions[index - 1]).normalized;
+            var dir2 = (positions[index + 1] - positions[index]).normalized;
+            
+            // Calculate angle between segments
+            float angle = Vector3.Angle(dir1, dir2) * Mathf.Deg2Rad;
+            
+            // If angle is very sharp, use a different approach
+            if (angle > Mathf.PI * 0.75f) // 135 degrees or more
+            {
+                // For very sharp corners, use the previous segment's direction
+                forward = dir1;
+            }
+            else
+            {
+                // Normal case - average the directions and normalize
+                // Use the formula that properly accounts for the angle between segments
+                forward = (dir1 + dir2).normalized;
+                
+                // Adjust for miter length to maintain consistent tube thickness
+                if (angle > 0.01f) // Only if there's a noticeable angle
+                {
+                    // Adjust by 1/sin(angle/2) to maintain tube thickness
+                    float adjust = 1.0f / Mathf.Sin(angle * 0.5f);
+                    // Clamp to avoid extreme values at very sharp corners
+                    adjust = Mathf.Clamp(adjust, 1.0f, 2.0f);
+                    forward = forward * adjust;
+                }
+            }
         }
 
-        // If not last index
-        if (index < positions.Length - 1)
+        // Calculate perpendicular axes for the circle
+        var up = Vector3.Cross(forward, Vector3.up);
+        if (up.magnitude < 0.01f)
         {
-            forward += (positions[index + 1] - positions[index]).normalized;
-            dirCount++;
+            // If forward is parallel to up, use a different reference vector
+            up = Vector3.Cross(forward, Vector3.right);
         }
-
-        // Forward is the average of the connecting edges directions
-        forward = (forward / dirCount).normalized;
-        var side = Vector3.Cross(forward, forward + new Vector3(.123564f, .34675f, .756892f)).normalized;
-        var up = Vector3.Cross(forward, side).normalized;
+        up.Normalize();
+        
+        var right = Vector3.Cross(up, forward).normalized;
 
         var circle = new Vector3[sides];
-        var angle = 0f;
         var angleStep = (2 * Mathf.PI) / sides;
-
         var t = index / (positions.Length - 1f);
-        float radius;
         
         // Calculate radius based on the selected mode
+        float radius;
         switch (radiusMode)
         {
             case RadiusMode.StartEnd:
@@ -299,14 +410,14 @@ public class TubeRenderer : MonoBehaviour
                 break;
         }
 
+        // Create the circle points
         for (int i = 0; i < sides; i++)
         {
-            var x = Mathf.Cos(angle);
-            var y = Mathf.Sin(angle);
-
-            circle[i] = positions[index] + side * x * radius + up * y * radius;
-
-            angle += angleStep;
+            float angle = i * angleStep;
+            float cosA = Mathf.Cos(angle);
+            float sinA = Mathf.Sin(angle);
+            
+            circle[i] = positions[index] + right * (cosA * radius) + up * (sinA * radius);
         }
 
         return circle;
