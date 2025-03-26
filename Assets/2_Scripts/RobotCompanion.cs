@@ -173,8 +173,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        {
            _defaultEyeLightColor = eyeLight.color;
            _fullEyeLightIntensity = eyeLight.intensity;
-           _defaultInnerSpotAngle = eyeLight.spotAngle;
-           _defaultOuterSpotAngle = eyeLight.innerSpotAngle;
+           _defaultInnerSpotAngle = eyeLight.innerSpotAngle;
+           _defaultOuterSpotAngle = eyeLight.spotAngle;
        }
        currentBattery = fullBattery;
    }

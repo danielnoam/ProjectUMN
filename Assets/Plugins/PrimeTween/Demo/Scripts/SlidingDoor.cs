@@ -1,9 +1,13 @@
+
+
 #if PRIME_TWEEN_INSTALLED && UNITY_UGUI_INSTALLED
 using PrimeTween;
 using UnityEngine;
 
+
 namespace PrimeTweenDemo {
     public class SlidingDoor : Animatable {
+        
         [SerializeField] Transform animationAnchor;
         [SerializeField] Vector3 openedPos, midPos, closedPos;
         bool isClosed;
@@ -15,6 +19,7 @@ namespace PrimeTweenDemo {
             }
         }
 
+        
         public override Sequence Animate(bool _isClosed) {
             if (isClosed == _isClosed) {
                 return Sequence.Create();

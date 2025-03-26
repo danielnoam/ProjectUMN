@@ -2,7 +2,6 @@ using UnityEngine;
 using VInspector;
 using PrimeTween;
 using System.Collections.Generic;
-using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -440,6 +439,7 @@ public class PowerPlane : MonoBehaviour
     
     #endregion Setup Methods --------------------------------------------------------------------------------------
 
+    
     
     #region Editor -----------------------------------------------------------------------------------
 
