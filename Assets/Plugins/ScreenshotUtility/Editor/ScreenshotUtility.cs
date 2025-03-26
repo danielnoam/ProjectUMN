@@ -5,6 +5,9 @@ using UnityEditor;
 using UnityEditor.AnimatedValues;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if CINEMACHINE
+using Unity.Cinemachine;
+#endif
 
 // Staggart Creations http://staggart.xyz
 // Copyright protected under Unity asset store EULA
@@ -466,11 +469,9 @@ public sealed class ScreenshotUtility : EditorWindow
         float originalOthoSize = sourceCamera.orthographicSize;
 
 #if CINEMACHINE
-        /*
-        Cinemachine.CinemachineBrain cBrain = sourceCamera.GetComponent<Cinemachine.CinemachineBrain>();
+        CinemachineBrain cBrain = sourceCamera.GetComponent<CinemachineBrain>();
         bool cBrainEnable = false;
         if (cBrain) cBrainEnable = cBrain.enabled;
-        */
 #endif
 
         if (captureScene)
@@ -485,7 +486,7 @@ public sealed class ScreenshotUtility : EditorWindow
             if (SceneView.lastActiveSceneView)
             {
 #if CINEMACHINE
-                //if (cBrain && cBrainEnable) cBrain.enabled = false;
+                if (cBrain && cBrainEnable) cBrain.enabled = false;
 #endif
                 
                 sourceCamera.fieldOfView = SceneView.lastActiveSceneView.camera.fieldOfView;
@@ -523,7 +524,7 @@ public sealed class ScreenshotUtility : EditorWindow
 
         //Restore
 #if CINEMACHINE
-        //if (cBrain && cBrainEnable) cBrain.enabled = true;
+        if (cBrain && cBrainEnable) cBrain.enabled = true;
 #endif
         if (captureScene)
         {
