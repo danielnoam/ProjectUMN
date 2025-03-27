@@ -313,7 +313,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 0.48
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6944776471230076981
 GameObject:
@@ -325,8 +325,9 @@ GameObject:
   m_Component:
   - component: {fileID: 5802156293420794569}
   - component: {fileID: 488975152901695955}
+  - component: {fileID: 7144686127989086391}
   - component: {fileID: 8070216384204447415}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: PowerPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -447,6 +448,27 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!135 &7144686127989086391
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6944776471230076981}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &8070216384204447415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -464,23 +486,47 @@ MonoBehaviour:
   rotationPivot: {fileID: 815008496850535695}
   rotationSpeed: 500
   rotationAcceleration: 100
-  rotationDeceleration: 75
+  rotationDeceleration: 150
   rotationDirection: {x: 0, y: 1, z: 1}
   pointLight: {fileID: 7820413481550610846}
   maxLightIntensity: 5
   lightAcceleration: 1
-  lightDeceleration: 1
+  lightDeceleration: 1.5
   materialRenderer: {fileID: 1431242944131415894}
   maxEmissionIntensity: 5
   emissionColor: {r: 0, g: 1, b: 1, a: 1}
   emissionAcceleration: 1
-  emissionDeceleration: 1
+  emissionDeceleration: 1.5
   onActivated:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: SlideingDoor, Assembly-CSharp
+        m_MethodName: AddPowerSource
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8070216384204447415}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onDeactivated:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: SlideingDoor, Assembly-CSharp
+        m_MethodName: RemovePowerSource
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8070216384204447415}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   isOn: 0
   powerSources: 0
   powerRatio: 0

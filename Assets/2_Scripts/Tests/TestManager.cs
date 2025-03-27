@@ -188,14 +188,8 @@ public class TestManager : MonoBehaviour
         StartTest(testIndex);
     }
     
-    [Button]
-    public void QuitApplication()
-    {
-        Application.Quit();
-        #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-        #endif
-    }
+
+
 
 
     [Button]
@@ -209,6 +203,14 @@ public class TestManager : MonoBehaviour
         currentTheme = introTheme;
         currentTheme?.Play(_audioSource);
         _cameraManager.StartIntroSequenceCamera();
+    }
+    
+    public void QuitApplication()
+    {
+        Application.Quit();
+        #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+        #endif
     }
 
     public void ToggleDebugMode()

@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 [SelectionBase]
-public class SlideingDoor : MonoBehaviour
+public class SlidingDoor : MonoBehaviour
 {
 
     [Header("Settings")] 
@@ -32,26 +32,26 @@ public class SlideingDoor : MonoBehaviour
     [SerializeField] private Vector3 openedPosR, closedPosR;
     [EndFoldout]
     
-    [Space(10)]
+    [Header("Debug")]
     [SerializeField ,ReadOnly] private bool isClosed;
     [SerializeField, ReadOnly] private float powerSources;
+    
+    
+    
     private Sequence _animationSequence;
     private readonly HashSet<Object> _powerSources = new HashSet<Object>();
 
     private void Awake()
     {
-        SetState(isClosed, true);
+        ApplyStateImmediate(isClosed);
     }
 
     private void Update()
     {
         if (!usePowerSystem) return;
         
-        
-        
         if (powerTurnOn)
         {
-
             if (_powerSources.Count >= powerSourcesNeeded && isClosed)
             {
                 SetState(false);
@@ -60,8 +60,6 @@ public class SlideingDoor : MonoBehaviour
             {
                 SetState(true);
             }
-            
-                
         }
         else
         {
@@ -73,11 +71,12 @@ public class SlideingDoor : MonoBehaviour
             {
                 SetState(false);
             }
-            
         }
         
         powerSources = _powerSources.Count;
     }
+
+    #region Door State Control ------------------------------------------------------------------------------------------------
 
     [Button]
     public void ToggleState()
@@ -97,47 +96,67 @@ public class SlideingDoor : MonoBehaviour
         SetState(true);
     }
     
-    
-    private Sequence SetState(bool _isClosed, bool instant = false) {
-        
-        if (usePowerSystem && _powerSources.Count > 0) Sequence.Create();
-        
-        
-        
+    private void SetState(bool closed, bool instant = false) 
+    {
         if (!Application.isPlaying || instant)
         {
-            isClosed = _isClosed;
-            
-            if (_isClosed) {
-                leftAnchor.localPosition = closedPosL;
-                rightAnchor.localPosition = closedPosR;
-            }
-            else {
-                leftAnchor.localPosition = openedPosL;
-                rightAnchor.localPosition = openedPosR;
-            }
-            
-            return  Sequence.Create();
+            ApplyStateImmediate(closed);
+            return;
         }
         
+        PlayDoorAnimation(closed);
+    }
+    
+    private void ApplyStateImmediate(bool closed)
+    {
+        isClosed = closed;
         
-        if (isClosed == _isClosed) {
+        if (closed) 
+        {
+            leftAnchor.localPosition = closedPosL;
+            rightAnchor.localPosition = closedPosR;
+        }
+        else 
+        {
+            leftAnchor.localPosition = openedPosL;
+            rightAnchor.localPosition = openedPosR;
+        }
+    }
+    
+    
+    private Sequence PlayDoorAnimation(bool closed)
+    {
+        if (usePowerSystem && _powerSources.Count > 0) Sequence.Create();
+        
+        if (isClosed == closed) 
+        {
             return Sequence.Create();
         }
-        isClosed = _isClosed;
-        if (_animationSequence.isAlive) {
+        
+        isClosed = closed;
+        
+        if (_animationSequence.isAlive) 
+        {
             _animationSequence.Stop();
         }
         
         var tweenSettings = new TweenSettings(animationTime, animationEase, startDelay: animationStartDelay);
         _animationSequence =
-            Tween.LocalPosition(leftAnchor, _isClosed ? closedPosL : openedPosL, tweenSettings)
-                .Group(Tween.LocalPosition(rightAnchor, _isClosed ? closedPosR : openedPosR, tweenSettings));
-        
+            Tween.LocalPosition(leftAnchor, closed ? closedPosL : openedPosL, tweenSettings)
+                .Group(Tween.LocalPosition(rightAnchor, closed ? closedPosR : openedPosR, tweenSettings));
         
         return _animationSequence;
     }
+    
 
+    #endregion Door State Control ------------------------------------------------------------------------------------------------
+    
+    
+
+
+    
+    
+    #region Power System ------------------------------------------------------------------------------------------------
     
     public void AddPowerSource(Object source)
     {
@@ -148,18 +167,20 @@ public class SlideingDoor : MonoBehaviour
     {
         _powerSources.Remove(source);
     }
-
     
     
-    #region Editor
+     
+    #endregion Power System ------------------------------------------------------------------------------------------------
+    
+    
 
+    #region Editor ------------------------------------------------------------------------------------------------
     
     private void OnValidate()
     {
         if (!Application.isPlaying)
-            SetState(isClosed, true);
+            ApplyStateImmediate(isClosed);
     }
 
-    #endregion
-
+    #endregion Editor ------------------------------------------------------------------------------------------------
 }

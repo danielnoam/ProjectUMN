@@ -1,16 +1,17 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
+[SelectionBase]
 public class LaserSource : MonoBehaviour
 {
-    
     [Header("Settings")]
-    [SerializeField] private  Transform originTransform;
-    [SerializeField] private  LaserBeam laserBeam;
+    [SerializeField] private Transform originTransform;
+    [SerializeField] private LaserBeam laserBeam;
     [SerializeField] private float beamLength = 100f;
     [SerializeField] private float beamWidth = 0.1f;
     [SerializeField] private Color beamColor = Color.red;
     [SerializeField] private Material beamMaterial;
+    [SerializeField] private LayerMask collisionMask = -1; // Default to all layers
 
     private void Start() {
         // Initialize the beam with the specified properties
@@ -24,6 +25,6 @@ public class LaserSource : MonoBehaviour
         // Reset accumulated distance and propagate
         laserBeam.totalDistance = 0f;
         laserBeam.maxTotalDistance = beamLength;
-        laserBeam.Propagate(startPosition, direction);
+        laserBeam.Propagate(startPosition, direction, collisionMask);
     }
 }

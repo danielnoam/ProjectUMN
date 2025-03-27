@@ -120,12 +120,12 @@ public class PowerPoint : MonoBehaviour
     {
         powerSources = _powerSources.Count;
         
-        if (_powerSources.Count >= powerSourcesNeeded && !isOn)
+        if (_powerSources.Count >= powerSourcesNeeded && !isOn && _currentRotationSpeed >= rotationSpeed/3)
         {
             isOn = true;
             onActivated?.Invoke();
         } 
-        else if (_powerSources.Count < powerSourcesNeeded && isOn)
+        else if (_powerSources.Count < powerSourcesNeeded && isOn && _currentRotationSpeed <= rotationSpeed/2)
         {
             isOn = false;
             onDeactivated?.Invoke();

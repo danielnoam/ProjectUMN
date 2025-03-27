@@ -43,11 +43,21 @@ public class SOTest : ScriptableObject
     
     public int GetTimeToLoad()
     {
+        if (TestManager.Instance && TestManager.Instance.DebugMode)
+        {
+            return 1;
+        }
+        
         return timeToLoad;
     }
     
     public int GetTimeToUnload()
     {
+        if (TestManager.Instance && TestManager.Instance.DebugMode)
+        {
+            return 1;
+        }
+        
         return timeToUnload;
     }
     
@@ -85,6 +95,7 @@ public class SOTest : ScriptableObject
         return theme;
     }
     
+    [Button]
     public void ApplyLightingSetting()
     {
         RenderSettings.ambientIntensity = ambientIntensity;

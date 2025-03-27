@@ -9,20 +9,34 @@ public class EndPlatform : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private bool isActive;
     [SerializeField] private AudioSource audioSource;
+    [SerializeField] private Light pointLight;
     [SerializeField] private ParticleSystem[] particleSystems;
-    private TestManager _testManager;
     
+    private TestManager _testManager;
+    private float _lightIntensity;
     
     
 
     private void Awake()
     {
+        if (pointLight)
+        {
+            _lightIntensity = pointLight.intensity;
+        }
         SetActiveState(isActive);
     }
 
     private void Start()
     {
         _testManager = TestManager.Instance;
+    }
+    
+    private void Update()
+    {
+        if (pointLight)
+        {
+            pointLight.intensity = Mathf.Lerp(pointLight.intensity, isActive ? _lightIntensity : 0, Time.deltaTime * 2);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -48,6 +62,7 @@ public class EndPlatform : MonoBehaviour
         if (state)
         {
             audioSource?.Play();
+            
             
             foreach (var particle in particleSystems)
             {

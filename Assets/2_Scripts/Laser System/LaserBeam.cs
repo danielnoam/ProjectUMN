@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Serialization;
+using VInspector;
 
 [RequireComponent(typeof(LineRenderer))]
 public class LaserBeam : MonoBehaviour
@@ -13,7 +14,8 @@ public class LaserBeam : MonoBehaviour
     public Vector3 hitNormal;
     public LaserBeam prefab;
     public Vector3 Direction => (endPosition - startPosition).normalized;
-    private LaserOpticalElementBase _laserOpticalElementBaseThatTheBeamHit;
+    [ShowInInspector] private LaserOpticalElementBase _laserOpticalElementBaseThatTheBeamHit;
+    [ShowInInspector] private PowerPoint _powerPointThatTheBeamHit;
     [HideInInspector] public LineRenderer _lineRenderer;
 
     public LaserOpticalElementBase LaserOpticalElementBaseThatTheBeamHit { 
@@ -35,6 +37,26 @@ public class LaserBeam : MonoBehaviour
             }
         }
     }
+    
+    public PowerPoint PowerPointThatTheBeamHit {
+        get => _powerPointThatTheBeamHit;
+        set {
+            if (_powerPointThatTheBeamHit == value) {
+                return;
+            }
+            else {
+                if (_powerPointThatTheBeamHit) {
+                    _powerPointThatTheBeamHit.RemovePowerSource(this);
+                }
+                
+                _powerPointThatTheBeamHit = value;
+                
+                if (_powerPointThatTheBeamHit) {
+                    _powerPointThatTheBeamHit.AddPowerSource(this);
+                }
+            }
+        }
+    }
 
     private void Awake() {                                                                                                               
         _lineRenderer = GetComponent<LineRenderer>();
@@ -49,7 +71,13 @@ public class LaserBeam : MonoBehaviour
         _lineRenderer.endColor = color;
     }
 
+    // Original method kept for backward compatibility
     public void Propagate(Vector3 startPosition, Vector3 direction) {
+        Propagate(startPosition, direction, -1); // -1 is the default layer mask (everything)
+    }
+
+    // New method with layer mask parameter
+    public void Propagate(Vector3 startPosition, Vector3 direction, LayerMask layerMask) {
         // Remember the original totalDistance before we add this segment
         float originalDistance = totalDistance;
         
@@ -68,14 +96,19 @@ public class LaserBeam : MonoBehaviour
         Vector3 endPosition = startPosition + direction * remainingDistance;
         Vector3 hitNormal = Vector3.zero;
 
-        if (Physics.Raycast(startPosition, direction, out RaycastHit hit, remainingDistance)) {
+        if (Physics.Raycast(startPosition, direction, out RaycastHit hit, remainingDistance, layerMask)) {
             endPosition = hit.point;
             hitNormal = hit.normal;
 
+            // Check for optical element
             LaserOpticalElementBaseThatTheBeamHit = hit.collider.TryGetComponent(out LaserOpticalElementBase opticalElement) ? opticalElement : null;
+            
+            // Check for PowerPoint
+            PowerPointThatTheBeamHit = hit.collider.TryGetComponent(out PowerPoint powerPoint) ? powerPoint : null;
         }
         else {
             LaserOpticalElementBaseThatTheBeamHit = null;
+            PowerPointThatTheBeamHit = null;
         }
 
         this.startPosition = startPosition;

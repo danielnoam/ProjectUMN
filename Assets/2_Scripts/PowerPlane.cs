@@ -11,60 +11,53 @@ using UnityEditor;
 public class PowerPlane : MonoBehaviour
 {
     [Header("Plane Settings")]
+    [SerializeField, Tooltip("When toggled on, activation calls will turn the plane on. When toggled off, activation calls will turn the plane off.")]
+    private bool powerTurnsOn = true;
+    
     [SerializeField, Range(0.1f, 15f), Tooltip("Width of the plane")]
     private float planeWidth = 2f;
     
     [SerializeField, Range(0.1f, 15f), Tooltip("Height/thickness of the plane")]
     private float planeHeight = 0.2f;
     
-    [SerializeField, Range(0.1f, 5f), Tooltip("Time to fully activate or deactivate the plane")]
-    private float animationTime = 2.0f;
-
-    [SerializeField, Tooltip("Ease function to use for the animation")]
-    private Ease animationEase = Ease.Linear;
     [SerializeField, Tooltip("Whether to use a delay before changing the power plane state")]
     private bool useDelay = false;
     
-    [EnableIf("useDelay")]
-    [SerializeField, Range(0f, 10f), Tooltip("Delay in seconds before the plane changes state")]
+    [ShowIf("useDelay"), SerializeField, Range(0f, 10f), Tooltip("Delay in seconds before the plane changes state")]
     private float stateChangeDelay = 0.5f;
     [EndIf]
     
+    
+    [Header("Animation Settings")]
+    [SerializeField, Range(0.1f, 5f), Tooltip("Time to fully activate the plane")]
+    private float activateAnimationTime = 2.0f;
+    
+    [SerializeField, Range(0.1f, 5f), Tooltip("Time to fully deactivate the plane")]
+    private float deactivateAnimationTime = 2.0f;
 
-    
-    [Header("Runtime")]
-    [SerializeField, Tooltip("Toggle to activate/deactivate the plane (works in editor and play mode)")]
-    private bool isActive;
-    
-    [SerializeField, Tooltip("When toggled on, activation calls will turn the plane on. When toggled off, activation calls will turn the plane off.")]
-    private bool powerTurnsOn = true;
+    [SerializeField, Tooltip("Ease function to use for the animation")]
+    private Ease animationEase = Ease.Linear;
     
     
     [Header("References")]
     [SerializeField, Tooltip("Starting point of the plane")]
     private Transform startPoint;
-    
     [SerializeField, Tooltip("Ending point of the plane")]
     private Transform endPoint;
-    
     [SerializeField, Tooltip("Reference to the visual GameObject that will be scaled between start and end points")]
     private Transform planeVisualRef;
-    
     [SerializeField, Tooltip("Material to apply to the plane visual")]
     private Material planeMaterial;
-
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioSource audioSource2;
+    [SerializeField] private SOAudioEvent sfxPlaneActivated;
+    [SerializeField] private SOAudioEvent sfxPlaneDeactivated;
     
-    [SerializeField]
-    private AudioSource audioSource;
     
-    [SerializeField]
-    private AudioSource audioSource2;
+    [Header("Debug")]
+    [SerializeField ,ReadOnly] private bool isActive;
+    [SerializeField, ReadOnly] private float powerSources;
     
-    [SerializeField]
-    private SOAudioEvent sfxPlaneActivated;
-    
-    [SerializeField]
-    private SOAudioEvent sfxPlaneDeactivated;
     
     
     private GameObject _planeObject;
@@ -76,7 +69,7 @@ public class PowerPlane : MonoBehaviour
     private float _targetLength;
     
     // HashSet to track which objects have activated the plane
-    private readonly HashSet<Object> _activatingObjects = new HashSet<Object>();
+    private readonly HashSet<Object> _powerSources = new HashSet<Object>();
     
     
     
@@ -102,6 +95,8 @@ public class PowerPlane : MonoBehaviour
     
     private void Update()
     {
+        powerSources = _powerSources.Count;
+        
         // Only proceed if we have a valid visual reference
         if (!planeVisualRef) return;
         
@@ -161,7 +156,7 @@ public class PowerPlane : MonoBehaviour
     
     public void TogglePlane(Object caller)
     {
-        if (_activatingObjects.Contains(caller))
+        if (_powerSources.Contains(caller))
         {
             DeactivatePlane(caller);
         }
@@ -186,7 +181,7 @@ public class PowerPlane : MonoBehaviour
         }
         
         // Add to the set of activating objects
-        _activatingObjects.Add(caller);
+        _powerSources.Add(caller);
         
         // Update the activation state based on powerTurnsOn
         UpdateActivationState();
@@ -207,7 +202,7 @@ public class PowerPlane : MonoBehaviour
         }
         
         // Remove from the set of activating objects
-        _activatingObjects.Remove(caller);
+        _powerSources.Remove(caller);
         
         // Update the activation state
         UpdateActivationState();
@@ -215,7 +210,7 @@ public class PowerPlane : MonoBehaviour
     
     private void UpdateActivationState()
     {
-        bool shouldBeActive = _activatingObjects.Count > 0;
+        bool shouldBeActive = _powerSources.Count > 0;
         
         // If powerTurnsOn is false, we invert the activation logic
         if (!powerTurnsOn)
@@ -398,8 +393,11 @@ public class PowerPlane : MonoBehaviour
         // Calculate what percentage of the total animation we need to perform
         float animationPercentage = totalDistance > 0 ? remainingDistance / totalDistance : 0;
         
+        // Use different animation times based on whether we're activating or deactivating
+        float selectedAnimTime = active ? activateAnimationTime : deactivateAnimationTime;
+        
         // Scale animation time by the percentage of distance we need to cover
-        float scaledAnimTime = animationTime * animationPercentage;
+        float scaledAnimTime = selectedAnimTime * animationPercentage;
         
         // Ensure we have a minimum animation time to avoid visual glitches
         scaledAnimTime = Mathf.Max(scaledAnimTime, 0.05f);

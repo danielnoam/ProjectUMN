@@ -257,6 +257,9 @@ MonoBehaviour:
   beamWidth: 0.1
   beamColor: {r: 1, g: 0, b: 0, a: 1}
   beamMaterial: {fileID: 2100000, guid: 6027654b30a22874b93301ff6a3e0d1f, type: 2}
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 961
 --- !u!1001 &4496711632646279864
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -379,15 +382,15 @@ PrefabInstance:
       objectReference: {fileID: 8597442363470424348}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: endPosition.x
-      value: -12.55
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: endPosition.y
-      value: 2.0688424
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: endPosition.z
-      value: 119.4395
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: totalDistance
@@ -395,15 +398,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: startPosition.x
-      value: -12.55
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: startPosition.y
-      value: 2.0688424
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8168817687411235697, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: startPosition.z
-      value: 19.4395
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8926403053949250184, guid: 6a2a3b880e217b54982c06e4a54d47a4, type: 3}
       propertyPath: m_Name
