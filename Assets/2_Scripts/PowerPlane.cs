@@ -148,31 +148,32 @@ public class PowerPlane : MonoBehaviour
     #region Control Methods -----------------------------------------------------------------------------------
     
     [Button]
+    
     private void TogglePlane()
     {
         // When called from inspector, use this component as the caller
-        TogglePlane(this);
+        TogglePowerSource(this);
     }
     
-    public void TogglePlane(Object caller)
+    public void TogglePowerSource(Object caller)
     {
         if (_powerSources.Contains(caller))
         {
-            DeactivatePlane(caller);
+            RemovePowerSource(caller);
         }
         else
         {
-            ActivatePlane(caller);
+            AddPowerSource(caller);
         }
     }
     
     private void ActivatePlane()
     {
         // When called from inspector, use this component as the caller
-        ActivatePlane(this);
+        AddPowerSource(this);
     }
     
-    public void ActivatePlane(Object caller)
+    public void AddPowerSource(Object caller)
     {
         if (caller == null)
         {
@@ -190,10 +191,10 @@ public class PowerPlane : MonoBehaviour
     private void DeactivatePlane()
     {
         // When called from inspector, use this component as the caller
-        DeactivatePlane(this);
+        RemovePowerSource(this);
     }
     
-    public void DeactivatePlane(Object caller)
+    public void RemovePowerSource(Object caller)
     {
         if (caller == null)
         {
@@ -220,7 +221,7 @@ public class PowerPlane : MonoBehaviour
     }
     
     [Button]
-    public void ToggleGlobalState()
+    public void TogglePowerMode()
     {
         powerTurnsOn = !powerTurnsOn;
         UpdateActivationState();

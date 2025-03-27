@@ -10,8 +10,8 @@ using Random = UnityEngine.Random;
 [CreateAssetMenu(fileName = "AudioEvent", menuName = "SO Audio/Audio Event")]
 public class SOAudioEvent : ScriptableObject
 {
-    public string aoName = "Name";
-    public string aoAuthor = "Author";
+
+    [Header("Settings")]
     public AudioClip[] clips;
     public AudioMixerGroup mixerGroup;
     [MinMaxRange(0f, 1f)] public RangedFloat volume = 1f;
@@ -26,7 +26,7 @@ public class SOAudioEvent : ScriptableObject
     
 
     
-    [Header("3D Sound Settings")]
+    [Header("3D Sound")]
     public bool set3DSettings = false;
     [EnableIf("set3DSettings")]
     [MinMaxRange(0f, 5f)] public float dopplerLevel = 1f; 
@@ -36,8 +36,10 @@ public class SOAudioEvent : ScriptableObject
     [Min(0)] public float maxDistance = 500f;
     [EndIf]
     
-    
 
+    [Header("Information")]
+    public string aoName = "Name";
+    public string aoAuthor = "Author";
 
 
 
@@ -94,7 +96,7 @@ public class SOAudioEvent : ScriptableObject
         // Store the current volume to return to after fade completes
         float targetVolume = Random.Range(volume.minValue, volume.maxValue);
     
-        // If audio is already playing, start full crossfade
+        // If audio is already playing, start full cross-fade
         if (source.isPlaying)
         {
             // Start at current volume
