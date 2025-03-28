@@ -1,10 +1,20 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEditor;
 using CustomAttribute;
 using UnityEngine.Audio;
 using VInspector;
 using Random = UnityEngine.Random;
+using System;
+using System.Collections;
+using TMPro;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using VInspector;
 
 
 [CreateAssetMenu(fileName = "AudioEvent", menuName = "SO Audio/Audio Event")]
@@ -76,57 +86,7 @@ public class SOAudioEvent : ScriptableObject
     }
     
     
-    public void CrossFade(AudioSource source, float fadeDuration, float delay = 0)
-    {
-        if (clips.Length == 0) 
-        {
-#if UNITY_EDITOR
-            Debug.Log("No clips found");
-#endif
-            return;
-        }
-    
-        // Get or add AudioFadeController to the AudioSource's GameObject
-        AudioFadeController controller = source.gameObject.GetComponent<AudioFadeController>();
-        if (controller == null)
-        {
-            controller = source.gameObject.AddComponent<AudioFadeController>();
-        }
-    
-        // Store the current volume to return to after fade completes
-        float targetVolume = Random.Range(volume.minValue, volume.maxValue);
-    
-        // If audio is already playing, start full cross-fade
-        if (source.isPlaying)
-        {
-            // Start at current volume
-            float startVolume = source.volume;
-        
-            // Choose the new clip
-            AudioClip newClip = clips[Random.Range(0, clips.Length)];
-            controller.CrossFade(source, newClip, this, fadeDuration, startVolume, targetVolume, delay);
-        }
-        else
-        {
-            // Just fade in the new clip
-            SetAudioSourceSettings(source);
-            source.volume = 0f;
-        
-            if (delay > 0f)
-            {
-                source.PlayDelayed(delay);
-                controller.FadeInDelayed(source, fadeDuration, targetVolume, delay);
-            }
-            else
-            {
-                source.Play();
-                controller.FadeIn(source, fadeDuration, targetVolume);
-            }
-        }
-    }
-    
-    
-    public void PlayAtPoint(Vector3 position = new Vector3())
+    public void PlayAtPoint(Vector3 position = new())
     {
         if (clips.Length == 0)
         {
@@ -138,11 +98,25 @@ public class SOAudioEvent : ScriptableObject
         
         AudioSource source = new GameObject("OneShotAudioEvent").AddComponent<AudioSource>();
         source.transform.position = position;
-
-        // Set settings to audio source and play
+        
         SetAudioSourceSettings(source);
         source.Play();
         Destroy(source.gameObject, source.clip.length);
+    }
+    
+    
+    public IEnumerator FadeOutRoutine(AudioSource source, float fadeTime)
+    {
+        float startVolume = source.volume;
+
+        while (source.volume > 0)
+        {
+            source.volume -= startVolume * Time.deltaTime / fadeTime;
+            yield return null;
+        }
+
+        source.Stop();
+        source.volume = startVolume;
     }
 
 

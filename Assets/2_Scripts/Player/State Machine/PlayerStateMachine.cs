@@ -190,7 +190,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-            _debugText = TestManager.Instance.GetDebugTextLeft();
+            _debugText = TestManager.Instance.DebugTextLeft;
         }
         
     }
@@ -239,7 +239,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnTestLoaded(SOTest test)
     {
         robot = TestManager.Instance.Robot;
-        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetSpawnPoint(), Quaternion.Euler(0, 0, 0), 2f, false));
+        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), 2f, false));
     }
     
 
@@ -285,7 +285,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         if (other.TryGetComponent(out LaserGround laserGround))
         {
-            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.GetCheckPoint(), Quaternion.Euler(0, 0, 0), 2f, true));
+            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentCheckpoint, Quaternion.Euler(0, 0, 0), 2f, true));
         }
     }
 

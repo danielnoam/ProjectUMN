@@ -52,6 +52,7 @@ public class PowerPlane : MonoBehaviour
     [SerializeField] private AudioSource audioSource2;
     [SerializeField] private SOAudioEvent sfxPlaneActivated;
     [SerializeField] private SOAudioEvent sfxPlaneDeactivated;
+    [SerializeField] private SOAudioEvent sfxPlaneLoop;
     
     
     [Header("Debug")]
@@ -75,7 +76,15 @@ public class PowerPlane : MonoBehaviour
     
     private void Awake()
     {
-        if (!isActive) audioSource2?.Stop();
+        if (!isActive)
+        {
+            sfxPlaneLoop?.Stop(audioSource2);
+        }
+        else
+        {
+            sfxPlaneLoop?.Play(audioSource2);
+        }
+        
         InitializeComponents();
     }
     
@@ -404,7 +413,7 @@ public class PowerPlane : MonoBehaviour
         scaledAnimTime = Mathf.Max(scaledAnimTime, 0.05f);
         
         // Start the animation
-        if (active) audioSource2?.Play();
+        if (active) sfxPlaneLoop?.Play(audioSource2);
         
         _activationTween = Tween.Custom(
             startValue: _currentLength,
@@ -427,7 +436,7 @@ public class PowerPlane : MonoBehaviour
                 else
                 {
                     sfxPlaneDeactivated?.Play(audioSource);
-                    audioSource2?.Stop();
+                    sfxPlaneLoop?.Stop(audioSource2);
                 }
                 
                 

@@ -14,6 +14,11 @@ public class LaserSource : MonoBehaviour
     [SerializeField] private Color beamColor = Color.red;
     [SerializeField] private Material beamMaterial;
     [SerializeField] private LayerMask collisionMask = -1;
+
+    [Header("Rotation")] 
+    [SerializeField, Tooltip("How long is the rotation")] private float rotationTime = 0.5f;
+    [SerializeField, Tooltip("Rotation ease")] private  Ease rotationEase = Ease.Linear;
+    
     
     [Header("Feedback")]
     [SerializeField, Tooltip("Whether to use a delay before changing the laser state")]
@@ -44,6 +49,7 @@ public class LaserSource : MonoBehaviour
     private AudioSource _audioSource;
     private Tween _activationTween;
     private Tween _delayTween;
+    private Tween _rotateTween;
     private float _currentBeamLength = 0f;
     
     private void Awake() {
@@ -54,6 +60,8 @@ public class LaserSource : MonoBehaviour
         
         // Set initial length
         _currentBeamLength = isActive ? beamLength : 0f;
+        
+        SetLaserActive(isActive);
     }
     
     private void Update() {
@@ -73,7 +81,26 @@ public class LaserSource : MonoBehaviour
         SetLaserActive(!isActive);
     }
     
-    public void SetLaserActive(bool active) {
+    
+    [Button]
+    public void Rotate()
+    {
+        if (_rotateTween.isAlive || !Application.isPlaying) return;
+
+        Quaternion targetRotation = transform.rotation * Quaternion.AngleAxis(90, Vector3.up);
+        _rotateTween = Tween.Rotation(transform, targetRotation, rotationTime, rotationEase);
+    }
+    
+    public void Rotate(float degrees, Vector3 axis)
+    {
+        if (_rotateTween.isAlive || !Application.isPlaying) return;
+        
+
+        Quaternion targetRotation = transform.rotation * Quaternion.AngleAxis(degrees, axis);
+        _rotateTween = Tween.Rotation(transform, targetRotation, rotationTime, rotationEase);
+    }
+    
+    private void SetLaserActive(bool active) {
         // Skip if already in desired state and no animation is running
         if (isActive == active && !_activationTween.isAlive && !_delayTween.isAlive) {
             return;
@@ -130,4 +157,5 @@ public class LaserSource : MonoBehaviour
             }
         });
     }
+
 }

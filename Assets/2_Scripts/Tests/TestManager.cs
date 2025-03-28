@@ -4,9 +4,15 @@ using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using VInspector;
+
+
+
+
+
+
+
 
 [SelectionBase]
 [RequireComponent(typeof(AudioSource))]
@@ -24,14 +30,13 @@ public class TestManager : MonoBehaviour
     [SerializeField] private bool debugMode = true;
     [SerializeField] private TextMeshProUGUI debugTextRight;
     [SerializeField] private TextMeshProUGUI debugTextLeft;
-    
-    [Header("Current test")]
-    [SerializeField, ReadOnly] private SOTest currentTest;
-    [SerializeField, ReadOnly] private GameObject currentEnvironment;
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
+    [SerializeField, ReadOnly] private SOTest currentTest;
+    [SerializeField, ReadOnly] private GameObject currentEnvironment;
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
+    [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
 
     [Foldout("Events")]
     public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
@@ -45,13 +50,17 @@ public class TestManager : MonoBehaviour
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
     public SOAudioEvent CurrentTheme => currentTheme;
-    
+    public Vector3 CurrentCheckpoint => currentCheckpoint ? currentCheckpoint.position : currentTest.GetPlayerSpawnPoint();
+    public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
+    public TextMeshProUGUI DebugTextLeft => debugTextLeft;
+    public TextMeshProUGUI DebugTextRight => debugTextRight;
     
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
     private AudioSource _audioSource;
     private CameraManager _cameraManager;
+    private TestLightSettings _defaultLightSettings;
     
     
     
@@ -67,6 +76,7 @@ public class TestManager : MonoBehaviour
         }
         
         _audioSource = GetComponent<AudioSource>();
+        _defaultLightSettings = tests[0].GetLightSettings();
     }
     
     private void Start()
@@ -189,9 +199,6 @@ public class TestManager : MonoBehaviour
     }
     
 
-
-
-
     [Button]
     public void StartIntroSequence()
     {
@@ -224,45 +231,38 @@ public class TestManager : MonoBehaviour
         }
     }
     
-    #endregion Test control ----------------------------------------------------------------------------
-    
-    
-    
-    #region Information methods ----------------------------------------------------------------------------
-
     public void SetCheckpointPosition(Transform checkpoint)
     {
         currentCheckpoint = checkpoint;
     }
+    
+    
+    private void ApplyLightSettings(TestLightSettings lightSettings)
+    {
+        RenderSettings.ambientIntensity = lightSettings.ambientIntensity;
+        RenderSettings.defaultReflectionMode = lightSettings.reflectionMode;
+        
+        RenderSettings.fog = lightSettings.useFog;
+        RenderSettings.fogMode = lightSettings.fogMode;
+        RenderSettings.fogColor = lightSettings.fogColor;
+        switch (lightSettings.fogMode)
+        {
+            case FogMode.Exponential or FogMode.ExponentialSquared:
+                RenderSettings.fogDensity = lightSettings.fogDensity;
+                break;
+            case FogMode.Linear:
+                RenderSettings.fogStartDistance = lightSettings.fogStart;
+                RenderSettings.fogEndDistance = lightSettings.fogEnd;
+                break;
+        }
+    }
+    
+    
+    #endregion Test control ----------------------------------------------------------------------------
+    
 
-    public Vector3 GetCheckPoint()
-    {
-        return currentCheckpoint ? currentCheckpoint.position : GetSpawnPoint();
-    }
-
-    public Vector3 GetSpawnPoint()
-    {
-        return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
-    }
-    
-    public TextMeshProUGUI GetDebugTextLeft()
-    {
-        return debugTextLeft;
-    }
-    
-    public TextMeshProUGUI GetDebugTextRight()
-    {
-        return debugTextRight;
-    }
-    
-    
-    #endregion Information methods ----------------------------------------------------------------------------
-    
-    
-    
     
     #region Private methods ----------------------------------------------------------------------------
-    
     
     private IEnumerator StartTestLoadingSequence(int testIndex)
     {
@@ -325,7 +325,7 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator LoadTest(int testIndex, bool isStandaloneCall = true)
     {
-        // Early exit if invalid test index
+
         if (tests.Length <= 0 || testIndex >= tests.Length)
         {
             if (isStandaloneCall) _activeLoadCoroutine = null;
@@ -334,9 +334,12 @@ public class TestManager : MonoBehaviour
         
         Debug.Log("Loading... " + tests[testIndex].GetName());
         yield return new WaitForSeconds(tests[testIndex].GetTimeToLoad());
-        
-        
         currentTest = tests[testIndex];
+        currentTheme = currentTest.GetTheme();
+        ApplyLightSettings(currentTest.GetLightSettings());
+        currentTheme?.Play(_audioSource, 1.5f);
+        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
+        
         if (currentTest.HasRobot()) // The new test has a robot in it
         {
             if (currentRobot) Destroy(currentRobot.gameObject);
@@ -347,11 +350,7 @@ public class TestManager : MonoBehaviour
             currentRobot = newRobot.GetComponent<RobotCompanion>();
             currentRobot.TurnOn();
         }
-        currentTest.ApplyLightingSetting();
-        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
-        currentTheme = currentTest.GetTheme();
-        currentTheme?.CrossFade(_audioSource,1.5f,3f);
-        if (!currentRobot || currentRobot == null)
+        if (!currentRobot)
         {
             currentRobot = FindFirstObjectByType<RobotCompanion>();
         }
@@ -375,6 +374,8 @@ public class TestManager : MonoBehaviour
         
         SOTest test = currentTest;
         
+        StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
+        
         Debug.Log("Unloading... " + test.GetName());
         yield return new WaitForSeconds(test.GetTimeToUnload());
         Debug.Log("Unloaded " + test.GetName());
@@ -384,6 +385,8 @@ public class TestManager : MonoBehaviour
         currentEnvironment = null;
         currentCheckpoint = null;
         currentRobot = null;
+        currentTheme = null;
+        ApplyLightSettings(_defaultLightSettings);
         onTestUnloaded.Invoke(test);
         
         // Clear unload coroutine reference
@@ -394,5 +397,7 @@ public class TestManager : MonoBehaviour
     #endregion Private methods ----------------------------------------------------------------------------
     
     
+
+
     
 }

@@ -196,7 +196,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (TestManager.Instance)
        {
            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-           _debugText = TestManager.Instance.GetDebugTextRight();
+           _debugText = TestManager.Instance.DebugTextRight;
        }
 
    }
@@ -233,7 +233,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (currentState != RobotState.Off)
        {
            Teleport(_player.transform.position, Quaternion.identity);
-           FollowPlayer();
+           CommandFollowPlayer();
        }
    }
 
@@ -748,7 +748,7 @@ private void OnDrawGizmos()
    private void FollowPlayer()
    {
        if (!_playerFollowPosition || !_playerAimingFollowPosition) return;
-
+       
        // Calculate the direction to the target in the horizontal plane only
        Vector3 targetPosition;
        if (_player.IsAiming)

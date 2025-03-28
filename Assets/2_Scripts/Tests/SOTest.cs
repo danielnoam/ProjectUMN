@@ -1,7 +1,10 @@
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Serialization;
 using VInspector;
+
+
+
+
+
 
 [CreateAssetMenu(fileName = "Test", menuName = "SO Test/New Test")]
 public class SOTest : ScriptableObject
@@ -18,17 +21,10 @@ public class SOTest : ScriptableObject
     
     [Header("Environment")]
     [SerializeField] private GameObject environmentPrefab;
-    [SerializeField, Range(0f, 8f)] private float ambientIntensity = 1f;
-    [SerializeField] private DefaultReflectionMode reflectionMode = DefaultReflectionMode.Skybox;
-    
-    [Header("Fog")]
-    [SerializeField] private bool useFog = false;
-    [SerializeField] private FogMode fogMode = FogMode.Exponential;
-    [SerializeField] private  Color fogColor = Color.white;
-    [SerializeField, Range(0f, 1f), HideIf("fogMode", FogMode.Linear)] private float fogDensity = 0;[EndIf]
-    [SerializeField, ShowIf("fogMode", FogMode.Linear)] private float fogStart = 0;[EndIf]
-    [SerializeField, ShowIf("fogMode", FogMode.Linear)] private float fogEnd = 300;[EndIf]
+    [SerializeField] private TestLightSettings lightSettings;
 
+    
+    
     
     
     public string GetName()
@@ -95,23 +91,9 @@ public class SOTest : ScriptableObject
         return theme;
     }
     
-    [Button]
-    public void ApplyLightingSetting()
+    public  TestLightSettings GetLightSettings()
     {
-        RenderSettings.ambientIntensity = ambientIntensity;
-        RenderSettings.defaultReflectionMode = reflectionMode;
-        RenderSettings.fog = useFog;
-        RenderSettings.fogMode = fogMode;
-        RenderSettings.fogColor = fogColor;
-        if (fogMode is FogMode.Exponential or FogMode.ExponentialSquared)
-        {
-            RenderSettings.fogDensity = fogDensity;
-        }
-        else if (fogMode == FogMode.Linear)
-        {
-            RenderSettings.fogStartDistance = fogStart;
-            RenderSettings.fogEndDistance = fogEnd;
-        }
+        return lightSettings;
     }
     
     
@@ -151,4 +133,24 @@ public class SOTest : ScriptableObject
         return true;
     }
     
+    
+    
+    [Button]
+    private void ApplyLightingSetting()
+    {
+        RenderSettings.ambientIntensity = lightSettings.ambientIntensity;
+        RenderSettings.defaultReflectionMode = lightSettings.reflectionMode;
+        RenderSettings.fog = lightSettings.useFog;
+        RenderSettings.fogMode = lightSettings.fogMode;
+        RenderSettings.fogColor = lightSettings.fogColor;
+        if (lightSettings.fogMode is FogMode.Exponential or FogMode.ExponentialSquared)
+        {
+            RenderSettings.fogDensity = lightSettings.fogDensity;
+        }
+        else if (lightSettings.fogMode == FogMode.Linear)
+        {
+            RenderSettings.fogStartDistance = lightSettings.fogStart;
+            RenderSettings.fogEndDistance = lightSettings.fogEnd;
+        }
+    }
 }

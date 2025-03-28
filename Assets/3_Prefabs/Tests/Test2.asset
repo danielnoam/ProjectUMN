@@ -18,11 +18,12 @@ MonoBehaviour:
   timeToUnload: 1
   theme: {fileID: 11400000, guid: 76e9ae2c0441bf541a385d7de9c200b2, type: 2}
   environmentPrefab: {fileID: 5202618782218235974, guid: bdc0e2e6f2cb1bb4aaab67777d058ffc, type: 3}
-  ambientIntensity: 0
-  reflectionMode: 1
-  useFog: 0
-  fogMode: 1
-  fogColor: {r: 0.30817598, g: 0.30817598, b: 0.30817598, a: 1}
-  fogDensity: 0.01
-  fogStart: 0
-  fogEnd: 10
+  lightSettings:
+    ambientIntensity: 0
+    reflectionMode: 1
+    useFog: 0
+    fogMode: 2
+    fogColor: {r: 1, g: 1, b: 1, a: 1}
+    fogDensity: 0
+    fogStart: 0
+    fogEnd: 300
