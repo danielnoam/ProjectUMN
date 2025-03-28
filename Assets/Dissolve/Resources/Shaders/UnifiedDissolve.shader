@@ -1,4 +1,4 @@
-Shader "Custom/UnifiedDissolveShader" {
+Shader "Custom/UnifiedDissolve" {
     Properties {
         [MainTexture] _MainTex ("Primary (RGB)", 2D) = "white" {}
         [MainColor] _Color ("Primary Color", Color) = (1,1,1,1)

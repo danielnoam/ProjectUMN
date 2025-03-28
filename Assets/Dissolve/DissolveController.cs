@@ -159,7 +159,7 @@ public class DissolveController : MonoBehaviour
     // Update a single material with this interactor's properties
     private void UpdateSingleInteractorMaterial(Material material)
     {
-        if (material.shader.name.Contains("Custom/UnifiedDissolveShader"))
+        if (material.shader.name.Contains("Custom/UnifiedDissolve"))
         {
             material.SetVector(PositionID, transform.position);
             material.SetFloat(RadiusID, radius);
@@ -225,7 +225,7 @@ public class DissolveController : MonoBehaviour
         {
             foreach (Material mat in renderer.materials)
             {
-                if (mat.shader.name.Contains("Custom/UnifiedDissolveShader"))
+                if (mat.shader.name.Contains("Custom/UnifiedDissolve"))
                 {
                     materials.Add(mat);
                 }
@@ -267,7 +267,7 @@ public class DissolveController : MonoBehaviour
         {
             foreach (Material mat in renderer.materials)
             {
-                if (mat.shader.name.Contains("Custom/UnifiedDissolveShader"))
+                if (mat.shader.name.Contains("Custom/UnifiedDissolve"))
                 {
                     affectedRenderers.Add(renderer);
                     break; // Add each renderer only once
