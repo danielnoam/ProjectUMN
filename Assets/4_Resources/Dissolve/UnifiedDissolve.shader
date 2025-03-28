@@ -14,6 +14,9 @@ Shader "Custom/UnifiedDissolve" {
         [HDR]_DisLineColor ("Line Color", Color) = (1,1,1,1)
         
         _Radius ("Effect Radius", Range(0, 30)) = 5
+        _ShapeType ("Shape Type (0=Sphere, 1=Box)", Float) = 0
+        _BoxSize ("Box Size", Vector) = (1,1,1,0)
+        _BoxRotation ("Box Rotation", Vector) = (0,0,0,0)
         _ShapeCutoff ("Shape Cutoff", Range(0, 1)) = 0.5
         _ShapeSmoothness ("Shape Smoothness", Range(0, 1)) = 0.1
         
@@ -69,7 +72,7 @@ Shader "Custom/UnifiedDissolve" {
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             
-            // Function for rotating boxes
+            // Function for rotating boxes - defined globally for all passes
             float3 RotateAroundAxis(float3 position, float3 axis, float angle)
             {
                 angle = radians(angle);
@@ -100,6 +103,9 @@ Shader "Custom/UnifiedDissolve" {
             
             // Interactor properties
             uniform float3 _Position;
+            uniform float _ShapeType;
+            uniform float3 _BoxSize;
+            uniform float3 _BoxRotation;
             
             // Texture samplers
             TEXTURE2D(_MainTex);
@@ -169,104 +175,143 @@ Shader "Custom/UnifiedDissolve" {
                 return output;
             }
             
-            half4 frag(Varyings input) : SV_Target
+            // Function to calculate box effect
+            float CalculateBoxEffect(float3 position, float3 boxPosition, float3 boxSize, float3 boxRotation)
             {
-                // Calculate interactor effect
-                float interactorEffect = 0;
+                // Calculate local position
+                float3 localPos = position - boxPosition;
                 
-                #ifdef _USE_MULTIPLE_INTERACTORS
-                    float sphereEffect = 0;
-                    float boxEffect = 0;
-                    
-                    // Process all active interactors
-                    for (int i = 0; i < min(_InteractorCount, 20); i++) {
-                        // Sphere shape
-                        float dist = distance(_ShaderInteractorsPositions[i].xyz, input.positionWS);
-                        float sphereRadius = 1.0 - saturate(dist / _ShaderInteractorsRadiuses[i]);
-                        sphereRadius = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, sphereRadius);
-                        sphereEffect += sphereRadius;
-                        
-                        // Box shape
-                        float3 rotation = _ShaderInteractorRotation[i].xyz;
-                        float3 localPos = _ShaderInteractorsPositions[i].xyz - input.positionWS;
-                        
-                        // Apply rotation
-                        float3 rotatedPos = localPos;
-                        rotatedPos = RotateAroundAxis(rotatedPos, float3(1,0,0), rotation.x);
-                        rotatedPos = RotateAroundAxis(rotatedPos, float3(0,1,0), rotation.y);
-                        rotatedPos = RotateAroundAxis(rotatedPos, float3(0,0,1), rotation.z);
-                        
-                        // Calculate box bounds
-                        float3 boxSize = _ShaderInteractorsBoxBounds[i].xyz;
-                        float3 boxDistance = saturate(boxSize - abs(rotatedPos));
-                        float boxMask = saturate(boxDistance.x * boxDistance.y * boxDistance.z);
-                        boxMask = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, boxMask);
-                        
-                        boxEffect += boxMask;
-                    }
-                    
-                    interactorEffect = saturate(sphereEffect + boxEffect); // Clamp to 0-1 range
-                #else
-                    // Single interactor - sphere only
-                    float dist = distance(_Position, input.positionWS);
-                    interactorEffect = 1.0 - saturate(dist / _Radius);
-                #endif
+                // Apply rotation
+                float3 rotatedPos = localPos;
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(1,0,0), boxRotation.x);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,1,0), boxRotation.y);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,0,1), boxRotation.z);
                 
-                // Apply triplanar noise mapping for better-looking effects
-                float3 blendNormal = saturate(pow(input.normalWS * 1.4, 4));
+                // Calculate box bounds
+                float3 boxDistance = boxSize - abs(rotatedPos);
                 
-                // Sample noise texture from three directions
-                float4 noiseXY = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xy + _Time.y) * _NScale);
-                float4 noiseXZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xz + _Time.y) * _NScale);
-                float4 noiseYZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.yz + _Time.y) * _NScale);
+                // If all components are positive, point is inside box
+                float boxMask = min(min(boxDistance.x, boxDistance.y), boxDistance.z);
+                boxMask = saturate(boxMask); // Clamp to 0-1 range
                 
-                // Blend noise samples based on normal direction
-                float3 noiseValue = noiseXY.rgb;
-                noiseValue = lerp(noiseValue, noiseYZ.rgb, blendNormal.x);
-                noiseValue = lerp(noiseValue, noiseXZ.rgb, blendNormal.y);
+                // Apply smoothing
+                boxMask = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, boxMask);
                 
-                // Combine noise with interactor effect
-                float effectNoise = lerp(noiseValue.r * interactorEffect, interactorEffect, _NoiseStrength);
-                
-                // Create dissolve effect with cutoff
-                float cutoff = step(_DisAmount, effectNoise);
-                
-                // Sample textures
-                half4 c1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * _Color;
-                half4 c2 = SAMPLE_TEXTURE2D(_SecondTex, sampler_SecondTex, input.uv) * _Color2;
-                
-                // Create effect line
-                float lineEffect = step(effectNoise - _DisLineWidth, _DisAmount) * cutoff;
-                half3 dissolveLine = lineEffect * _DisLineColor.rgb;
-                
-                // Combine textures based on dissolve effect
-                half3 resultColor = lerp(c1.rgb, c2.rgb, cutoff);
-                resultColor += dissolveLine;
-                
-                // Apply different clipping based on style
-                #if defined(_STYLE_APPEAR)
-                    clip(cutoff - 0.01);
-                #elif defined(_STYLE_DISAPPEAR)
-                    clip(1.0 - (cutoff - lineEffect) - 0.01);
-                #endif
-                
-                // Calculate lighting - simplified URP lighting
-                // Get main light
-                Light mainLight = GetMainLight();
-                float3 normalWS = normalize(input.normalWS);
-                float NdotL = saturate(dot(normalWS, mainLight.direction));
-                float3 lighting = mainLight.color * NdotL;
-                
-                // Add ambient lighting
-                float3 ambient = SampleSH(normalWS);
-                lighting += ambient;
-                
-                // Combine lighting with albedo
-                float3 finalColor = resultColor * lighting;
-                finalColor += dissolveLine * _DisLineColor.a; // Add emission
-                
-                return half4(finalColor, c1.a);
+                return boxMask;
             }
+            
+    half4 frag(Varyings input) : SV_Target
+    {
+        // Calculate interactor effect
+        float interactorEffect = 0;
+        
+        #ifdef _USE_MULTIPLE_INTERACTORS
+            float sphereEffect = 0;
+            float boxEffect = 0;
+            
+            // Process all active interactors
+            for (int i = 0; i < min(_InteractorCount, 20); i++) {
+                float3 interactorPos = _ShaderInteractorsPositions[i].xyz;
+                float shapeType = _ShaderInteractorsBoxBounds[i].w;
+                
+                if (shapeType < 0.5) { // Sphere shape
+                    float dist = distance(interactorPos, input.positionWS);
+                    float sphereRadius = 1.0 - saturate(dist / _ShaderInteractorsRadiuses[i]);
+                    sphereRadius = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, sphereRadius);
+                    sphereEffect += sphereRadius;
+                }
+                else { // Box shape
+                    float3 boxSize = _ShaderInteractorsBoxBounds[i].xyz;
+                    float3 boxRotation = _ShaderInteractorRotation[i].xyz;
+                    float boxMask = CalculateBoxEffect(input.positionWS, interactorPos, boxSize, boxRotation);
+                    boxEffect += boxMask;
+                }
+            }
+            
+            interactorEffect = saturate(sphereEffect + boxEffect); // Clamp to 0-1 range
+        #else
+            // Single interactor - calculate based on shape type
+            if (_ShapeType < 0.5) { // Sphere shape
+                float dist = distance(_Position, input.positionWS);
+                interactorEffect = 1.0 - saturate(dist / _Radius);
+                interactorEffect = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, interactorEffect);
+            }
+            else { // Box shape
+                interactorEffect = CalculateBoxEffect(input.positionWS, _Position, _BoxSize, _BoxRotation);
+            }
+        #endif
+        
+        // Apply triplanar noise mapping for better-looking effects
+        float3 blendNormal = saturate(pow(abs(input.normalWS) * 1.4, 4));
+        blendNormal /= dot(blendNormal, 1.0);
+        
+        // Sample noise texture from three directions
+        float4 noiseXY = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xy + _Time.y) * _NScale);
+        float4 noiseXZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xz + _Time.y) * _NScale);
+        float4 noiseYZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.yz + _Time.y) * _NScale);
+        
+        // Blend noise samples based on normal direction
+        float3 noiseValue = 
+            noiseXY.rgb * blendNormal.z +
+            noiseXZ.rgb * blendNormal.y +
+            noiseYZ.rgb * blendNormal.x;
+        
+        // Combine noise with interactor effect
+        float effectNoise = lerp(noiseValue.r * interactorEffect, interactorEffect, _NoiseStrength);
+        
+        // Create dissolve effect with cutoff
+        float cutoff = step(_DisAmount, effectNoise);
+        
+        // Sample textures
+        half4 c1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * _Color;
+        half4 c2 = SAMPLE_TEXTURE2D(_SecondTex, sampler_SecondTex, input.uv) * _Color2;
+        
+        // Create effect line
+        float lineEffect = step(effectNoise - _DisLineWidth, _DisAmount) * cutoff;
+        half3 dissolveLine = lineEffect * _DisLineColor.rgb;
+        
+        // Combine textures based on effect style
+        half3 resultColor;
+        
+        #if defined(_STYLE_SWAPTEXTURES)
+            resultColor = lerp(c1.rgb, c2.rgb, cutoff);
+        #elif defined(_STYLE_APPEAR)
+            // CHANGED: For appear style, always show primary texture (c1) and apply clipping
+            resultColor = c1.rgb;
+        #elif defined(_STYLE_DISAPPEAR)
+            // For disappear style, can still swap textures if needed, or just use primary
+            resultColor = c1.rgb;
+        #else
+            resultColor = lerp(c1.rgb, c2.rgb, cutoff);
+        #endif
+        
+        // Add glow line
+        resultColor += dissolveLine;
+        
+        // Apply different clipping based on style
+        #if defined(_STYLE_APPEAR)
+            clip(cutoff - 0.01);
+        #elif defined(_STYLE_DISAPPEAR)
+            clip(1.0 - (cutoff - lineEffect) - 0.01);
+        #endif
+        
+        // Calculate lighting - simplified URP lighting
+        // Get main light
+        Light mainLight = GetMainLight();
+        float3 normalWS = normalize(input.normalWS);
+        float NdotL = saturate(dot(normalWS, mainLight.direction));
+        float3 lighting = mainLight.color * NdotL;
+        
+        // Add ambient lighting
+        float3 ambient = SampleSH(normalWS);
+        lighting += ambient;
+        
+        // Combine lighting with albedo
+        float3 finalColor = resultColor * lighting;
+        finalColor += dissolveLine * _DisLineColor.a; // Add emission
+        
+        return half4(finalColor, c1.a);
+    }
             ENDHLSL
         }
         
@@ -289,12 +334,42 @@ Shader "Custom/UnifiedDissolve" {
             // UNITY INCLUDES
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+            
+            // Function for rotating boxes (duplicated for this pass)
+            float3 RotateAroundAxis(float3 position, float3 axis, float angle)
+            {
+                angle = radians(angle);
+                float s = sin(angle);
+                float c = cos(angle);
+                float one_minus_c = 1.0 - c;
+                
+                axis = normalize(axis);
+                float3x3 rot_mat;
+                rot_mat[0] = float3(
+                    one_minus_c * axis.x * axis.x + c,
+                    one_minus_c * axis.x * axis.y - axis.z * s,
+                    one_minus_c * axis.z * axis.x + axis.y * s
+                );
+                rot_mat[1] = float3(
+                    one_minus_c * axis.x * axis.y + axis.z * s,
+                    one_minus_c * axis.y * axis.y + c,
+                    one_minus_c * axis.y * axis.z - axis.x * s
+                );
+                rot_mat[2] = float3(
+                    one_minus_c * axis.z * axis.x - axis.y * s,
+                    one_minus_c * axis.y * axis.z + axis.x * s,
+                    one_minus_c * axis.z * axis.z + c
+                );
+                
+                return mul(rot_mat, position);
+            }
             
             // Interactor properties
             uniform float3 _Position;
+            uniform float _ShapeType;
+            uniform float3 _BoxSize;
+            uniform float3 _BoxRotation;
             
             // Texture samplers
             TEXTURE2D(_NoiseTex);
@@ -308,6 +383,8 @@ Shader "Custom/UnifiedDissolve" {
                 float _DisLineWidth;
                 float _NoiseStrength;
                 float _Radius;
+                float _ShapeCutoff;
+                float _ShapeSmoothness;
             CBUFFER_END
             
             struct Attributes
@@ -326,7 +403,24 @@ Shader "Custom/UnifiedDissolve" {
                 float3 normalWS     : TEXCOORD2;
             };
             
-            // Using URP's built-in shadow bias functions instead of defining our own
+            // Function to calculate box effect (same as above)
+            float CalculateBoxEffect(float3 position, float3 boxPosition, float3 boxSize, float3 boxRotation)
+            {
+                float3 localPos = position - boxPosition;
+                
+                // Apply rotation
+                float3 rotatedPos = localPos;
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(1,0,0), boxRotation.x);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,1,0), boxRotation.y);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,0,1), boxRotation.z);
+                
+                float3 boxDistance = boxSize - abs(rotatedPos);
+                float boxMask = min(min(boxDistance.x, boxDistance.y), boxDistance.z);
+                boxMask = saturate(boxMask);
+                boxMask = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, boxMask);
+                
+                return boxMask;
+            }
             
             Varyings ShadowPassVertex(Attributes input)
             {
@@ -351,12 +445,21 @@ Shader "Custom/UnifiedDissolve" {
 
             half4 ShadowPassFragment(Varyings input) : SV_TARGET
             {
-                // Calculate dissolve effect for shadow casting
-                float dist = distance(_Position, input.positionWS);
-                float effect = 1.0 - saturate(dist / _Radius);
+                // Calculate effect based on shape type
+                float effect = 0;
+                
+                if (_ShapeType < 0.5) { // Sphere shape
+                    float dist = distance(_Position, input.positionWS);
+                    effect = 1.0 - saturate(dist / _Radius);
+                    effect = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, effect);
+                }
+                else { // Box shape
+                    effect = CalculateBoxEffect(input.positionWS, _Position, _BoxSize, _BoxRotation);
+                }
                 
                 // Apply triplanar noise mapping
-                float3 blendNormal = saturate(pow(input.normalWS * 1.4, 4));
+                float3 blendNormal = saturate(pow(abs(input.normalWS) * 1.4, 4));
+                blendNormal /= dot(blendNormal, 1.0);
                 
                 // Sample noise texture from three directions
                 float4 noiseXY = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xy + _Time.y) * _NScale);
@@ -364,9 +467,10 @@ Shader "Custom/UnifiedDissolve" {
                 float4 noiseYZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.yz + _Time.y) * _NScale);
                 
                 // Blend noise samples based on normal direction
-                float3 noiseValue = noiseXY.rgb;
-                noiseValue = lerp(noiseValue, noiseYZ.rgb, blendNormal.x);
-                noiseValue = lerp(noiseValue, noiseXZ.rgb, blendNormal.y);
+                float3 noiseValue = 
+                    noiseXY.rgb * blendNormal.z +
+                    noiseXZ.rgb * blendNormal.y +
+                    noiseYZ.rgb * blendNormal.x;
                 
                 // Combine noise with effect
                 float effectNoise = lerp(noiseValue.r * effect, effect, _NoiseStrength);
@@ -376,9 +480,9 @@ Shader "Custom/UnifiedDissolve" {
                 float lineEffect = step(effectNoise - _DisLineWidth, _DisAmount) * cutoff;
                 
                 #if defined(_STYLE_APPEAR)
-                    clip(cutoff - 0.01);
+                    clip(cutoff - 0.01); // Keep clipping the same
                 #elif defined(_STYLE_DISAPPEAR)
-                    clip(1.0 - (cutoff - lineEffect) - 0.01);
+                    clip(1.0 - (cutoff - lineEffect) - 0.01); // Keep clipping the same
                 #endif
                 
                 return 0;
@@ -404,8 +508,40 @@ Shader "Custom/UnifiedDissolve" {
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             
+            // Function for rotating boxes (duplicated for this pass)
+            float3 RotateAroundAxis(float3 position, float3 axis, float angle)
+            {
+                angle = radians(angle);
+                float s = sin(angle);
+                float c = cos(angle);
+                float one_minus_c = 1.0 - c;
+                
+                axis = normalize(axis);
+                float3x3 rot_mat;
+                rot_mat[0] = float3(
+                    one_minus_c * axis.x * axis.x + c,
+                    one_minus_c * axis.x * axis.y - axis.z * s,
+                    one_minus_c * axis.z * axis.x + axis.y * s
+                );
+                rot_mat[1] = float3(
+                    one_minus_c * axis.x * axis.y + axis.z * s,
+                    one_minus_c * axis.y * axis.y + c,
+                    one_minus_c * axis.y * axis.z - axis.x * s
+                );
+                rot_mat[2] = float3(
+                    one_minus_c * axis.z * axis.x - axis.y * s,
+                    one_minus_c * axis.y * axis.z + axis.x * s,
+                    one_minus_c * axis.z * axis.z + c
+                );
+                
+                return mul(rot_mat, position);
+            }
+            
             // Interactor properties
             uniform float3 _Position;
+            uniform float _ShapeType;
+            uniform float3 _BoxSize;
+            uniform float3 _BoxRotation;
             
             // Texture samplers
             TEXTURE2D(_NoiseTex);
@@ -419,6 +555,8 @@ Shader "Custom/UnifiedDissolve" {
                 float _DisLineWidth;
                 float _NoiseStrength;
                 float _Radius;
+                float _ShapeCutoff;
+                float _ShapeSmoothness;
             CBUFFER_END
 
             struct Attributes
@@ -439,6 +577,25 @@ Shader "Custom/UnifiedDissolve" {
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            // Function to calculate box effect (same as above)
+            float CalculateBoxEffect(float3 position, float3 boxPosition, float3 boxSize, float3 boxRotation)
+            {
+                float3 localPos = position - boxPosition;
+                
+                // Apply rotation
+                float3 rotatedPos = localPos;
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(1,0,0), boxRotation.x);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,1,0), boxRotation.y);
+                rotatedPos = RotateAroundAxis(rotatedPos, float3(0,0,1), boxRotation.z);
+                
+                float3 boxDistance = boxSize - abs(rotatedPos);
+                float boxMask = min(min(boxDistance.x, boxDistance.y), boxDistance.z);
+                boxMask = saturate(boxMask);
+                boxMask = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, boxMask);
+                
+                return boxMask;
+            }
+
             Varyings DepthOnlyVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
@@ -456,12 +613,21 @@ Shader "Custom/UnifiedDissolve" {
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                // Calculate dissolve effect for depth pass
-                float dist = distance(_Position, input.positionWS);
-                float effect = 1.0 - saturate(dist / _Radius);
+                // Calculate effect based on shape type
+                float effect = 0;
+                
+                if (_ShapeType < 0.5) { // Sphere shape
+                    float dist = distance(_Position, input.positionWS);
+                    effect = 1.0 - saturate(dist / _Radius);
+                    effect = smoothstep(_ShapeCutoff, _ShapeCutoff + _ShapeSmoothness, effect);
+                }
+                else { // Box shape
+                    effect = CalculateBoxEffect(input.positionWS, _Position, _BoxSize, _BoxRotation);
+                }
                 
                 // Apply triplanar noise mapping
-                float3 blendNormal = saturate(pow(input.normalWS * 1.4, 4));
+                float3 blendNormal = saturate(pow(abs(input.normalWS) * 1.4, 4));
+                blendNormal /= dot(blendNormal, 1.0);
                 
                 // Sample noise texture from three directions
                 float4 noiseXY = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.xy + _Time.y) * _NScale);
@@ -469,9 +635,10 @@ Shader "Custom/UnifiedDissolve" {
                 float4 noiseYZ = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, (input.positionWS.yz + _Time.y) * _NScale);
                 
                 // Blend noise samples based on normal direction
-                float3 noiseValue = noiseXY.rgb;
-                noiseValue = lerp(noiseValue, noiseYZ.rgb, blendNormal.x);
-                noiseValue = lerp(noiseValue, noiseXZ.rgb, blendNormal.y);
+                float3 noiseValue = 
+                    noiseXY.rgb * blendNormal.z +
+                    noiseXZ.rgb * blendNormal.y +
+                    noiseYZ.rgb * blendNormal.x;
                 
                 // Combine noise with effect
                 float effectNoise = lerp(noiseValue.r * effect, effect, _NoiseStrength);
@@ -481,9 +648,9 @@ Shader "Custom/UnifiedDissolve" {
                 float lineEffect = step(effectNoise - _DisLineWidth, _DisAmount) * cutoff;
                 
                 #if defined(_STYLE_APPEAR)
-                    clip(cutoff - 0.01);
+                    clip(cutoff - 0.01); // Keep clipping the same
                 #elif defined(_STYLE_DISAPPEAR)
-                    clip(1.0 - (cutoff - lineEffect) - 0.01);
+                    clip(1.0 - (cutoff - lineEffect) - 0.01); // Keep clipping the same
                 #endif
 
                 return 0;

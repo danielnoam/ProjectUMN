@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: UnifiedDissolve
+  m_Name: UnifiedDissolveRock
   m_Shader: {fileID: 4800000, guid: 03e773ceb71c56743b424fc13da6b256, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _STYLE_DISAPPEAR
+  - _STYLE_APPEAR
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -55,9 +55,10 @@ Material:
     - _NScale: 1.48
     - _NoiseStrength: 0.5
     - _Radius: 5
-    - _STYLE: 2
+    - _STYLE: 1
     - _ShapeCutoff: 0.5
     - _ShapeSmoothness: 0.247
+    - _ShapeType: 0
     - _Smoothness: 0.5
     - _SrcBlend: 1
     - _Surface: 0
@@ -65,7 +66,9 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 0.45597476, b: 0.45597476, a: 1}
+    - _BoxRotation: {r: 0, g: 0, b: 0, a: 0}
+    - _BoxSize: {r: 1, g: 1, b: 1, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color2: {r: 1, g: 1, b: 1, a: 1}
     - _DisLineColor: {r: 0, g: 0.5428197, b: 2.1132076, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
