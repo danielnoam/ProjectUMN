@@ -65,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ba6d4bf672bc6d940837680c133c848d, type: 2}
+  - {fileID: 2100000, guid: 485c19ca7c6a1f446b8ec6c76b826421, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -100,9 +100,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sides: 10
-  positions:
-  - {x: 0, y: 0, z: 0}
-  - {x: -0, y: 0, z: 3}
+  closeStartCap: 0
+  closeEndCap: 0
   radiusMode: 0
   radiusCurve:
     serializedVersion: 2
@@ -130,3 +129,6 @@ MonoBehaviour:
     m_RotationOrder: 4
   radiusOne: 0.08
   radiusTwo: 1
+  positions:
+  - {x: 0, y: 0, z: 0}
+  - {x: -0, y: 0, z: 3}

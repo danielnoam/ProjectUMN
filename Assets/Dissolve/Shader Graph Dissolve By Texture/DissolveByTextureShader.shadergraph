@@ -49,6 +49,12 @@
     "m_CategoryData": [
         {
             "m_Id": "a7aafaae8efb481eb3915ecac94013e4"
+        },
+        {
+            "m_Id": "a8aa203ff03e414f87e8bf6fea341028"
+        },
+        {
+            "m_Id": "6ce2c0ff667d4ebab7f761f02093c2b7"
         }
     ],
     "m_Nodes": [
@@ -887,8 +893,8 @@
     ],
     "m_VertexContext": {
         "m_Position": {
-            "x": 2936.500244140625,
-            "y": -449.0000915527344
+            "x": 3249.999755859375,
+            "y": -311.3333435058594
         },
         "m_Blocks": [
             {
@@ -904,8 +910,8 @@
     },
     "m_FragmentContext": {
         "m_Position": {
-            "x": 2936.500244140625,
-            "y": -249.0000457763672
+            "x": 3249.999755859375,
+            "y": -111.33330535888672
         },
         "m_Blocks": [
             {
@@ -961,7 +967,7 @@
     "m_ObjectId": "055bcf6c5b9540908543b1919caa8873",
     "m_Title": "Lerp between two textures",
     "m_Position": {
-        "x": 2386.66650390625,
+        "x": 2386.666748046875,
         "y": -1076.0
     }
 }
@@ -1114,10 +1120,10 @@
     "m_Guid": {
         "m_GuidSerialized": "6cf3ac2c-dc85-47ba-abc3-bb848d671ff6"
     },
-    "m_Name": "NoiseStrength",
+    "m_Name": "Dissolve Noise Strength",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "NoiseStrength",
-    "m_DefaultReferenceName": "_NoiseStrength",
+    "m_RefNameGeneratedByDisplayName": "Dissolve Noise Strength",
+    "m_DefaultReferenceName": "_Dissolve_Noise_Strength",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -1257,7 +1263,7 @@
     "m_ObjectId": "12843d3bd862490e91bbf13de4e85578",
     "m_Title": "Triplanar Noise",
     "m_Position": {
-        "x": 314.6666259765625,
+        "x": 314.6665954589844,
         "y": -1124.6666259765625
     }
 }
@@ -1364,8 +1370,8 @@
     "m_ObjectId": "15f36e02e65c412ea89f0981aa4337f8",
     "m_Title": "Line",
     "m_Position": {
-        "x": 748.6666870117188,
-        "y": -21.333385467529298
+        "x": 748.6665649414063,
+        "y": -21.33318328857422
     }
 }
 
@@ -1441,7 +1447,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "17a2da2411e448a194d74d047c90a750",
     "m_Id": 0,
-    "m_DisplayName": "MoveSpeed",
+    "m_DisplayName": "Dissolve Noise Move Speed",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -1672,8 +1678,8 @@
     "m_ObjectId": "27bacc682c6544d2a77bbbb1266323d4",
     "m_Title": "Texture Array",
     "m_Position": {
-        "x": -548.0000610351563,
-        "y": -244.66677856445313
+        "x": -547.9998779296875,
+        "y": -244.6666259765625
     }
 }
 
@@ -1708,7 +1714,7 @@
     "m_Title": "Multiple Positions and Textures",
     "m_Position": {
         "x": -267.33331298828127,
-        "y": -467.9999694824219
+        "y": -468.0000915527344
     }
 }
 
@@ -1763,7 +1769,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "2e54911212912080a853c424d1b9f184",
     "m_Id": 0,
-    "m_DisplayName": "Radius Noise Cutoff",
+    "m_DisplayName": "Dissolve Radius Noise Cutoff",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -1780,7 +1786,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "2ef55eff99d3427681cb5cae755f0093",
     "m_Id": 0,
-    "m_DisplayName": "Radius Noise Cutoff",
+    "m_DisplayName": "Dissolve Radius Noise Cutoff",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -1822,7 +1828,7 @@
     "m_ObjectId": "3192799b0ca644719099ad90cb173f01",
     "m_Title": "Radius Cutoff",
     "m_Position": {
-        "x": 888.666748046875,
+        "x": 888.6666259765625,
         "y": -848.0
     }
 }
@@ -1969,7 +1975,7 @@
     "m_Guid": {
         "m_GuidSerialized": "24832dfc-632f-4d80-a4a2-94990c569fc5"
     },
-    "m_Name": "Edge Color",
+    "m_Name": "Dissolve Edge Color",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Color_F69F1A11",
@@ -2127,7 +2133,7 @@
     "m_Guid": {
         "m_GuidSerialized": "9f132a6a-c1f8-4499-8cfa-44288bed49d3"
     },
-    "m_Name": "Noise Texture",
+    "m_Name": "Dissolve Noise Texture",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Texture2D_4204C0C8",
@@ -2243,8 +2249,8 @@
     "m_ObjectId": "496729835a4c46658769f890b5bb9dc7",
     "m_Title": "Glow on Back Faces",
     "m_Position": {
-        "x": 2232.666748046875,
-        "y": -74.00007629394531
+        "x": 2232.66650390625,
+        "y": -73.99980163574219
     }
 }
 
@@ -2753,6 +2759,42 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "6ce2c0ff667d4ebab7f761f02093c2b7",
+    "m_Name": "Dissolve Effect",
+    "m_ChildObjectList": [
+        {
+            "m_Id": "d9fe92c697ea4249a1fc4961e2687974"
+        },
+        {
+            "m_Id": "3c00bd8f37f02f8ba6093549fffa2a65"
+        },
+        {
+            "m_Id": "a71561508ae1688d91d49cef507afb28"
+        },
+        {
+            "m_Id": "d94eaefdcee5e3878f36fc481e6afe59"
+        },
+        {
+            "m_Id": "0e8354e0d63d41f2990f4db32ab34150"
+        },
+        {
+            "m_Id": "845e055ca150461a81786e781a6abd40"
+        },
+        {
+            "m_Id": "eec3c5a8c23d118d9b16cfa3e154297e"
+        },
+        {
+            "m_Id": "443ef86d2552608cb690c2a5c559d648"
+        },
+        {
+            "m_Id": "cc536141dab94188ab77a0f71e67bc33"
+        }
+    ]
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
     "m_ObjectId": "6dd33609ca84158289743523ae437ce0",
     "m_Id": 0,
@@ -3007,7 +3049,7 @@
     "m_Group": {
         "m_Id": "9a80286f792c41ad960eb73f2df4d748"
     },
-    "m_Name": "Style",
+    "m_Name": "Dissolve Style",
     "m_DrawState": {
         "m_Expanded": true,
         "m_Position": {
@@ -3360,10 +3402,10 @@
     "m_Guid": {
         "m_GuidSerialized": "e75f9635-7bd4-4981-97b1-ffc91cc83718"
     },
-    "m_Name": "MoveSpeed",
+    "m_Name": "Dissolve Noise Move Speed",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "MoveSpeed",
-    "m_DefaultReferenceName": "_MoveSpeed",
+    "m_RefNameGeneratedByDisplayName": "Dissolve Noise Move Speed",
+    "m_DefaultReferenceName": "_Dissolve_Noise_Move_Speed",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -3951,7 +3993,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Texture2DMaterialSlot",
     "m_ObjectId": "9f0cee03adbe2a8287c3600a00e0e1a0",
     "m_Id": 0,
-    "m_DisplayName": "Noise Texture",
+    "m_DisplayName": "Dissolve Noise Texture",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -4086,7 +4128,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "a4a3dd86c5b34ca8b6eb972e214ac144",
     "m_Id": 0,
-    "m_DisplayName": "Edge Color",
+    "m_DisplayName": "Dissolve Edge Color",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -4269,7 +4311,7 @@
     "m_Guid": {
         "m_GuidSerialized": "d5a59996-5f90-4af9-9c46-5d73de251034"
     },
-    "m_Name": "Edge Width",
+    "m_Name": "Dissolve Edge Width",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Vector1_8ED1EA40",
@@ -4301,39 +4343,6 @@
         },
         {
             "m_Id": "4d7adb1082b79180b21470d92babef50"
-        },
-        {
-            "m_Id": "abb4ce6f5319ea8d9adba04cea65ce1c"
-        },
-        {
-            "m_Id": "eec3c5a8c23d118d9b16cfa3e154297e"
-        },
-        {
-            "m_Id": "a71561508ae1688d91d49cef507afb28"
-        },
-        {
-            "m_Id": "443ef86d2552608cb690c2a5c559d648"
-        },
-        {
-            "m_Id": "d94eaefdcee5e3878f36fc481e6afe59"
-        },
-        {
-            "m_Id": "3c00bd8f37f02f8ba6093549fffa2a65"
-        },
-        {
-            "m_Id": "a0b551ba27807080bbd8ce9f44a881b3"
-        },
-        {
-            "m_Id": "0e8354e0d63d41f2990f4db32ab34150"
-        },
-        {
-            "m_Id": "845e055ca150461a81786e781a6abd40"
-        },
-        {
-            "m_Id": "d9fe92c697ea4249a1fc4961e2687974"
-        },
-        {
-            "m_Id": "cc536141dab94188ab77a0f71e67bc33"
         }
     ]
 }
@@ -4422,6 +4431,21 @@
     "m_Property": {
         "m_Id": "d94eaefdcee5e3878f36fc481e6afe59"
     }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "a8aa203ff03e414f87e8bf6fea341028",
+    "m_Name": "Textures",
+    "m_ChildObjectList": [
+        {
+            "m_Id": "abb4ce6f5319ea8d9adba04cea65ce1c"
+        },
+        {
+            "m_Id": "a0b551ba27807080bbd8ce9f44a881b3"
+        }
+    ]
 }
 
 {
@@ -4640,8 +4664,8 @@
     "m_ObjectId": "b14355a1274b4f8cbfe1f25f73c5e5ca",
     "m_Title": "Movement",
     "m_Position": {
-        "x": -534.0001220703125,
-        "y": -1356.6666259765625
+        "x": -534.0,
+        "y": -1356.66650390625
     }
 }
 
@@ -4957,7 +4981,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "c4d4c8e32940738c83d42d9930ebf484",
     "m_Id": 0,
-    "m_DisplayName": "Edge Color",
+    "m_DisplayName": "Dissolve Edge Color",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -5092,7 +5116,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Texture2DArrayMaterialSlot",
     "m_ObjectId": "cbeb2966467549d786b128e091fb1403",
     "m_Id": 0,
-    "m_DisplayName": "ShapeTexArray",
+    "m_DisplayName": "Dissolve ShapeTexArray",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -5107,10 +5131,10 @@
     "m_Guid": {
         "m_GuidSerialized": "952ddf7a-24ee-4bd6-9670-c8ad9ced4992"
     },
-    "m_Name": "ShapeTexArray",
+    "m_Name": "Dissolve ShapeTexArray",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "ShapeTexArray",
-    "m_DefaultReferenceName": "_ShapeTexArray",
+    "m_RefNameGeneratedByDisplayName": "Dissolve ShapeTexArray",
+    "m_DefaultReferenceName": "_Dissolve_ShapeTexArray",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -5267,7 +5291,7 @@
     "m_ObjectId": "d707f5ff7d864f4db3b896a8eac25950",
     "m_Title": "Primary Texture",
     "m_Position": {
-        "x": 972.6666870117188,
+        "x": 972.6665649414063,
         "y": -1447.33349609375
     }
 }
@@ -5279,7 +5303,7 @@
     "m_Guid": {
         "m_GuidSerialized": "a9ddd6f0-6109-452b-b043-c569fdaf082e"
     },
-    "m_Name": "Noise Scale",
+    "m_Name": "Dissolve Noise Scale",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Vector1_D632FD56",
@@ -5307,10 +5331,10 @@
     "m_Guid": {
         "m_GuidSerialized": "839e625d-be10-462f-94cb-5ab1eedeab8e"
     },
-    "m_Name": "Style",
+    "m_Name": "Dissolve Style",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Style",
-    "m_DefaultReferenceName": "_STYLE",
+    "m_RefNameGeneratedByDisplayName": "Dissolve Style",
+    "m_DefaultReferenceName": "_DISSOLVE_STYLE",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -5347,8 +5371,8 @@
     "m_ObjectId": "db15cf95155444c3907b14dd7b29ebe0",
     "m_Title": "Colored Line",
     "m_Position": {
-        "x": 1807.3333740234375,
-        "y": 24.666675567626954
+        "x": 1807.333251953125,
+        "y": 24.66681671142578
     }
 }
 
@@ -5525,7 +5549,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "e31fa4e292d8a787ae84c1312101c8f3",
     "m_Id": 0,
-    "m_DisplayName": "Edge Width",
+    "m_DisplayName": "Dissolve Edge Width",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -5615,8 +5639,8 @@
     "m_ObjectId": "e799b644fc2c48cfaf4afec1f44b31eb",
     "m_Title": "Secondary Texture",
     "m_Position": {
-        "x": 1672.0,
-        "y": -1423.3336181640625
+        "x": 1671.9998779296875,
+        "y": -1423.33349609375
     }
 }
 
@@ -5758,7 +5782,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "e98fc39d4f4146dfbdd5d5b4aff744c3",
     "m_Id": 0,
-    "m_DisplayName": "NoiseStrength",
+    "m_DisplayName": "Dissolve Noise Strength",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -5851,7 +5875,7 @@
     "m_Guid": {
         "m_GuidSerialized": "c57bae8c-df31-43fb-8024-3ad98f35566f"
     },
-    "m_Name": "Radius Noise Cutoff",
+    "m_Name": "Dissolve Radius Noise Cutoff",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Vector1_FBD9E64",
@@ -6088,7 +6112,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "fe59ca79b949e88bb40e27f820e53bc1",
     "m_Id": 0,
-    "m_DisplayName": "Noise Scale",
+    "m_DisplayName": "Dissolve Noise Scale",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
