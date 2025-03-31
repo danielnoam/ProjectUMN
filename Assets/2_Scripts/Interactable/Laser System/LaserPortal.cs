@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 [RequireComponent(typeof(BoxCollider))]
 public class LaserPortal : LaserOpticalElementBase {
@@ -15,6 +14,25 @@ public class LaserPortal : LaserOpticalElementBase {
     }
 
     public override void RegisterLaserBeam(LaserBeam laserBeam) {
+        // Check if we already have a pair for this incoming beam
+        LaserBeamPair existingPair = GetPairFromIncomingBeam(laserBeam);
+        
+        if (existingPair != null) {
+            // We already have this beam registered, so update properties
+            // but don't create a new outgoing beam
+            existingPair.outgoing.maxTotalDistance = laserBeam.maxTotalDistance;
+            existingPair.outgoing.totalDistance = laserBeam.totalDistance;
+            
+            // Update visual properties in case they've changed
+            existingPair.outgoing.SetBeamProperties(
+                laserBeam._lineRenderer.startWidth, 
+                laserBeam._lineRenderer.startColor, 
+                laserBeam._lineRenderer.material
+            );
+            return;
+        }
+        
+        // Create new outgoing beam since this is a new registration
         LaserBeam outgoingLaserBeam = GameObject.Instantiate(laserBeam.prefab, transform);
         
         // Copy beam properties (color, width, material)
@@ -35,6 +53,8 @@ public class LaserPortal : LaserOpticalElementBase {
     
     public override void UnregisterLaserBeam(LaserBeam laserBeam) {
         var pair = GetPairFromIncomingBeam(laserBeam);
+        
+        if (pair == null) return; // Nothing to unregister
 
         if (pair.outgoing.LaserOpticalElementBaseThatTheBeamHit != null) {
             pair.outgoing.LaserOpticalElementBaseThatTheBeamHit.UnregisterLaserBeam(pair.outgoing);
@@ -46,6 +66,8 @@ public class LaserPortal : LaserOpticalElementBase {
     
     public override void Propagate(LaserBeam laserBeam) {
         var pair = GetPairFromIncomingBeam(laserBeam);
+        
+        if (pair == null) return; // Safety check
         
         // Update the outgoing beam's totalDistance to match the incoming beam
         // This ensures the accumulated distance is passed along

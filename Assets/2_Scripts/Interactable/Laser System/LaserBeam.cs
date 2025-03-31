@@ -63,6 +63,18 @@ public class LaserBeam : MonoBehaviour
         _lineRenderer.positionCount = 2;
     }
 
+
+    private void OnDestroy()
+    {
+        if (_laserOpticalElementBaseThatTheBeamHit) {
+            _laserOpticalElementBaseThatTheBeamHit.UnregisterLaserBeam(this);
+        }
+
+        if (_powerPointThatTheBeamHit) {
+            _powerPointThatTheBeamHit.RemovePowerSource(this);
+        }
+    }
+
     public void SetBeamProperties(float width, Color color, Material material) {
         _lineRenderer.startWidth = width;
         _lineRenderer.endWidth = width;

@@ -83,6 +83,14 @@ public class LaserSource : MonoBehaviour
         SetLaserActive(!isActive);
     }
     
+    public void SetLaserActive() {
+        SetLaserActive(true);
+    }
+    
+    public void SetLaserInactive() {
+        SetLaserActive(false);
+    }
+    
     
     
     private void SetLaserActive(bool active) {

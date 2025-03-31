@@ -17,7 +17,10 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, Range(0.1f, 5f), Tooltip("Controls the power response curve. Values below 1 make differences more noticeable at low power, values above 1 create steeper changes at high power")]
     private float powerCurve = 2f;
-    [EndIf]
+    
+    [SerializeField, Tooltip("If enabled, the power point will remain active after first activation, even if power sources are removed")]
+    private bool stayActiveAfterFirstActivation = false;
+
     
     [Header("Rotation")]
     [SerializeField, Tooltip("The transform that will rotate when power is applied")]
@@ -80,6 +83,10 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, ReadOnly, Tooltip("Current power ratio after applying the power curve")]
     private float powerRatio;
+    
+    [SerializeField, ReadOnly, Tooltip("Has this power point been activated at least once")]
+    private bool hasBeenActivated = false;
+    
     private readonly HashSet<Object> _powerSources = new HashSet<Object>();
     private float _currentRotationSpeed;
     private float _currentLightIntensity;
@@ -120,20 +127,35 @@ public class PowerPoint : MonoBehaviour
     {
         powerSources = _powerSources.Count;
         
-        if (_powerSources.Count >= powerSourcesNeeded && !isOn && _currentRotationSpeed >= rotationSpeed/3)
+        // Determine if the power point should be activated
+        bool shouldBeOn = (_powerSources.Count >= powerSourcesNeeded) || 
+                          (stayActiveAfterFirstActivation && hasBeenActivated);
+        
+        // Calculate power ratio with an exponential curve
+        // When stayActiveAfterFirstActivation is true and it has been activated, use full power
+        float rawRatio;
+        if (stayActiveAfterFirstActivation && hasBeenActivated)
+        {
+            rawRatio = 1.0f; // Full power
+        }
+        else
+        {
+            rawRatio = Mathf.Clamp01(powerSources / powerSourcesNeeded);
+        }
+        powerRatio = Mathf.Pow(rawRatio, powerCurve);
+        
+        // Check activation state changes
+        if (shouldBeOn && !isOn && _currentRotationSpeed >= rotationSpeed/3)
         {
             isOn = true;
+            hasBeenActivated = true; // Mark as having been activated at least once
             onActivated?.Invoke();
         } 
-        else if (_powerSources.Count < powerSourcesNeeded && isOn && _currentRotationSpeed <= rotationSpeed/2)
+        else if (!shouldBeOn && isOn && _currentRotationSpeed <= rotationSpeed/2)
         {
             isOn = false;
             onDeactivated?.Invoke();
-        } 
-        
-        // Calculate power ratio with an exponential curve
-        float rawRatio = Mathf.Clamp01(powerSources / powerSourcesNeeded);
-        powerRatio = Mathf.Pow(rawRatio, powerCurve);
+        }
     }
     
     private void HandleFeedback()
@@ -229,5 +251,11 @@ public class PowerPoint : MonoBehaviour
     public void RemovePowerSource(Object source)
     {
         _powerSources.Remove(source);
+    }
+    
+    public void ResetActivationState()
+    {
+        // Method to manually reset the "has been activated" state
+        hasBeenActivated = false;
     }
 }
