@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using VInspector;
 
 
 [SelectionBase]
@@ -29,6 +30,7 @@ public class TouchPanel : MonoBehaviour
         _audioSource = GetComponent<AudioSource>();
     }
 
+    [Button]
     public void PressPanel()
     {
         if (_isPressed) return;

@@ -15,9 +15,7 @@ public class LaserSource : MonoBehaviour
     [SerializeField] private Material beamMaterial;
     [SerializeField] private LayerMask collisionMask = -1;
 
-    [Header("Rotation")] 
-    [SerializeField, Tooltip("How long is the rotation")] private float rotationTime = 0.5f;
-    [SerializeField, Tooltip("Rotation ease")] private  Ease rotationEase = Ease.Linear;
+
     
     
     [Header("Feedback")]
@@ -49,8 +47,8 @@ public class LaserSource : MonoBehaviour
     private AudioSource _audioSource;
     private Tween _activationTween;
     private Tween _delayTween;
-    private Tween _rotateTween;
     private float _currentBeamLength = 0f;
+    
     
     private void Awake() {
         _audioSource = GetComponent<AudioSource>();
@@ -68,37 +66,24 @@ public class LaserSource : MonoBehaviour
         if (isActive || _currentBeamLength > 0) {
             Vector3 startPosition = originTransform.position;
             Vector3 direction = originTransform.forward;
-            
+        
             // Reset accumulated distance and set max distance to current animated length
             laserBeam.totalDistance = 0f;
             laserBeam.maxTotalDistance = _currentBeamLength;
             laserBeam.Propagate(startPosition, direction, collisionMask);
+        
+            // Update maxTotalDistance on all connected optical elements
+            if (laserBeam.LaserOpticalElementBaseThatTheBeamHit) {
+                laserBeam.LaserOpticalElementBaseThatTheBeamHit.UpdateMaxDistance(laserBeam, _currentBeamLength);
+            }
         }
     }
-    
     [Button]
     public void ToggleLaser() {
         SetLaserActive(!isActive);
     }
     
     
-    [Button]
-    public void Rotate()
-    {
-        if (_rotateTween.isAlive || !Application.isPlaying) return;
-
-        Quaternion targetRotation = transform.rotation * Quaternion.AngleAxis(90, Vector3.up);
-        _rotateTween = Tween.Rotation(transform, targetRotation, rotationTime, rotationEase);
-    }
-    
-    public void Rotate(float degrees, Vector3 axis)
-    {
-        if (_rotateTween.isAlive || !Application.isPlaying) return;
-        
-
-        Quaternion targetRotation = transform.rotation * Quaternion.AngleAxis(degrees, axis);
-        _rotateTween = Tween.Rotation(transform, targetRotation, rotationTime, rotationEase);
-    }
     
     private void SetLaserActive(bool active) {
         // Skip if already in desired state and no animation is running

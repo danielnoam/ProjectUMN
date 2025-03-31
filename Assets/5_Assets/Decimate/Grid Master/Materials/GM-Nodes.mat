@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: UnifiedDissolveFloor
+  m_Name: GM-Nodes
   m_Shader: {fileID: 4800000, guid: 03e773ceb71c56743b424fc13da6b256, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _STYLE_APPEAR
+  - _STYLE_SWAPTEXTURES
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -29,14 +29,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 846b67b1a87a841d69f93de4e3067b88, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Ramp:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -50,14 +46,14 @@ Material:
     - _Blend: 0
     - _Cull: 2
     - _DisAmount: 0.01
-    - _DisLineWidth: 0.046
+    - _DisLineWidth: 0.05
     - _DstBlend: 0
-    - _NScale: 1.48
+    - _NScale: 1
     - _NoiseStrength: 0.5
-    - _Radius: 3
-    - _STYLE: 1
+    - _Radius: 5
+    - _STYLE: 0
     - _ShapeCutoff: 0.5
-    - _ShapeSmoothness: 0.247
+    - _ShapeSmoothness: 0.1
     - _ShapeType: 0
     - _Smoothness: 0.5
     - _SrcBlend: 1
@@ -70,7 +66,7 @@ Material:
     - _BoxSize: {r: 1, g: 1, b: 1, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color2: {r: 1, g: 1, b: 1, a: 1}
-    - _DisLineColor: {r: 0, g: 0.5428197, b: 2.1132076, a: 1}
+    - _DisLineColor: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

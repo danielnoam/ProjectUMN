@@ -50,6 +50,18 @@ public class LaserMirror : LaserOpticalElementBase
         Vector3 outgoingDirection = Vector3.Reflect(pair.incoming.Direction, pair.incoming.hitNormal);
         pair.outgoing.Propagate(pair.incoming.endPosition, outgoingDirection);
     }
+    
+    public override void UpdateMaxDistance(LaserBeam laserBeam, float maxTotalDistance) {
+        var pair = GetPairFromIncomingBeam(laserBeam);
+        if (pair != null) {
+            pair.outgoing.maxTotalDistance = maxTotalDistance;
+        
+            // Propagate update to any elements hit by the outgoing beam
+            if (pair.outgoing.LaserOpticalElementBaseThatTheBeamHit != null) {
+                pair.outgoing.LaserOpticalElementBaseThatTheBeamHit.UpdateMaxDistance(pair.outgoing, maxTotalDistance);
+            }
+        }
+    }
 
     private LaserBeamPair GetPairFromIncomingBeam(LaserBeam laserBeam) => _laserBeamPairs.Find(x => x.incoming == laserBeam);
 }

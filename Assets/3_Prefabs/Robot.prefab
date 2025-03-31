@@ -789,11 +789,11 @@ MonoBehaviour:
   currentBattery: 100
   currentState: 0
   horizontalMoveSpeed: 25
-  interactDistance: 0.5
   minFollowDistance: 2
   maxFollowDistance: 4
   friction: 1
   followSmoothness: 0.02
+  interactDistance: 0.5
   followCurve:
     serializedVersion: 2
     m_Curve:
@@ -818,6 +818,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  aimingMoveSpeed: 50
+  aimingTransitionMultiplier: 1.2
+  aimingMinFollowDistance: 0.1
   verticalMoveSpeed: 5
   sitDownSpeed: 2
   minEnvironmentClearance: 0.5
@@ -898,21 +901,21 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   rotateEars: 1
-  leftEarPivot: {fileID: 6631523453387643233}
-  rightEarPivot: {fileID: 5380237225979921613}
   maxEarBend: 45
   earRotationSmoothness: 0.2
   maxSpeedForEarRotation: 4
   eye: {fileID: 7687609520431025120}
   eyeLight: {fileID: 6026187158545299600}
   eyeAreaLight: {fileID: 2702829901955178225}
+  leftEarPivot: {fileID: 6631523453387643233}
+  rightEarPivot: {fileID: 5380237225979921613}
+  rigidBody: {fileID: 7216424626492076193}
+  sphereCollider: {fileID: 3648063352551605096}
+  audioSource: {fileID: 7554109476326350533}
   sfxTurnOn: {fileID: 11400000, guid: 772b06472fee76447aa6411c893dc3d8, type: 2}
   sfxTurnOff: {fileID: 11400000, guid: 6d4d8a90168073f47be7610b26262e0f, type: 2}
   sfxReceiveCommand: {fileID: 11400000, guid: c41535d2d7921a4469148d2cfa7891c8, type: 2}
   sfxImpact: {fileID: 11400000, guid: b3907550452511542a59c86f47711303, type: 2}
-  rigidBody: {fileID: 7216424626492076193}
-  sphereCollider: {fileID: 3648063352551605096}
-  audioSource: {fileID: 7554109476326350533}
 --- !u!1 &7300311048934344313
 GameObject:
   m_ObjectHideFlags: 0

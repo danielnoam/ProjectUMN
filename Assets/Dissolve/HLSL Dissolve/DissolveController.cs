@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -71,6 +72,12 @@ public class DissolveController : MonoBehaviour
     public List<Renderer> targetRenderers = new List<Renderer>();
 
     [Header("Gizmo Settings")]
+    public bool showGizmos = true;
+    [Tooltip("Show connections to affected renderers")]
+    public bool showConnections = true;
+    
+    [Tooltip("Show labels with distances")]
+    public bool showLabels = true;
     [Tooltip("Color for the main gizmo")]
     public Color gizmoColor = new Color(0f, 0.8f, 1f, 0.4f);
     
@@ -80,11 +87,7 @@ public class DissolveController : MonoBehaviour
     [Tooltip("Color for lines connecting to affected objects")]
     public Color connectionColor = new Color(0.2f, 1f, 0.3f, 0.7f);
     
-    [Tooltip("Show connections to affected renderers")]
-    public bool showConnections = true;
-    
-    [Tooltip("Show labels with distances")]
-    public bool showLabels = true;
+
 
     
     
@@ -333,6 +336,7 @@ public class DissolveController : MonoBehaviour
     
     private void OnDrawGizmos()
     {
+        if (!showGizmos) return;
         DrawShapeGizmo();
         
         if (showConnections)

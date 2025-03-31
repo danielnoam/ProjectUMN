@@ -1,6 +1,4 @@
 
-
-using System;
 using TMPro;
 using UnityEngine;
 using VInspector;
@@ -34,9 +32,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Tooltip("Base movement speed of the robot")]
     [SerializeField] private float horizontalMoveSpeed = 25f;
     
-    [Tooltip("Distance at which the robot stops moving towards the target")]
-    [SerializeField] private float interactDistance = 0.5f;
-    
     [Tooltip("Minimum distance to maintain from target")]
     [SerializeField] private float minFollowDistance = 2f;
     
@@ -49,18 +44,30 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Tooltip("How smoothly the robot accelerates and decelerates")]
     [SerializeField] private float followSmoothness = 0.02f;
     
+    [Tooltip("Distance at which the robot stops moving towards the target")]
+    [SerializeField] private float interactDistance = 0.5f;
+    
     [Tooltip("Animation curve controlling how speed changes based on distance")]
     [SerializeField] private AnimationCurve followCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    
+    [Header("Aim Mode")]
+    [Tooltip("Movement speed when player is aiming")]
+    [SerializeField] private float aimingMoveSpeed = 50f;
+
+    [Tooltip("Speed multiplier when transitioning to aiming mode")]
+    [SerializeField] private float aimingTransitionMultiplier = 1.2f;
+    
+    [Tooltip("Minimum distance to maintain from target when player is aiming")]
+    [SerializeField] private float aimingMinFollowDistance = 0.1f;
     [EndFoldout]
     
     
     
     [Foldout("Vertical Movement")]
-    
     [Tooltip("Vertical movement speed of the robot")]
     [SerializeField] private float verticalMoveSpeed = 5f;
     
-    [SerializeField] private float sitDownSpeed = 3f; // Speed at which the robot sits down
+    [SerializeField] private float sitDownSpeed = 2f;
     
     [Tooltip("Minimum safe distance the robot must maintain from ground")]
     [SerializeField] private float minEnvironmentClearance = 0.5f;
@@ -80,7 +87,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Tooltip("Animation curve controlling how vertical speed changes based on height difference")]
     [SerializeField] private AnimationCurve heightAdjustmentCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     
-    [Header("Hover effect")]
+    [Header("Hover")]
     [Tooltip("Maximum distance the robot will hover up and down")]
     [SerializeField] private float hoverHeight = 0.3f;
     
@@ -89,7 +96,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [EndFoldout]
 
     
-    [Foldout("Rotation")]
+    [Foldout("Rotation stabilization")]
     [Tooltip("How quickly the robot returns to its desired rotation")]
     [SerializeField] private float rotationStability = 4f;
     
@@ -101,13 +108,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [EndFoldout]
 
 
-    [Foldout("Ears")] 
+    [Foldout("Ears rotation")] 
     [SerializeField] private bool rotateEars = true;
-    [Tooltip("Transform reference for the left ear/antenna")]
-    [SerializeField] private Transform leftEarPivot;
-
-    [Tooltip("Transform reference for the right ear/antenna")]
-    [SerializeField] private Transform rightEarPivot;
 
     [Tooltip("Maximum bend angle of the ears")]
     [SerializeField] private float maxEarBend = 45f;
@@ -120,24 +122,21 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [EndFoldout]
     
     
-    [Foldout("Eye")] 
+    
+    [Foldout("References")]
     [SerializeField] private GameObject eye;
     [SerializeField] private Light eyeLight;
     [SerializeField] private Light eyeAreaLight;
-    [EndFoldout]
-    
-    [Foldout("SFX")] 
+    [SerializeField] private Transform leftEarPivot;
+    [SerializeField] private Transform rightEarPivot;
+    [SerializeField] private Rigidbody rigidBody;
+    [SerializeField] private SphereCollider sphereCollider;
+    [SerializeField] private AudioSource audioSource;
     [SerializeField] private SOAudioEvent sfxTurnOn;
     [SerializeField] private SOAudioEvent sfxTurnOff;
     [SerializeField] private SOAudioEvent sfxReceiveCommand;
     [SerializeField] private SOAudioEvent sfxImpact;
     [EndFoldout]
-
-    [Header("References")]
-    [SerializeField] private Rigidbody rigidBody;
-    [SerializeField] private SphereCollider sphereCollider;
-    [SerializeField] private AudioSource audioSource;
-    
     
     private PlayerStateMachine _player;
     private Transform _playerFollowPosition;
@@ -247,10 +246,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        {
            sfxImpact?.Play(audioSource);
        }
-       
-       
-       RaycastHit hit;
-       if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.5f, environmentLayer))
+
+
+       if (Physics.Raycast(transform.position, Vector3.down, out var hit, 0.5f, environmentLayer))
        {
             
            var ground = hit.transform.GetComponent<GroundRipple>();
@@ -469,249 +467,186 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
    
    
-private void AdjustHeight()
-{
-    if (!IsOn()) return;
-
-    // Update hover time
-    _hoverTime += Time.fixedDeltaTime * hoverSpeed;
-
-    // Get target height based on current state
-    float targetHeight = GetStateBasedTargetHeight();
-    (float minHeight, float maxHeight) = GetHeightConstraints();
-
-    // Calculate hover offset (only positive values to hover ABOVE target height)
-    float hoverOffset = (Mathf.Sin(_hoverTime) + 1) * hoverHeight * 0.5f;
-
-    // Check if height change requires delay
-    float heightDifference = Mathf.Abs(targetHeight - _lastTargetHeight);
-    bool needsDelay = heightDifference <= verticalThreshold;
-
-    // Update target if threshold exceeded or delay passed
-    if (!needsDelay || Time.time - _lastHeightAdjustmentTime >= heightAdjustmentDelay)
+    private void AdjustHeight()
     {
-        _lastTargetHeight = targetHeight;
-        _lastHeightAdjustmentTime = Time.time;
-    }
+        if (!IsOn()) return;
 
-    // Calculate final target height with hover
-    float finalTargetHeight = Mathf.Clamp(_lastTargetHeight + hoverOffset, minHeight, maxHeight);
+        // Update hover time
+        _hoverTime += Time.fixedDeltaTime * hoverSpeed;
 
-    // Get current vertical velocity
-    float currentVerticalVelocity = rigidBody.linearVelocity.y;
+        // Get target height based on current state
+        float targetHeight = GetStateBasedTargetHeight();
+        (float minHeight, float maxHeight) = GetHeightConstraints();
 
-    // Calculate desired vertical velocity
-    float heightError = finalTargetHeight - transform.position.y;
-    float normalizedHeightDifference = Mathf.Clamp01(Mathf.Abs(heightError) / verticalThreshold);
-    float speedMultiplier = heightAdjustmentCurve.Evaluate(normalizedHeightDifference);
-    float desiredVerticalVelocity = heightError * verticalMoveSpeed * speedMultiplier;
+        // Calculate hover offset (only positive values to hover ABOVE target height)
+        float hoverOffset = (Mathf.Sin(_hoverTime) + 1) * hoverHeight * 0.5f;
 
-    // Calculate damping force
-    float dampingForce = -currentVerticalVelocity * followSmoothness;
+        // Check if height change requires delay
+        float heightDifference = Mathf.Abs(targetHeight - _lastTargetHeight);
+        bool needsDelay = heightDifference <= verticalThreshold;
 
-    // Calculate acceleration needed to reach desired velocity
-    float acceleration = (desiredVerticalVelocity - currentVerticalVelocity) * (1f - followSmoothness);
-
-    // Combine forces
-    float totalForce = acceleration + dampingForce;
-
-    // Apply forces over time
-    float velocityChange = totalForce * Time.fixedDeltaTime;
-
-    // Create new velocity vector, preserving X and Z components
-    Vector3 currentVelocity = rigidBody.linearVelocity;
-    Vector3 newVelocity = new Vector3(
-        currentVelocity.x,
-        currentVerticalVelocity + velocityChange,
-        currentVelocity.z
-    );
-
-    // Apply final velocity
-    rigidBody.linearVelocity = newVelocity;
-}
-
-// New method to get the target height based on the robot's current state
-private float GetStateBasedTargetHeight()
-{
-    switch (currentState)
-    {
-        case RobotState.Idle:
-            return GetIdleTargetHeight();
-            
-        case RobotState.FollowingPlayer:
-            return GetFollowPlayerTargetHeight();
-            
-        case RobotState.GoingToTarget:
-            return GetGoToTargetHeight();
-            
-        case RobotState.Interacting:
-            return GetInteractingTargetHeight();
-            
-        default:
-            return GetIdleTargetHeight();
-    }
-}
-
-// Height calculation for CommandIdle state
-private float GetIdleTargetHeight()
-{
-    // In idle state, just maintain minimum clearance from the ground
-    if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
-    {
-        return groundHit.point.y + baseHeight;
-    }
-    
-    return transform.position.y; // If no ground found, maintain current height
-}
-
-// Height calculation for FollowingPlayer state
-private float GetFollowPlayerTargetHeight()
-{
-    if (!_playerFollowPosition) return GetIdleTargetHeight();
-    
-    // When following player, match player's height with some adjustments
-    float playerHeight = _playerFollowPosition.position.y;
-    
-    // Check the terrain between robot and player
-    Vector3 toPlayer = _playerFollowPosition.position - transform.position;
-    Vector3 midPoint = transform.position + toPlayer * 0.5f;
-    float terrainHeight = float.MinValue;
-    
-    // Cast multiple rays to check terrain between robot and player
-    for (float t = 0.25f; t <= 0.75f; t += 0.25f)
-    {
-        Vector3 checkPoint = Vector3.Lerp(transform.position, _playerFollowPosition.position, t);
-        if (Physics.Raycast(checkPoint, Vector3.down, out RaycastHit hit, Mathf.Infinity, environmentLayer))
+        // Update target if threshold exceeded or delay passed
+        if (!needsDelay || Time.time - _lastHeightAdjustmentTime >= heightAdjustmentDelay)
         {
-            terrainHeight = Mathf.Max(terrainHeight, hit.point.y);
+            _lastTargetHeight = targetHeight;
+            _lastHeightAdjustmentTime = Time.time;
         }
-    }
-    
-    // If valid terrain found, consider it for height calculation
-    if (terrainHeight > float.MinValue)
-    {
-        // Choose the higher value between player height and terrain height + base clearance
-        return Mathf.Max(playerHeight, terrainHeight + baseHeight);
-    }
-    
-    return playerHeight; // Default to player height if no terrain data available
-}
 
-// Height calculation for GoToInteractable state
-private float GetGoToTargetHeight()
-{
-    if (!_target) return GetIdleTargetHeight();
-    
-    // When going to a target, move toward the target's height
-    float targetHeight = _target.position.y;
-    
-    // Check the ground below target
-    if (Physics.Raycast(_target.position, Vector3.down, out RaycastHit targetGroundHit, Mathf.Infinity, environmentLayer))
+        // Calculate final target height with hover
+        float finalTargetHeight = Mathf.Clamp(_lastTargetHeight + hoverOffset, minHeight, maxHeight);
+
+        // Get current vertical velocity
+        float currentVerticalVelocity = rigidBody.linearVelocity.y;
+
+        // Calculate desired vertical velocity
+        float heightError = finalTargetHeight - transform.position.y;
+        float normalizedHeightDifference = Mathf.Clamp01(Mathf.Abs(heightError) / verticalThreshold);
+        float speedMultiplier = heightAdjustmentCurve.Evaluate(normalizedHeightDifference);
+        float desiredVerticalVelocity = heightError * verticalMoveSpeed * speedMultiplier;
+
+        // Calculate damping force
+        float dampingForce = -currentVerticalVelocity * followSmoothness;
+
+        // Calculate acceleration needed to reach desired velocity
+        float acceleration = (desiredVerticalVelocity - currentVerticalVelocity) * (1f - followSmoothness);
+
+        // Combine forces
+        float totalForce = acceleration + dampingForce;
+
+        // Apply forces over time
+        float velocityChange = totalForce * Time.fixedDeltaTime;
+
+        // Create new velocity vector, preserving X and Z components
+        Vector3 currentVelocity = rigidBody.linearVelocity;
+        Vector3 newVelocity = new Vector3(
+            currentVelocity.x,
+            currentVerticalVelocity + velocityChange,
+            currentVelocity.z
+        );
+
+        // Apply final velocity
+        rigidBody.linearVelocity = newVelocity;
+    }
+
+    // New method to get the target height based on the robot's current state
+    private float GetStateBasedTargetHeight()
     {
-        // Calculate min safe height above ground at target position
-        float minSafeHeight = targetGroundHit.point.y + minEnvironmentClearance;
-        
-        // If target is below min safe height, use min safe height
-        if (targetHeight < minSafeHeight)
+        switch (currentState)
         {
-            targetHeight = minSafeHeight;
-        }
-    }
-    
-    return targetHeight;
-}
-
-// Height calculation for Interacting state
-private float GetInteractingTargetHeight()
-{
-    if (!_target) return GetIdleTargetHeight();
-    
-    // When interacting, match exactly the target's height
-    return _target.position.y;
-}
-
-// Keep the existing GetHeightConstraints method
-private (float minHeight, float maxHeight) GetHeightConstraints()
-{
-    float minHeight = 0;
-    float maxHeight = Mathf.Infinity;
-
-    // Check ground clearance
-    if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
-    {
-        minHeight = groundHit.point.y + minEnvironmentClearance;
-    }
-
-    // Check ceiling clearance
-    if (Physics.Raycast(transform.position, Vector3.up, out RaycastHit ceilingHit, Mathf.Infinity, environmentLayer))
-    {
-        maxHeight = ceilingHit.point.y - minEnvironmentClearance;
-    }
-
-    return (minHeight, maxHeight);
-}
-
-// Update the OnDrawGizmos method to show the different height targets based on state
-private void OnDrawGizmos()
-{
-    if (!IsOn()) return;
-
-    // Draw ground and ceiling raycasts
-    Gizmos.color = Color.blue;
-    if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
-    {
-        Gizmos.DrawLine(transform.position, groundHit.point);
-        Gizmos.DrawWireSphere(groundHit.point, 0.1f);
-    }
-    if (Physics.Raycast(transform.position, Vector3.up, out RaycastHit ceilingHit, Mathf.Infinity, environmentLayer))
-    {
-        Gizmos.DrawLine(transform.position, ceilingHit.point);
-        Gizmos.DrawWireSphere(ceilingHit.point, 0.1f);
-    }
-
-    // Draw state-based target height
-    Gizmos.color = Color.yellow;
-    float stateBasedHeight = GetStateBasedTargetHeight();
-    Vector3 stateBasedPosition = new Vector3(transform.position.x, stateBasedHeight, transform.position.z);
-    Gizmos.DrawWireSphere(stateBasedPosition, 0.15f);
-    
-    // Draw hover range
-    Gizmos.color = Color.green;
-    Gizmos.DrawWireSphere(stateBasedPosition + Vector3.up * hoverHeight, 0.1f);
-
-    // Draw visual indicators for specific states
-    switch (currentState)
-    {
-        case RobotState.FollowingPlayer:
-            if (_playerFollowPosition)
-            {
-                // Draw line to player
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawLine(transform.position, _playerFollowPosition.position);
+            case RobotState.Idle:
+                return GetIdleTargetHeight();
                 
-                // Draw terrain check points
-                Gizmos.color = Color.magenta;
-                Vector3 toPlayer = _playerFollowPosition.position - transform.position;
-                for (float t = 0.25f; t <= 0.75f; t += 0.25f)
-                {
-                    Vector3 checkPoint = Vector3.Lerp(transform.position, _playerFollowPosition.position, t);
-                    Gizmos.DrawLine(checkPoint, checkPoint + Vector3.down * 10f);
-                }
-            }
-            break;
-            
-        case RobotState.GoingToTarget:
-            if (_target)
-            {
-                // Draw line to target
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(transform.position, _target.position);
-            }
-            break;
+            case RobotState.FollowingPlayer:
+                return GetFollowPlayerTargetHeight();
+                
+            case RobotState.GoingToTarget:
+                return GetGoToTargetHeight();
+                
+            case RobotState.Interacting:
+                return GetInteractingTargetHeight();
+                
+            default:
+                return GetIdleTargetHeight();
+        }
     }
-}
 
-   
+    // Height calculation for CommandIdle state
+    private float GetIdleTargetHeight()
+    {
+        // In idle state, just maintain minimum clearance from the ground
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
+        {
+            return groundHit.point.y + baseHeight;
+        }
+        
+        return transform.position.y; // If no ground found, maintain current height
+    }
+
+    // Height calculation for FollowingPlayer state
+    private float GetFollowPlayerTargetHeight()
+    {
+        if (!_playerFollowPosition) return GetIdleTargetHeight();
+        
+        // When following player, match player's height with some adjustments
+        float playerHeight = _playerFollowPosition.position.y;
+        float terrainHeight = float.MinValue;
+        
+        // Cast multiple rays to check terrain between robot and player
+        for (float t = 0.25f; t <= 0.75f; t += 0.25f)
+        {
+            Vector3 checkPoint = Vector3.Lerp(transform.position, _playerFollowPosition.position, t);
+            if (Physics.Raycast(checkPoint, Vector3.down, out RaycastHit hit, Mathf.Infinity, environmentLayer))
+            {
+                terrainHeight = Mathf.Max(terrainHeight, hit.point.y);
+            }
+        }
+        
+        // If valid terrain found, consider it for height calculation
+        if (terrainHeight > float.MinValue)
+        {
+            // Choose the higher value between player height and terrain height + base clearance
+            return Mathf.Max(playerHeight, terrainHeight + baseHeight);
+        }
+        
+        return playerHeight; // Default to player height if no terrain data available
+    }
+
+    // Height calculation for GoToInteractable state
+    private float GetGoToTargetHeight()
+    {
+        if (!_target) return GetIdleTargetHeight();
+        
+        // When going to a target, move toward the target's height
+        float targetHeight = _target.position.y;
+        
+        // Check the ground below target
+        if (Physics.Raycast(_target.position, Vector3.down, out RaycastHit targetGroundHit, Mathf.Infinity, environmentLayer))
+        {
+            // Calculate min safe height above ground at target position
+            float minSafeHeight = targetGroundHit.point.y + minEnvironmentClearance;
+            
+            // If target is below min safe height, use min safe height
+            if (targetHeight < minSafeHeight)
+            {
+                targetHeight = minSafeHeight;
+            }
+        }
+        
+        return targetHeight;
+    }
+
+    // Height calculation for Interacting state
+    private float GetInteractingTargetHeight()
+    {
+        if (!_target) return GetIdleTargetHeight();
+        
+        // When interacting, match exactly the target's height
+        return _target.position.y;
+    }
+
+    // Keep the existing GetHeightConstraints method
+    private (float minHeight, float maxHeight) GetHeightConstraints()
+    {
+        float minHeight = 0;
+        float maxHeight = Mathf.Infinity;
+
+        // Check ground clearance
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
+        {
+            minHeight = groundHit.point.y + minEnvironmentClearance;
+        }
+
+        // Check ceiling clearance
+        if (Physics.Raycast(transform.position, Vector3.up, out RaycastHit ceilingHit, Mathf.Infinity, environmentLayer))
+        {
+            maxHeight = ceilingHit.point.y - minEnvironmentClearance;
+        }
+
+        return (minHeight, maxHeight);
+    }
+
+
+
 
    #endregion Vertical movement -------------------------------------------------------------------------------
 
@@ -745,22 +680,15 @@ private void OnDrawGizmos()
        }
    }
    
-   private void FollowPlayer()
-   {
-       if (!_playerFollowPosition || !_playerAimingFollowPosition) return;
-       
-       // Calculate the direction to the target in the horizontal plane only
-       Vector3 targetPosition;
-       if (_player.IsAiming)
-       {
-           targetPosition = new Vector3(_playerAimingFollowPosition.position.x, transform.position.y, _playerAimingFollowPosition.position.z);
-       }
-       else
-       {
-           targetPosition = new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
-       }
-
+    private void FollowPlayer()
+    {
+        if (!_playerFollowPosition || !_playerAimingFollowPosition) return;
         
+        // Calculate the direction to the target in the horizontal plane only
+        bool isPlayerAiming = _player.IsAiming;
+        
+        Vector3 targetPosition = isPlayerAiming ? new Vector3(_playerAimingFollowPosition.position.x, transform.position.y, _playerAimingFollowPosition.position.z) 
+            : new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
 
         // Calculate distance to target
         Vector3 directionToTarget = (targetPosition - transform.position);
@@ -776,11 +704,14 @@ private void OnDrawGizmos()
         // Calculate desired velocity
         Vector3 desiredVelocity = Vector3.zero;
 
-        if (distanceToTarget > minFollowDistance)
+        // NEW FEATURE: Use different minimum follow distance when aiming
+        float effectiveMinFollowDistance = isPlayerAiming ? aimingMinFollowDistance : minFollowDistance;
+
+        if (distanceToTarget > effectiveMinFollowDistance)
         {
             // Normalize the distance between min and max follow distance
             float normalizedDistance = Mathf.Clamp01(
-                (distanceToTarget - minFollowDistance) / (maxFollowDistance - minFollowDistance)
+                (distanceToTarget - effectiveMinFollowDistance) / (maxFollowDistance - effectiveMinFollowDistance)
             );
             
             // Apply the curve to get the speed multiplier
@@ -805,30 +736,40 @@ private void OnDrawGizmos()
             }
             
             // IMPROVEMENT 3: Additional speed reduction when very close
-            if (distanceToTarget < minFollowDistance * 2f)
+            if (distanceToTarget < effectiveMinFollowDistance * 2f)
             {
-                speedMultiplier *= distanceToTarget / (minFollowDistance * 2f);
+                speedMultiplier *= distanceToTarget / (effectiveMinFollowDistance * 2f);
             }
             
-            desiredVelocity = moveDirection * (horizontalMoveSpeed * speedMultiplier);
+            // NEW FEATURE: Select different move speeds based on aiming state
+            float selectedMoveSpeed = isPlayerAiming ? aimingMoveSpeed : horizontalMoveSpeed;
+            
+            // NEW FEATURE: Apply boost when transitioning to aiming mode
+            if (isPlayerAiming && currentSpeed < selectedMoveSpeed * 0.9f)
+            {
+                speedMultiplier *= aimingTransitionMultiplier;
+            }
+            
+            desiredVelocity = moveDirection * (selectedMoveSpeed * speedMultiplier);
         }
 
         // IMPROVEMENT 4: Check if we're moving away from target instead of towards it
-        // Calculate damping force
-        Vector3 dampingForce = -currentHorizontalVelocity * followSmoothness;
+        // Calculate damping force - reduced smoothness for quicker response in aiming mode
+        float effectiveSmoothness = isPlayerAiming ? followSmoothness * 0.5f : followSmoothness;
+        Vector3 dampingForce = -currentHorizontalVelocity * effectiveSmoothness;
 
         float dotProduct = Vector3.Dot(currentHorizontalVelocity.normalized, directionToTarget.normalized);
         if (dotProduct < -0.2f && distanceToTarget < maxFollowDistance)
         {
             // We're moving away from target - apply stronger deceleration
-            dampingForce = -currentHorizontalVelocity * (followSmoothness * 3f);
+            // Increase deceleration even more when aiming
+            float decelMultiplier = isPlayerAiming ? 4f : 3f;
+            dampingForce = -currentHorizontalVelocity * (effectiveSmoothness * decelMultiplier);
             rigidBody.AddForce(dampingForce, ForceMode.Acceleration);
         }
 
-
-
         // Calculate acceleration needed to reach desired velocity
-        Vector3 acceleration = (desiredVelocity - currentHorizontalVelocity) * (1f - followSmoothness);
+        Vector3 acceleration = (desiredVelocity - currentHorizontalVelocity) * (1f - effectiveSmoothness);
 
         // Combine forces
         Vector3 totalForce = acceleration + dampingForce;
@@ -843,12 +784,13 @@ private void OnDrawGizmos()
             currentHorizontalVelocity.z + velocityChange.z
         );
 
-        // IMPROVEMENT 5: Limit maximum horizontal speed based on distance
-        float maxSpeed = horizontalMoveSpeed;
+        // IMPROVEMENT 5: Limit maximum horizontal speed based on distance and aim state
+        float maxSpeed = isPlayerAiming ? aimingMoveSpeed : horizontalMoveSpeed;
         if (distanceToTarget < maxFollowDistance)
         {
-            // Gradually reduce max speed as we get closer
-            maxSpeed = Mathf.Lerp(horizontalMoveSpeed * 0.3f, horizontalMoveSpeed, 
+            // Gradually reduce max speed as we get closer, but keep higher minimum speed when aiming
+            float minSpeedRatio = isPlayerAiming ? 0.4f : 0.3f;
+            maxSpeed = Mathf.Lerp(maxSpeed * minSpeedRatio, maxSpeed, 
                 distanceToTarget / maxFollowDistance);
         }
 
@@ -863,6 +805,42 @@ private void OnDrawGizmos()
 
         // Apply final velocity
         rigidBody.linearVelocity = newVelocity;
+    }
+   
+   
+   
+   
+   private void MoveToTarget(Transform target)
+   {
+       // Calculate distance to target
+       Vector3 targetPosition = new Vector3(target.position.x, target.position.y, target.position.z);
+       float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+    
+       // If we're close enough to the target
+       if (distanceToTarget <= interactDistance)
+       {
+           // If we have an interactable object, interact with it
+           if (CurrentInteractable)
+           {
+               // Perform the interaction
+               InteractWith();
+           }
+       }
+       else
+       {
+           // If we're not close enough, move towards the target
+           Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+           Vector3 moveDirection = new Vector3(directionToTarget.x, 0f, directionToTarget.z);
+           
+           Vector3 newVelocity = new Vector3(
+               moveDirection.x * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime),
+               rigidBody.linearVelocity.y,
+               moveDirection.z * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime)
+           );
+           
+           // Apply the movement
+           rigidBody.linearVelocity = newVelocity;
+       }
    }
 
    #endregion Horizontal movement -------------------------------------------------------------------------------
@@ -879,16 +857,8 @@ private void OnDrawGizmos()
     
        if (currentState == RobotState.FollowingPlayer)
        {
-           Vector3 directionToTarget;
-           
-           if (_player.IsAiming)
-           {
-               directionToTarget = (_player.cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0)).normalized;
-           }
-           else
-           {
-               directionToTarget = (_player.transform.position + new Vector3(0,0.5f, 0) - transform.position).normalized;
-           }
+           Vector3 directionToTarget = _player.IsAiming ? (_player.cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0)).normalized 
+               : (_player.transform.position + new Vector3(0,0.5f, 0) - transform.position).normalized;
            
            targetRotation = Quaternion.LookRotation(directionToTarget);
            
@@ -934,9 +904,7 @@ private void OnDrawGizmos()
        stabilizationTorque -= currentAngularVelocity * rotationStability;
     
        // Add torque towards target rotation
-       Vector3 rotationAxis;
-       float rotationAngle;
-       (targetRotation * Quaternion.Inverse(transform.rotation)).ToAngleAxis(out rotationAngle, out rotationAxis);
+       (targetRotation * Quaternion.Inverse(transform.rotation)).ToAngleAxis(out var rotationAngle, out var rotationAxis);
     
        if (!float.IsNaN(rotationAngle))
        {
@@ -956,40 +924,6 @@ private void OnDrawGizmos()
 
 
    #region Utility ------------------------------------------------------------------------
-
-
-   private void MoveToTarget(Transform target)
-   {
-       // Calculate distance to target
-       Vector3 targetPosition = new Vector3(target.position.x, target.position.y, target.position.z);
-       float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
-    
-       // If we're close enough to the target
-       if (distanceToTarget <= interactDistance)
-       {
-           // If we have an interactable object, interact with it
-           if (CurrentInteractable)
-           {
-               // Perform the interaction
-               InteractWith();
-           }
-       }
-       else
-       {
-           // If we're not close enough, move towards the target
-           Vector3 directionToTarget = (targetPosition - transform.position).normalized;
-           Vector3 moveDirection = new Vector3(directionToTarget.x, 0f, directionToTarget.z);
-           
-           Vector3 newVelocity = new Vector3(
-               moveDirection.x * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime),
-               rigidBody.linearVelocity.y,
-               moveDirection.z * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime)
-           );
-           
-           // Apply the movement
-           rigidBody.linearVelocity = newVelocity;
-       }
-   }
    
    private void Teleport(Vector3 position, Quaternion rotation)
    {
@@ -1127,7 +1061,7 @@ private void OnDrawGizmos()
    }
    
    
-       private void UpdateDebugInformation()
+    private void UpdateDebugInformation()
     {
         if (TestManager.Instance && TestManager.Instance.DebugMode)
         {
@@ -1146,4 +1080,84 @@ private void OnDrawGizmos()
 
    #endregion Utility ------------------------------------------------------------------------
    
+   
+   
+   
+   #region Gizmos ------------------------------------------------------------------------
+
+    private void OnDrawGizmos()
+    {
+        if (!IsOn()) return;
+
+        // Draw ground and ceiling raycasts
+        Gizmos.color = Color.blue;
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, Mathf.Infinity, environmentLayer))
+        {
+            Gizmos.DrawLine(transform.position, groundHit.point);
+            Gizmos.DrawWireSphere(groundHit.point, 0.1f);
+        }
+        if (Physics.Raycast(transform.position, Vector3.up, out RaycastHit ceilingHit, Mathf.Infinity, environmentLayer))
+        {
+            Gizmos.DrawLine(transform.position, ceilingHit.point);
+            Gizmos.DrawWireSphere(ceilingHit.point, 0.1f);
+        }
+
+        // Draw state-based target height
+        Gizmos.color = Color.yellow;
+        float stateBasedHeight = GetStateBasedTargetHeight();
+        Vector3 stateBasedPosition = new Vector3(transform.position.x, stateBasedHeight, transform.position.z);
+        Gizmos.DrawWireSphere(stateBasedPosition, 0.15f);
+        
+        // Draw hover range
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(stateBasedPosition + Vector3.up * hoverHeight, 0.1f);
+
+        // Draw visual indicators for specific states
+        switch (currentState)
+        {
+            case RobotState.FollowingPlayer:
+                if (_playerFollowPosition)
+                {
+                    // Draw line to player
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawLine(transform.position, _playerFollowPosition.position);
+                    
+                    // Draw normal min follow distance
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawWireSphere(transform.position, minFollowDistance);
+                    
+                    // Draw aiming min follow distance if applicable
+                    if (_player && _player.IsAiming)
+                    {
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawWireSphere(transform.position, aimingMinFollowDistance);
+                    }
+                    
+                    // Draw max follow distance
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawWireSphere(transform.position, maxFollowDistance);
+                    
+                    // Draw terrain check points
+                    Gizmos.color = Color.magenta;
+                    for (float t = 0.25f; t <= 0.75f; t += 0.25f)
+                    {
+                        Vector3 checkPoint = Vector3.Lerp(transform.position, _playerFollowPosition.position, t);
+                        Gizmos.DrawLine(checkPoint, checkPoint + Vector3.down * 10f);
+                    }
+                }
+                break;
+                
+            case RobotState.GoingToTarget:
+                if (_target)
+                {
+                    // Draw line to target
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(transform.position, _target.position);
+                }
+                break;
+        }
+    }
+
+   
+   #endregion Gizmos ------------------------------------------------------------------------
 }

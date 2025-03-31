@@ -64,6 +64,18 @@ public class LaserPortal : LaserOpticalElementBase {
         targetPosition += targetDirection * _boxCollider.size.z;
         pair.outgoing.Propagate(targetPosition, targetDirection);
     }
+    
+    public override void UpdateMaxDistance(LaserBeam laserBeam, float maxTotalDistance) {
+        var pair = GetPairFromIncomingBeam(laserBeam);
+        if (pair != null) {
+            pair.outgoing.maxTotalDistance = maxTotalDistance;
+        
+            // Propagate update to any elements hit by the outgoing beam
+            if (pair.outgoing.LaserOpticalElementBaseThatTheBeamHit != null) {
+                pair.outgoing.LaserOpticalElementBaseThatTheBeamHit.UpdateMaxDistance(pair.outgoing, maxTotalDistance);
+            }
+        }
+    }
 
     private LaserBeamPair GetPairFromIncomingBeam(LaserBeam laserBeam) => _laserBeamPairs.Find(x => x.incoming == laserBeam);
 }
