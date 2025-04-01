@@ -385,6 +385,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6050077395804514476}
   - component: {fileID: 1820426967260782076}
+  - component: {fileID: 2340978542512954311}
   - component: {fileID: 877771211570101660}
   m_Layer: 0
   m_Name: TestManager
@@ -506,6 +507,38 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2340978542512954311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6817677396046505635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53931b6869791744aaea2513fcd744be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playOnAwake: 0
+  resetOnDisable: 1
+  animationDuration: 0.5
+  delayBetweenObjects: 0.1
+  scaleEase: 30
+  sortMode: 6
+  customOrderedObjects: []
+  distanceReferencePoint: {fileID: 0}
+  sortFromFarthest: 0
+  findAllMeshesInScene: 1
+  additionalObjectsToAnimate: []
+  excludedObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  excludeChildren: 1
+  excludePlayer: 1
+  excludeRobot: 1
+  totalAnimationTime: 0
+  numberOfObjectsToAnimate: 0
 --- !u!114 &877771211570101660
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -530,12 +563,21 @@ MonoBehaviour:
   debugMode: 0
   debugTextRight: {fileID: 5332473880504026189}
   debugTextLeft: {fileID: 1423539123162314081}
-  currentTest: {fileID: 0}
-  currentEnvironment: {fileID: 0}
   currentPlayer: {fileID: 0}
   currentRobot: {fileID: 0}
+  currentTest: {fileID: 0}
+  currentEnvironment: {fileID: 0}
   currentCheckpoint: {fileID: 0}
   currentTheme: {fileID: 0}
+  currentLightSettings:
+    ambientIntensity: 1
+    reflectionMode: 0
+    useFog: 0
+    fogMode: 2
+    fogColor: {r: 1, g: 1, b: 1, a: 1}
+    fogDensity: 0
+    fogStart: 0
+    fogEnd: 300
   onTestLoaded:
     m_PersistentCalls:
       m_Calls: []

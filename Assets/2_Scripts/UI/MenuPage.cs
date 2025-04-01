@@ -66,7 +66,6 @@ public class MenuPage : MonoBehaviour
     [SerializeField] private SOAudioEvent sfxButtonClick;
     [SerializeField] private SOAudioEvent sfxButtonMoveIn;
     [SerializeField] private SOAudioEvent sfxButtonMoveOut;
-    
     [EndFoldout]
     
     
