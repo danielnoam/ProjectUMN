@@ -36,7 +36,6 @@ public class RotatingPillar : MonoBehaviour
     
     [Header("Debug")]
     [SerializeField, ReadOnly] private bool isActive = false;
-    [SerializeField, ReadOnly] private bool isRotating = false;
     
     private AudioSource _audioSource;
     private float _activeYPosition;
@@ -178,9 +177,6 @@ public class RotatingPillar : MonoBehaviour
         // Add 360 degrees clockwise for activation, 360 counterclockwise for deactivation
         endRotation.y += active ? 360 : -360;
         
-        // Debug - mark that rotation is happening
-        isRotating = true;
-        
         // Create a sequence containing both position and rotation animations
         _animationSequence = Sequence.Create()
             // Add position animation to the sequence
@@ -199,7 +195,6 @@ public class RotatingPillar : MonoBehaviour
                 ease: animationEase
             ))
             .OnComplete(() => {
-                isRotating = false;
                 
                 // Play sound effect when animation completes
                 if (_audioSource != null)

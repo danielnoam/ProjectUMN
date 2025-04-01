@@ -403,28 +403,7 @@ public class CameraManager : MonoBehaviour
     }
     
     #endregion Private methods ----------------------------------------------------------------------------
-
-
-
-
-
-#if UNITY_EDITOR
-    private void OnValidate()
-    {
-        return;
-        if (Application.isPlaying || !aimCore || !SceneManager.GetActiveScene().IsValid()) return;
-
-        if (!_player)
-        {
-            _player = FindFirstObjectByType<PlayerStateMachine>();
-        }
-        else
-        {
-            aimCore.transform.position = _player.transform.position + _currentOffset;
-        }
-        
-    }
-#endif
+    
 
     
 }

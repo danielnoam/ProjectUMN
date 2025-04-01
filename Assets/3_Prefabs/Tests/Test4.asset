@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Test 4
   description: '"?????"'
-  timeToLoad: 1
-  timeToUnload: 1
+  timeToLoad: 4
+  timeToUnload: 3
   theme: {fileID: 11400000, guid: 735feeb0ed9e129469af5a65e6c3c5c5, type: 2}
   environmentPrefab: {fileID: 4701224180201935342, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
-  ambientIntensity: 1
-  reflectionMode: 0
-  useFog: 0
-  fogMode: 2
-  fogColor: {r: 1, g: 1, b: 1, a: 1}
-  fogDensity: 0
-  fogStart: 0
-  fogEnd: 300
+  lightSettings:
+    ambientIntensity: 1
+    reflectionMode: 0
+    useFog: 0
+    fogMode: 2
+    fogColor: {r: 1, g: 1, b: 1, a: 1}
+    fogDensity: 0
+    fogStart: 0
+    fogEnd: 300

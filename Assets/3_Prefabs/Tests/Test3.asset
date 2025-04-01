@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Test 3
   description: '"Who Gets to Leave?"'
-  timeToLoad: 1
-  timeToUnload: 1
+  timeToLoad: 4
+  timeToUnload: 3
   theme: {fileID: 11400000, guid: 79e55219fca309649beaaba689915ac0, type: 2}
   environmentPrefab: {fileID: 3910846880397731132, guid: 1e7db0e32420871428bcb2d167e0f6ea, type: 3}
-  ambientIntensity: 1
-  reflectionMode: 0
-  useFog: 0
-  fogMode: 2
-  fogColor: {r: 1, g: 1, b: 1, a: 1}
-  fogDensity: 0
-  fogStart: 0
-  fogEnd: 300
+  lightSettings:
+    ambientIntensity: 1
+    reflectionMode: 0
+    useFog: 0
+    fogMode: 2
+    fogColor: {r: 1, g: 1, b: 1, a: 1}
+    fogDensity: 0
+    fogStart: 0
+    fogEnd: 300

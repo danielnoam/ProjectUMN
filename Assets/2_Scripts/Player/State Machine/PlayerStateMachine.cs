@@ -190,6 +190,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+            TestManager.Instance.onTestStartLoading.AddListener(OnTestStartLoading);
             _debugText = TestManager.Instance.DebugTextLeft;
         }
         
@@ -201,6 +202,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+            TestManager.Instance.onTestStartLoading.RemoveListener(OnTestStartLoading);
             _debugText = null;
         }
     }
@@ -239,7 +241,13 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnTestLoaded(SOTest test)
     {
         robot = TestManager.Instance.Robot;
-        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), 2f, false));
+        
+    }
+    
+    private void OnTestStartLoading(SOTest test)
+    {
+        robot = null;
+        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), test.GetTimeToLoad(), false));
     }
     
 

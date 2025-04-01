@@ -46,6 +46,7 @@ public class InfoTextHandler : MonoBehaviour
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+            TestManager.Instance.onTestStartUnloading.AddListener(OnTestStartUnloading);
         }
 
         if (player)
@@ -54,12 +55,15 @@ public class InfoTextHandler : MonoBehaviour
             player.onPlayerOpenedMenu.AddListener(ForceHideAnimation);
         }
     }
-    
+
+
+
     private void OnDisable()
     {
         if (TestManager.Instance)
         {
             TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+            TestManager.Instance.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
         }
         
         if (player)
@@ -79,6 +83,14 @@ public class InfoTextHandler : MonoBehaviour
         testDescriptionText.text = $"{prfix}{test.GetDescription()}{suffix}";
         musicNameText.text = $"{prfix}'{test.GetTheme().aoName}'{suffix}";
         musicAuthorText.text = $"{prfix}By {test.GetTheme().aoAuthor}{suffix}";
+    }
+    
+    private void OnTestStartUnloading(SOTest test)
+    {
+        if (_textSequence.isAlive)
+        {
+            ForceHideAnimation();
+        }
     }
 
     private float GetAnimationTime()

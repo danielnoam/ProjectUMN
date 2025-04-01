@@ -7,13 +7,6 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using VInspector;
 
-
-
-
-
-
-
-
 [SelectionBase]
 [RequireComponent(typeof(AudioSource))]
 public class TestManager : MonoBehaviour
@@ -21,10 +14,17 @@ public class TestManager : MonoBehaviour
     public static TestManager Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private SOTest[] tests;
-    [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private GameObject robotPrefab;
+    [SerializeField] private PlayerStateMachine playerPrefab;
+    [SerializeField] private RobotCompanion robotPrefab;
     [SerializeField] private SOAudioEvent introTheme;
+    [SerializeField] private SOTest[] tests;
+    [Foldout("Events")]
+    public UnityEvent onIntroSequenceStart = new UnityEvent();
+    public UnityEvent<SOTest> onTestStartLoading = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestStartUnloading = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
+    [EndFoldout]
     
     [Header("Debug")]
     [SerializeField] private bool debugMode = true;
@@ -38,14 +38,10 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
 
-    [Foldout("Events")]
-    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
-    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
-    [EndFoldout]
-    
-    
+
     
     public bool DebugMode => debugMode;
+    public TestLightSettings DefaultLightSettings => _defaultLightSettings;
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
@@ -61,8 +57,7 @@ public class TestManager : MonoBehaviour
     private AudioSource _audioSource;
     private CameraManager _cameraManager;
     private TestLightSettings _defaultLightSettings;
-    
-    
+    private TestAnimator _testAnimator;
     
     private void Awake()
     {
@@ -75,6 +70,7 @@ public class TestManager : MonoBehaviour
             Instance = this;
         }
         
+        _testAnimator = GetComponent<TestAnimator>();
         _audioSource = GetComponent<AudioSource>();
         _defaultLightSettings = tests[0].GetLightSettings();
     }
@@ -84,6 +80,7 @@ public class TestManager : MonoBehaviour
         currentPlayer = FindFirstObjectByType<PlayerStateMachine>();
         currentRobot = FindFirstObjectByType<RobotCompanion>();
         _cameraManager = FindFirstObjectByType<CameraManager>();
+        
 
         if (SceneManager.GetActiveScene().buildIndex == 0)
         {
@@ -97,7 +94,6 @@ public class TestManager : MonoBehaviour
         {
             ToggleDebugMode();
         }
-        
         if (Input.GetKeyDown(KeyCode.Keypad1))
         {
             StartTest(0);
@@ -117,6 +113,10 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad5))
         {
             StartTest(4);
+        }
+        if (Input.GetKeyDown(KeyCode.KeypadPeriod))
+        {
+            RemoveCurrentTest();
         }
     }
     
@@ -204,7 +204,6 @@ public class TestManager : MonoBehaviour
     {
         if (!_cameraManager || !currentPlayer) return;
         
-
         currentPlayer.SwitchState(currentPlayer.GroundedState);
         currentPlayer.transform.position = Vector3.zero + new Vector3(0, 0.9f, 0);
         currentTheme = introTheme;
@@ -325,7 +324,6 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator LoadTest(int testIndex, bool isStandaloneCall = true)
     {
-
         if (tests.Length <= 0 || testIndex >= tests.Length)
         {
             if (isStandaloneCall) _activeLoadCoroutine = null;
@@ -333,33 +331,49 @@ public class TestManager : MonoBehaviour
         }
         
         Debug.Log("Loading... " + tests[testIndex].GetName());
-        yield return new WaitForSeconds(tests[testIndex].GetTimeToLoad());
+        
         currentTest = tests[testIndex];
         currentTheme = currentTest.GetTheme();
         ApplyLightSettings(currentTest.GetLightSettings());
-        currentTheme?.Play(_audioSource, 1.5f);
-        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0),quaternion.identity ); // a bit of offset for the intersection effect
-        
+        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0), quaternion.identity); // a bit of offset for the intersection effect
+        currentEnvironment.name = currentTest.GetName() + " Environment";
         if (currentTest.HasRobot()) // The new test has a robot in it
         {
             if (currentRobot) Destroy(currentRobot.gameObject);
+            currentRobot = null;
+            currentRobot = FindFirstObjectByType<RobotCompanion>();
             
         } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
         {
-            GameObject newRobot = Instantiate(robotPrefab);
-            currentRobot = newRobot.GetComponent<RobotCompanion>();
+            currentRobot = Instantiate(robotPrefab);
             currentRobot.TurnOn();
         }
-        if (!currentRobot)
+        onTestStartLoading?.Invoke(tests[testIndex]);
+        
+        // Play scale-up animation 
+        if (_testAnimator && _testAnimator.PlayOnTestLoading)
         {
-            currentRobot = FindFirstObjectByType<RobotCompanion>();
+            
+            // Give a small delay before playing the animation
+            _testAnimator.RefreshForNewEnvironment();
+            _testAnimator.SetAllObjectsToZeroScale();
+            yield return new WaitForSeconds(0.5f);
+            _testAnimator.PlayScaleSequence(currentTest.GetTimeToLoad());
+            
+            
+            // Wait for animation to complete
+            yield return new WaitForSeconds(currentTest.GetTimeToLoad());
+        }
+        else
+        {
+            yield return new WaitForSeconds(currentTest.GetTimeToLoad());
         }
 
-
         
-        onTestLoaded.Invoke(currentTest);
+        currentTheme?.Play(_audioSource);
         _activeLoadCoroutine = null;
-        Debug.Log("Loaded " + tests[testIndex].GetName());
+        onTestLoaded?.Invoke(currentTest);
+        Debug.Log("Loaded " + currentTest.GetName());
     }
     
     
@@ -372,32 +386,41 @@ public class TestManager : MonoBehaviour
             yield break;
         }
         
-        SOTest test = currentTest;
         
+        SOTest test = currentTest;
+        Debug.Log("Unloading... " + test.GetName());
+        onTestStartUnloading?.Invoke(test);
         StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
         
-        Debug.Log("Unloading... " + test.GetName());
-        yield return new WaitForSeconds(test.GetTimeToUnload());
-        Debug.Log("Unloaded " + test.GetName());
+        // Play scale-down animation if enabled and MeshScaleSequence exists
+        if (_testAnimator && _testAnimator.PlayOnTestUnloading)
+        {
+            // Give a small delay before playing the animation
+            _testAnimator.RefreshForNewEnvironment();
+            yield return new WaitForSeconds(0.5f);
+            _testAnimator.PlayReverseSequence(test.GetTimeToUnload());
+            
+            // Wait for animation to complete
+            yield return new WaitForSeconds(test.GetTimeToUnload());
+        }
+        else
+        {
+            // If not using animations, still wait the unload time
+            yield return new WaitForSeconds(test.GetTimeToUnload());
+        }
+        
+        
         Destroy(currentEnvironment);
-        if (currentRobot) Destroy(currentRobot.gameObject);
+        if (!currentRobot) currentRobot = null;
         currentTest = null;
         currentEnvironment = null;
         currentCheckpoint = null;
-        currentRobot = null;
         currentTheme = null;
         ApplyLightSettings(_defaultLightSettings);
-        onTestUnloaded.Invoke(test);
-        
-        // Clear unload coroutine reference
         _activeUnloadCoroutine = null;
+        onTestUnloaded?.Invoke(test);
+        Debug.Log("Unloaded " + test.GetName());
     }
     
-
     #endregion Private methods ----------------------------------------------------------------------------
-    
-    
-
-
-    
 }

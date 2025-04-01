@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
+using VInspector;
 
 [SelectionBase]
 [RequireComponent(typeof(Interactable))]
@@ -43,6 +44,7 @@ public class PillerButton : MonoBehaviour
         );
     }
     
+    [Button]
     public void PressButton()
     {
         if (_isPressed) return;
