@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using PrimeTween;
 using TMPro;
 using UnityEngine;
@@ -69,29 +68,25 @@ public class Interactable : MonoBehaviour
     {
         _audioSource = GetComponent<AudioSource>();
         
-        // Save default alpha values
         if (interactPromptBackground)
         {
             _defaultBackgroundAlpha = interactPromptBackground.color.a;
-            // Set initial alpha to 0 (invisible)
             SetAlpha(interactPromptBackground, 0f);
         }
         
         if (interactPromptText)
         {
             _defaultTextAlpha = interactPromptText.color.a;
-            // Set initial alpha to 0 (invisible)
             SetAlpha(interactPromptText, 0f);
         }
         
         if (outlineObject)
         {
-            // Initialize outline with clear color (fully transparent)
             outlineObject.OutlineColor = Color.clear;
             outlineObject.OutlineWidth = outlineWidth;
         }
         
-        // Initialize sequences for tweens
+
         _promptSequence = Sequence.Create();
         _outlineSequence = Sequence.Create();
     } 
@@ -103,7 +98,7 @@ public class Interactable : MonoBehaviour
             ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"E";
-            FadePrompt(true); // Fade in the prompt
+            FadePrompt(true);
         }
         // Otherwise use the normal check
         else if (CanMarkForInteraction(interactor))
@@ -111,7 +106,7 @@ public class Interactable : MonoBehaviour
             ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"E"; // <sprite name=E>
-            FadePrompt(true); // Fade in the prompt
+            FadePrompt(true); 
         }
     }
     
@@ -122,7 +117,7 @@ public class Interactable : MonoBehaviour
             ChangeOutlineColor(robotOutlineColor);
             _markedForInteraction = true;
             interactPromptText.text = $"R";
-            FadePrompt(true); // Fade in the prompt
+            FadePrompt(true); 
         }
     }
     
@@ -134,11 +129,10 @@ public class Interactable : MonoBehaviour
             Color transparentOutlineColor = outlineObject.OutlineColor;
             transparentOutlineColor.a = 0f;
             ChangeOutlineColor(transparentOutlineColor);
-            
+            FadePrompt(false);
             _markedForInteraction = false;
             
-            // Fade out prompt
-            FadePrompt(false);
+            
         }
     }
 
@@ -233,7 +227,7 @@ public class Interactable : MonoBehaviour
         return !_isInteracting && (!_interacted || allowMultipleInteractions) && !_markedForInteraction && interactorAllowed;
     }
     
-    // Helper method to set alpha value for UI elements
+   
     private void SetAlpha(Graphic graphic, float alpha)
     {
         if (graphic == null) return;
@@ -243,7 +237,9 @@ public class Interactable : MonoBehaviour
         graphic.color = color;
     }
     
-
+    
+    
+    
     #region Effect --------------------------------------------------------------------------------------------------------
 
     private void FadePrompt(bool fadeIn)
@@ -251,7 +247,7 @@ public class Interactable : MonoBehaviour
         _promptSequence.Stop();
         _promptSequence = Sequence.Create();
         
-        // Tween background alpha if available
+     
         if (interactPromptBackground)
         {
             float targetAlpha = fadeIn ? _defaultBackgroundAlpha : 0f;
@@ -267,7 +263,7 @@ public class Interactable : MonoBehaviour
             );
         }
         
-        // Tween text alpha if available
+   
         if (interactPromptText)
         {
             float targetAlpha = fadeIn ? _defaultTextAlpha : 0f;

@@ -227,6 +227,7 @@ GameObject:
   - component: {fileID: 6664769028074961100}
   - component: {fileID: 94915746992158084}
   - component: {fileID: 6628262427022555812}
+  - component: {fileID: 7150048607373906197}
   m_Layer: 8
   m_Name: Point Light
   m_TagString: Untagged
@@ -328,7 +329,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Version: 3
   m_UsePipelineSettings: 1
-  m_AdditionalLightsShadowResolutionTier: 2
+  m_AdditionalLightsShadowResolutionTier: 1
   m_LightLayerMask: 1
   m_RenderingLayers: 1
   m_CustomShadowLayers: 0
@@ -337,6 +338,19 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!114 &7150048607373906197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3604538744132415881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f574d4f385aa8dd4b9cec463043c3536, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeDuration: 10
 --- !u!1 &5761973312317866703
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,7 +600,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoReleaseDelay: 0.5
-  panelTransform: {fileID: 2701070475180789875}
   sfxPanelPress: {fileID: 11400000, guid: 6323fb3e187d94340ad76d2a5e4a1b9e, type: 2}
   panelRenderer: {fileID: 394162082466066759}
   punchEmissionColor: {r: 0.011764706, g: 0.30980393, b: 0.7019608, a: 1}

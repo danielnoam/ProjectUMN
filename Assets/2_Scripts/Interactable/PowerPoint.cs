@@ -1,10 +1,8 @@
-using System;
+
 using UnityEngine;
 using VInspector;
-using PrimeTween;
 using System.Collections.Generic;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 [SelectionBase]
@@ -33,7 +31,7 @@ public class PowerPoint : MonoBehaviour
     private float rotationAcceleration = 100f;
     
     [SerializeField, Tooltip("How quickly the rotation speed decreases when power is reduced (degrees per second)")]
-    private float rotationDeceleration = 75f;
+    private float rotationDeceleration = 150f;
     
     [SerializeField, Tooltip("Direction of rotation (normalized in code)")]
     private Vector3 rotationDirection = Vector3.up;
@@ -49,7 +47,7 @@ public class PowerPoint : MonoBehaviour
     private float lightAcceleration = 1f;
     
     [SerializeField, Tooltip("How quickly the light intensity decreases when power is reduced")]
-    private float lightDeceleration = 1f;
+    private float lightDeceleration = 1.5f;
     
     [Header("Material")]
     [SerializeField, Tooltip("Reference to the renderer component whose material will have emission")]
@@ -65,7 +63,7 @@ public class PowerPoint : MonoBehaviour
     private float emissionAcceleration = 1f;
     
     [SerializeField, Tooltip("How quickly the emission intensity decreases when power is reduced")]
-    private float emissionDeceleration = 1f;
+    private float emissionDeceleration = 1.5f;
     
     [Header("Events")]
     [SerializeField, Tooltip("Event triggered when the power point becomes fully activated")]
@@ -95,7 +93,6 @@ public class PowerPoint : MonoBehaviour
     
     private Material _pivotMaterial;
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
-    private static readonly int EmissionEnabled = Shader.PropertyToID("_EmissionEnabled");
 
     private void Awake()
     {
@@ -104,12 +101,12 @@ public class PowerPoint : MonoBehaviour
         // Get the material from the rotation pivot
         if (materialRenderer)
         {
-            Renderer renderer = materialRenderer;
-            if (renderer)
+            Renderer rend = materialRenderer;
+            if (rend)
             {
                 // Create a material instance to avoid changing the shared material
-                _pivotMaterial = new Material(renderer.material);
-                renderer.material = _pivotMaterial;
+                _pivotMaterial = new Material(rend.material);
+                rend.material = _pivotMaterial;
                 
                 // Enable emission on the material
                 _pivotMaterial.EnableKeyword("_EMISSION");
@@ -127,12 +124,12 @@ public class PowerPoint : MonoBehaviour
     {
         powerSources = _powerSources.Count;
         
-        // Determine if the power point should be activated
+        // Determine if the PowerPoint should be activated
         bool shouldBeOn = (_powerSources.Count >= powerSourcesNeeded) || 
                           (stayActiveAfterFirstActivation && hasBeenActivated);
         
         // Calculate power ratio with an exponential curve
-        // When stayActiveAfterFirstActivation is true and it has been activated, use full power
+        // When stayActiveAfterFirstActivation is true, and it has been activated, use full power
         float rawRatio;
         if (stayActiveAfterFirstActivation && hasBeenActivated)
         {
