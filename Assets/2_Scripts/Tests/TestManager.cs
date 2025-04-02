@@ -90,33 +90,40 @@ public class TestManager : MonoBehaviour
     
     private void Update()
     {
+
         if (Input.GetKeyDown(KeyCode.Keypad0))
-        {
-            ToggleDebugMode();
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad1))
         {
             StartTest(0);
         }
-        if (Input.GetKeyDown(KeyCode.Keypad2))
+        if (Input.GetKeyDown(KeyCode.Keypad1))
         {
             StartTest(1);
         }
-        if (Input.GetKeyDown(KeyCode.Keypad3))
+        if (Input.GetKeyDown(KeyCode.Keypad2))
         {
             StartTest(2);
         }
-        if (Input.GetKeyDown(KeyCode.Keypad4))
+        if (Input.GetKeyDown(KeyCode.Keypad3))
         {
             StartTest(3);
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad5))
-        {
-            StartTest(4);
         }
         if (Input.GetKeyDown(KeyCode.KeypadPeriod))
         {
             RemoveCurrentTest();
+        }
+        
+        
+        if (Input.GetKeyDown(KeyCode.Keypad9))
+        {
+            ToggleDebugMode();
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad8))
+        {
+            ApplyLightSettings(tests[2].GetLightSettings());
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad7))
+        {
+            ApplyLightSettings(_defaultLightSettings);
         }
     }
     

@@ -28,10 +28,10 @@ public class StateChanger : MonoBehaviour
     private State _previousState;
     
     
-    private void Awake()
+    private void Start()
     {
         if (states.Length == 0) return;
-        
+
         ChangeState(states[0].name);
     }
 

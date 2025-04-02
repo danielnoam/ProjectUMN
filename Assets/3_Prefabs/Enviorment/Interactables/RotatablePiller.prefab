@@ -188,7 +188,6 @@ MonoBehaviour:
   activateSfx: {fileID: 0}
   deactivateSfx: {fileID: 0}
   isActive: 1
-  isRotating: 0
 --- !u!114 &393644897920634709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,6 +200,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca5366a03e18d4d478a8900acb0e90c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  rotationMode: 0
+  canRotate: 1
+  rotationDirection: {x: 0, y: 1, z: 0}
+  modifier1: 0
+  modifier2: 0
+  modifier3: 0
   rotationTime: 0.5
   rotationEase: 4
   rotationSfx: {fileID: 0}
