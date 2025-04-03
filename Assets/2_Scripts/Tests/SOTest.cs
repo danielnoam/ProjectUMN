@@ -21,6 +21,7 @@ public class SOTest : ScriptableObject
     
     [Header("Environment")]
     [SerializeField] private GameObject environmentPrefab;
+    [SerializeField] private Material floorMaterial;
     [SerializeField] private TestLightSettings lightSettings;
 
     
@@ -94,6 +95,11 @@ public class SOTest : ScriptableObject
     public  TestLightSettings GetLightSettings()
     {
         return lightSettings;
+    }
+    
+    public Material GetFloorMaterial()
+    {
+        return floorMaterial;
     }
     
     

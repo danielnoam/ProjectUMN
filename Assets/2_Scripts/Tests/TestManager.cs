@@ -57,7 +57,9 @@ public class TestManager : MonoBehaviour
     private AudioSource _audioSource;
     private CameraManager _cameraManager;
     private TestLightSettings _defaultLightSettings;
+    private Material _defaultTestFloorMaterial;
     private TestAnimator _testAnimator;
+    private Renderer _testFloorRenderer;
     
     private void Awake()
     {
@@ -73,6 +75,7 @@ public class TestManager : MonoBehaviour
         _testAnimator = GetComponent<TestAnimator>();
         _audioSource = GetComponent<AudioSource>();
         _defaultLightSettings = tests[0].GetLightSettings();
+        _defaultTestFloorMaterial = tests[0].GetFloorMaterial();
     }
     
     private void Start()
@@ -80,6 +83,8 @@ public class TestManager : MonoBehaviour
         currentPlayer = FindFirstObjectByType<PlayerStateMachine>();
         currentRobot = FindFirstObjectByType<RobotCompanion>();
         _cameraManager = FindFirstObjectByType<CameraManager>();
+        _testFloorRenderer = GameObject.Find("Floor").GetComponent<Renderer>();
+        
         
 
         if (SceneManager.GetActiveScene().buildIndex == 0)
@@ -342,6 +347,7 @@ public class TestManager : MonoBehaviour
         currentTest = tests[testIndex];
         currentTheme = currentTest.GetTheme();
         ApplyLightSettings(currentTest.GetLightSettings());
+        if (_testFloorRenderer) _testFloorRenderer.material = currentTest.GetFloorMaterial();
         currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0), quaternion.identity); // a bit of offset for the intersection effect
         currentEnvironment.name = currentTest.GetName() + " Environment";
         if (currentTest.HasRobot()) // The new test has a robot in it
@@ -424,6 +430,7 @@ public class TestManager : MonoBehaviour
         currentCheckpoint = null;
         currentTheme = null;
         ApplyLightSettings(_defaultLightSettings);
+        if (_testFloorRenderer) _testFloorRenderer.material = _defaultTestFloorMaterial;
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
         Debug.Log("Unloaded " + test.GetName());
