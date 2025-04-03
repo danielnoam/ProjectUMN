@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using PrimeTween;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using VInspector;
 
@@ -37,8 +39,6 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
-
-
     
     public bool DebugMode => debugMode;
     public TestLightSettings DefaultLightSettings => _defaultLightSettings;
@@ -50,6 +50,7 @@ public class TestManager : MonoBehaviour
     public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
+    public  GameObject FloorObject => _testFloorObject;
     
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
@@ -60,6 +61,7 @@ public class TestManager : MonoBehaviour
     private Material _defaultTestFloorMaterial;
     private TestAnimator _testAnimator;
     private Renderer _testFloorRenderer;
+    private GameObject _testFloorObject;
     
     private void Awake()
     {
@@ -72,6 +74,11 @@ public class TestManager : MonoBehaviour
             Instance = this;
         }
         
+        // Graphic settings
+        PrimeTweenConfig.SetTweensCapacity(800);
+        QualitySettings.shadowResolution = ShadowResolution.Medium;
+        
+        
         _testAnimator = GetComponent<TestAnimator>();
         _audioSource = GetComponent<AudioSource>();
         _defaultLightSettings = tests[0].GetLightSettings();
@@ -83,7 +90,8 @@ public class TestManager : MonoBehaviour
         currentPlayer = FindFirstObjectByType<PlayerStateMachine>();
         currentRobot = FindFirstObjectByType<RobotCompanion>();
         _cameraManager = FindFirstObjectByType<CameraManager>();
-        _testFloorRenderer = GameObject.Find("Floor").GetComponent<Renderer>();
+        _testFloorObject = GameObject.Find("Floor");
+        _testFloorRenderer = _testFloorObject.GetComponent<Renderer>();
         
         
 
@@ -347,7 +355,7 @@ public class TestManager : MonoBehaviour
         currentTest = tests[testIndex];
         currentTheme = currentTest.GetTheme();
         ApplyLightSettings(currentTest.GetLightSettings());
-        if (_testFloorRenderer) _testFloorRenderer.material = currentTest.GetFloorMaterial();
+        if (_testFloorRenderer) _testFloorRenderer.material = new Material(currentTest.GetFloorMaterial()); 
         currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0), quaternion.identity); // a bit of offset for the intersection effect
         currentEnvironment.name = currentTest.GetName() + " Environment";
         if (currentTest.HasRobot()) // The new test has a robot in it
@@ -430,7 +438,7 @@ public class TestManager : MonoBehaviour
         currentCheckpoint = null;
         currentTheme = null;
         ApplyLightSettings(_defaultLightSettings);
-        if (_testFloorRenderer) _testFloorRenderer.material = _defaultTestFloorMaterial;
+        if (_testFloorRenderer) _testFloorRenderer.material = new Material(_defaultTestFloorMaterial);
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
         Debug.Log("Unloaded " + test.GetName());

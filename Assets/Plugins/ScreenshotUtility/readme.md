@@ -10,3 +10,8 @@ Notes:
 -----------------------
 • Settings are saved in the operating system's registry, on a per-project basis.
 • The "Print-screen button" option only takes effect if the window is open and the scene-view has focus
+
+Runtime usage:
+-----------------------
+This is an editor utility, so there is no runtime API. You can use Unity's native screenshot API instead:
+https://docs.unity3d.com/6000.0/Documentation/ScriptReference/ScreenCapture.CaptureScreenshot.html

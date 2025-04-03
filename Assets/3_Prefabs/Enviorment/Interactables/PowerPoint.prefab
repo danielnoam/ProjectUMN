@@ -483,12 +483,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   powerSourcesNeeded: 1
   powerCurve: 3
+  stayActiveAfterFirstActivation: 0
   rotationPivot: {fileID: 815008496850535695}
   rotationSpeed: 500
   rotationAcceleration: 100
   rotationDeceleration: 150
   rotationDirection: {x: 0, y: 1, z: 1}
   pointLight: {fileID: 7820413481550610846}
+  minLightIntensity: 1
   maxLightIntensity: 5
   lightAcceleration: 1
   lightDeceleration: 1.5
@@ -530,6 +532,7 @@ MonoBehaviour:
   isOn: 0
   powerSources: 0
   powerRatio: 0
+  hasBeenActivated: 0
 --- !u!1 &7354123729312602546
 GameObject:
   m_ObjectHideFlags: 0

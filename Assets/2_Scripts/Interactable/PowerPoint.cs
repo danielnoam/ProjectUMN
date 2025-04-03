@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using VInspector;
 using System.Collections.Generic;
@@ -39,6 +38,9 @@ public class PowerPoint : MonoBehaviour
     [Header("Light")]
     [SerializeField, Tooltip("Reference to the light component that will change intensity with power")]
     private Light pointLight;
+    
+    [SerializeField, Tooltip("Minimum light intensity when no power is applied")]
+    private float minLightIntensity = 0f;
     
     [SerializeField, Tooltip("Maximum light intensity at full power")]
     private float maxLightIntensity = 5f;
@@ -182,8 +184,8 @@ public class PowerPoint : MonoBehaviour
         // Light
         if (pointLight)
         {
-            // Calculate target light intensity based on power ratio
-            float targetLightIntensity = maxLightIntensity * powerRatio;
+            // Calculate target light intensity based on power ratio, accounting for minimum intensity
+            float targetLightIntensity = minLightIntensity + (maxLightIntensity - minLightIntensity) * powerRatio;
             
             // Apply acceleration or deceleration based on whether we're increasing or decreasing
             if (targetLightIntensity > _currentLightIntensity)

@@ -18,8 +18,18 @@ public class GroundRipple : MonoBehaviour
     {
         _material = GetComponent<Renderer>().material;
     }
+
+    private void Start()
+    {
+        TestManager.Instance.onTestLoaded.AddListener(UpdateMaterial);
+    }
     
+    private void OnDisable()
+    {
+        TestManager.Instance.onTestLoaded.RemoveListener(UpdateMaterial);
+    }
     
+
     private void Update()
     {
         _rippleTime += Time.deltaTime;
@@ -36,5 +46,10 @@ public class GroundRipple : MonoBehaviour
         rippleSfx?.PlayAtPoint(hit.point);
         _material.SetVector(RippleOrigin, hit.textureCoord);
         _rippleTime = _material.GetFloat(RippleThickness) * -2.0f;
+    }
+
+    private void UpdateMaterial(SOTest test)
+    {
+        _material = GetComponent<Renderer>().material;
     }
 }

@@ -43,6 +43,7 @@ public class TestAnimator : MonoBehaviour
     [SerializeField] private List<GameObject> excludedObjects = new List<GameObject>();
     [SerializeField] private bool excludePlayer = true;
     [SerializeField] private bool excludeRobot = true;
+    [SerializeField] private bool excludeFloor = true;
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -150,6 +151,14 @@ public class TestAnimator : MonoBehaviour
             // Check if the object is the robot or a child of the robot
             GameObject robotObject = _testManager.Robot.gameObject;
             if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
+                return true;
+        }
+        
+        if (excludeFloor && _testManager && _testManager.FloorObject)
+        {
+            // Check if the object is the floor or a child of the floor
+            GameObject floorObject = _testManager.FloorObject.gameObject;
+            if (obj == floorObject || IsChildOf(obj.transform, floorObject.transform))
                 return true;
         }
         

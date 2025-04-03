@@ -5,7 +5,11 @@ using UnityEditor;
 using UnityEditor.AnimatedValues;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-#if CINEMACHINE
+
+#if CINEMACHINE && !CINEMACHINE_3
+using Cinemachine;
+#endif
+#if CINEMACHINE_3
 using Unity.Cinemachine;
 #endif
 

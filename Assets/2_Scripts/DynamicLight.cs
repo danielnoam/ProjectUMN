@@ -37,6 +37,7 @@ public class DynamicLight : MonoBehaviour
     private void OnDisable()
     {
         TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
+        _tween.Stop();
     }
 
     private void OnTestLoaded(SOTest test)
