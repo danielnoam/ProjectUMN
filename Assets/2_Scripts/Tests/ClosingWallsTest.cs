@@ -7,25 +7,21 @@ public class ClosingWallsTest : MonoBehaviour
 {
     [Header("Animation")]
     [SerializeField] private float animationTime = 10f;
-    [SerializeField] private float animationStartDelay = 0f;
     [SerializeField] private Ease animationEase = Ease.Linear;
     
     [Header("Shake Effect")]
     [SerializeField] private float shakeDuration = 2f;
     [SerializeField] private Vector3 shakeStrength = new Vector3(0.2f, 0, 0);
     [SerializeField] private int shakeFrequency = 10;
-    [SerializeField] private bool shakeWhileMoving = true;
     
     [Foldout("Left Wall")]
     [SerializeField] private Transform leftWall;
-    [SerializeField] private Transform leftWallShake;
     [SerializeField] private Vector3 closedPosL;
     [SerializeField, ReadOnly] private Vector3 openedPosL;
     [EndFoldout]
     
     [Foldout("Right Wall")]
     [SerializeField] private Transform rightWall;
-    [SerializeField] private Transform rightWallShake;
     [SerializeField] private Vector3 closedPosR;
     [SerializeField, ReadOnly] private Vector3 openedPosR;
     [EndFoldout]
@@ -47,21 +43,15 @@ public class ClosingWallsTest : MonoBehaviour
     }
 
     [Button]
-    public void ToggleState()
-    {
-        SetState(!isClosed);
-    }
-    
-    [Button]
     public void Open()
     {
-        SetState(false);
+        OpenWalls();
     }
     
     [Button]
     public void Close()
     {
-        SetState(true);
+        CloseWalls();
     }
     
     public void SetState(bool closed, bool instant = false)
@@ -72,7 +62,14 @@ public class ClosingWallsTest : MonoBehaviour
             return;
         }
         
-        PlayWallAnimation(closed);
+        if (closed)
+        {
+            CloseWalls();
+        }
+        else
+        {
+            OpenWalls();
+        }
     }
     
     private void ApplyStateImmediate(bool closed)
@@ -93,92 +90,89 @@ public class ClosingWallsTest : MonoBehaviour
         }
     }
     
-    
-    public Sequence PlayWallAnimation(bool closed)
+    public Sequence OpenWalls()
     {
-        if (isClosed == closed) 
+        if (!isClosed) 
         {
             return Sequence.Create();
         }
         
-        isClosed = closed;
+        isClosed = false;
         
         if (_animationSequence.isAlive) 
         {
             _animationSequence.Stop();
         }
         
-        var tweenSettings = new TweenSettings(animationTime, animationEase, startDelay: animationStartDelay);
+        var tweenSettings = new TweenSettings(animationTime, animationEase);
         _animationSequence = Sequence.Create();
         
-        // When closing, add shake effect before movement
-        if (closed)
-        {
-            // Add shake effect for each wall
-            if (leftWall)
-            {
-                _animationSequence = _animationSequence.Chain(
-                    Tween.ShakeLocalPosition(leftWallShake, strength: shakeStrength, duration: shakeDuration, frequency: shakeFrequency)
-                );
-            }
-            
-            if (rightWall)
-            {
-                _animationSequence = _animationSequence.Group(
-                    Tween.ShakeLocalPosition(rightWallShake, strength: shakeStrength, duration: shakeDuration, frequency: shakeFrequency)
-                );
-            }
-        }
-        
-        // Add movement animations with additional shake effect during movement
+        // Add movement animations
         if (leftWall)
         {
-            if (shakeWhileMoving)
-            {
-                // Group the movement and shake together
-                _animationSequence = _animationSequence.Chain(
-                    Tween.LocalPosition(leftWall, closed ? closedPosL : openedPosL, tweenSettings)
-                    .Group(Tween.ShakeLocalPosition(leftWallShake, strength: shakeStrength * 0.5f, duration: tweenSettings.duration * 0.9f, frequency: shakeFrequency * 1f))
-                );
-            }
-            else
-            {
-                // Just movement without shake
-                _animationSequence = _animationSequence.Chain(
-                    Tween.LocalPosition(leftWall, closed ? closedPosL : openedPosL, tweenSettings)
-                );
-            }
+            _animationSequence = _animationSequence.Chain(
+                Tween.LocalPosition(leftWall, openedPosL, tweenSettings)
+            );
         }
         
         if (rightWall)
         {
-            if (shakeWhileMoving)
-            {
-                // Group the movement and shake together
-                _animationSequence = _animationSequence.Group(
-                    Tween.LocalPosition(rightWall, closed ? closedPosR : openedPosR, tweenSettings)
-                    .Group(Tween.ShakeLocalPosition(rightWallShake, strength: shakeStrength * 0.5f, duration: tweenSettings.duration * 0.9f, frequency: shakeFrequency * 1f))
-                );
-            }
-            else
-            {
-                // Just movement without shake
-                _animationSequence = _animationSequence.Group(
-                    Tween.LocalPosition(rightWall, closed ? closedPosR : openedPosR, tweenSettings)
-                );
-            }
+            _animationSequence = _animationSequence.Group(
+                Tween.LocalPosition(rightWall, openedPosR, tweenSettings)
+            );
         }
         
         return _animationSequence;
     }
     
-    private void OnValidate()
+    public Sequence CloseWalls()
     {
-        if (Application.isPlaying) return;
+        if (isClosed) 
+        {
+            return Sequence.Create();
+        }
         
-        // Store the initial positions if we're in the editor
-        if (leftWall) openedPosL = leftWall.localPosition;
-        if (rightWall) openedPosR = rightWall.localPosition;
-        ApplyStateImmediate(isClosed);
+        isClosed = true;
+        
+        if (_animationSequence.isAlive) 
+        {
+            _animationSequence.Stop();
+        }
+        
+        var tweenSettings = new TweenSettings(animationTime, animationEase);
+        _animationSequence = Sequence.Create();
+        
+        // Add shake effect for each wall
+        if (leftWall)
+        {
+            _animationSequence = _animationSequence.Chain(
+                Tween.ShakeLocalPosition(leftWall, strength: shakeStrength, duration: shakeDuration, frequency: shakeFrequency)
+            );
+        }
+        
+        if (rightWall)
+        {
+            _animationSequence = _animationSequence.Group(
+                Tween.ShakeLocalPosition(rightWall, strength: shakeStrength, duration: shakeDuration, frequency: shakeFrequency)
+            );
+        }
+        
+        // Add movement animations after shake
+        if (leftWall)
+        {
+            _animationSequence = _animationSequence.Chain(
+                Tween.LocalPosition(leftWall, closedPosL, tweenSettings)
+            );
+        }
+        
+        if (rightWall)
+        {
+            _animationSequence = _animationSequence.Group(
+                Tween.LocalPosition(rightWall, closedPosR, tweenSettings)
+            );
+        }
+        
+        return _animationSequence;
     }
+    
 }
