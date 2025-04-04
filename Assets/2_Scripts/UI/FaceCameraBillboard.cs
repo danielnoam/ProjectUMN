@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class FaceCamera : MonoBehaviour
+public class FaceCameraBillboard : MonoBehaviour
 {
     
 

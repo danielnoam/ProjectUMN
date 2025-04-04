@@ -5,15 +5,15 @@ using TMPro;
 using UnityEngine.Serialization;
 using VInspector;
 
-public class InfoTextHandler : MonoBehaviour
+public class TestInfoTextHandler : MonoBehaviour
 {
 
     [Header("Animation")] 
-    [SerializeField] private float textFadeInDuration = 2f;
-    [SerializeField] private float textFadeOutDuration = 1f;
-    [SerializeField] private float textTransitionDelay = 2f;
+    [SerializeField] private float textFadeInDuration = 0.7f;
+    [SerializeField] private float textFadeOutDuration = 0.3f;
+    [SerializeField] private float textTransitionDelay = 1f;
     [SerializeField] private float initialDelay = 2f;
-    [SerializeField] private float displayDuration = 1f;
+    [SerializeField] private float displayDuration = 0.5f;
     [SerializeField,ReadOnly] private float animationTime;
     
     [Header("References")] 

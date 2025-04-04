@@ -369,7 +369,7 @@ public class TestManager : MonoBehaviour
             currentRobot = Instantiate(robotPrefab);
             currentRobot.TurnOn();
         }
-        onTestStartLoading?.Invoke(tests[testIndex]);
+        onTestStartLoading?.Invoke(currentTest);
         
         // Play scale-up animation 
         if (_testAnimator && _testAnimator.PlayOnTestLoading)
