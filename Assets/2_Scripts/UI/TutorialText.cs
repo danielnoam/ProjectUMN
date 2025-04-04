@@ -20,9 +20,9 @@ public class TutorialText : MonoBehaviour
     [Header("Distance Scaling")]
     [SerializeField] private bool scaleWithDistance = false;
     [ShowIf("scaleWithDistance")]
-    [SerializeField] private float scalingSpeed = 10f;
-    [SerializeField] private float minDistance = 7f;
-    [SerializeField] private float maxDistance = 18f;
+    [SerializeField] private float scalingSpeed = 5f;
+    [SerializeField] private float minDistance = 1f;
+    [SerializeField] private float maxDistance = 10f;
     [SerializeField] private Transform distanceTarget;
     [SerializeField,ReadOnly] private float distanceToDistanceTarget;
     [EndIf]
@@ -30,9 +30,9 @@ public class TutorialText : MonoBehaviour
     [Header("Distance Fade")]
     [SerializeField] private bool fadeWithDistance = true;
     [ShowIf("fadeWithDistance")]
-    [SerializeField] private float fadingSpeed = 8f;
-    [SerializeField] private float minFadeDistance = 5f;
-    [SerializeField] private float maxFadeDistance = 15f;
+    [SerializeField] private float fadingSpeed = 5f;
+    [SerializeField] private float minFadeDistance = 1f;
+    [SerializeField] private float maxFadeDistance = 6f;
     [SerializeField] private Transform fadeTarget;
     [SerializeField,ReadOnly] private float distanceToFadeTarget;
     [EndIf]
@@ -40,9 +40,9 @@ public class TutorialText : MonoBehaviour
     [Header("Distance Positioner")]
     [SerializeField] private bool positionWithDistance = true;
     [ShowIf("positionWithDistance")]
-    [SerializeField] private float positioningSpeed = 8f;
+    [SerializeField] private float positioningSpeed = 7f;
     [SerializeField] private float minPositionDistance = 5f;
-    [SerializeField] private float maxPositionDistance = 15f;
+    [SerializeField] private float maxPositionDistance = 10f;
     [SerializeField] private Vector3 farthestPosition = Vector3.down;
     [SerializeField] private Transform positionTarget;
     [SerializeField,ReadOnly] private float distanceToPositionerTarget;
@@ -67,6 +67,16 @@ public class TutorialText : MonoBehaviour
         distanceToFadeTarget = 0f;
         distanceToDistanceTarget = 0f;
         distanceToRotationTarget = 0f;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (positionWithDistance)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(transform.position, transform.position + farthestPosition);
+            Gizmos.DrawSphere(transform.position + farthestPosition, 0.2f);
+        }
     }
 
     private void Awake()
