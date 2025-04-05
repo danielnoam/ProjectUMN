@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -19,14 +20,9 @@ public class TestManager : MonoBehaviour
     [SerializeField] private PlayerStateMachine playerPrefab;
     [SerializeField] private RobotCompanion robotPrefab;
     [SerializeField] private SOAudioEvent introTheme;
+    [SerializeField] private TestEnvironmentSettings defaultEnvironmentSettings;
+    [SerializeField] private TestLightSettings defaultLightSettings;
     [SerializeField] private SOTest[] tests;
-    [Foldout("Events")]
-    public UnityEvent onIntroSequenceStart = new UnityEvent();
-    public UnityEvent<SOTest> onTestStartLoading = new UnityEvent<SOTest>();
-    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
-    public UnityEvent<SOTest> onTestStartUnloading = new UnityEvent<SOTest>();
-    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
-    [EndFoldout]
     
     [Header("Debug")]
     [SerializeField] private bool debugMode = true;
@@ -40,8 +36,19 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
     
+    
+    [Foldout("Events")]
+    public UnityEvent onIntroSequenceStart = new UnityEvent();
+    public UnityEvent<SOTest> onTestStartLoading = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestStartUnloading = new UnityEvent<SOTest>();
+    public UnityEvent<SOTest> onTestUnloaded = new UnityEvent<SOTest>();
+    [EndFoldout]
+    
+    
     public bool DebugMode => debugMode;
-    public TestLightSettings DefaultLightSettings => _defaultLightSettings;
+    public TestLightSettings DefaultLightSettings => defaultLightSettings;
+    public TestEnvironmentSettings DefaultEnvironmentSettings => defaultEnvironmentSettings;
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
@@ -57,8 +64,6 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeSequenceCoroutine;
     private AudioSource _audioSource;
     private CameraManager _cameraManager;
-    private TestLightSettings _defaultLightSettings;
-    private Material _defaultTestFloorMaterial;
     private TestAnimator _testAnimator;
     private Renderer _testFloorRenderer;
     private GameObject _testFloorObject;
@@ -81,8 +86,6 @@ public class TestManager : MonoBehaviour
         
         _testAnimator = GetComponent<TestAnimator>();
         _audioSource = GetComponent<AudioSource>();
-        _defaultLightSettings = tests[0].GetLightSettings();
-        _defaultTestFloorMaterial = tests[0].GetFloorMaterial();
     }
     
     private void Start()
@@ -136,7 +139,7 @@ public class TestManager : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.Keypad7))
         {
-            ApplyLightSettings(_defaultLightSettings);
+            ApplyLightSettings(defaultLightSettings);
         }
     }
     
@@ -379,7 +382,7 @@ public class TestManager : MonoBehaviour
             _testAnimator.RefreshForNewEnvironment();
             _testAnimator.SetAllObjectsToZeroScale();
             yield return new WaitForSeconds(0.5f);
-            _testAnimator.PlayScaleSequence(currentTest.GetTimeToLoad());
+            _testAnimator.PlayLoadSequence(currentTest.GetTimeToLoad());
             
             
             // Wait for animation to complete
@@ -419,7 +422,7 @@ public class TestManager : MonoBehaviour
             // Give a small delay before playing the animation
             _testAnimator.RefreshForNewEnvironment();
             yield return new WaitForSeconds(0.5f);
-            _testAnimator.PlayReverseSequence(test.GetTimeToUnload());
+            _testAnimator.PlayUnLoadSequence(test.GetTimeToUnload());
             
             // Wait for animation to complete
             yield return new WaitForSeconds(test.GetTimeToUnload());
@@ -437,8 +440,8 @@ public class TestManager : MonoBehaviour
         currentEnvironment = null;
         currentCheckpoint = null;
         currentTheme = null;
-        ApplyLightSettings(_defaultLightSettings);
-        if (_testFloorRenderer) _testFloorRenderer.material = new Material(_defaultTestFloorMaterial);
+        ApplyLightSettings(defaultLightSettings);
+        if (_testFloorRenderer) _testFloorRenderer.material = new Material(defaultEnvironmentSettings.floorMaterial);
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
         Debug.Log("Unloaded " + test.GetName());

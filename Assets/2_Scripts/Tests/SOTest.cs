@@ -1,9 +1,34 @@
 using UnityEngine;
 using VInspector;
+using System;
+using UnityEngine.Rendering;
 
 
+[Serializable]
+public class TestLightSettings {
+
+    [Header("Lighting")]
+    [Range(0f, 8f)] public float ambientIntensity = 1f;
+    public DefaultReflectionMode reflectionMode = DefaultReflectionMode.Skybox;
+    
+    [Header("Fog")]
+    public bool useFog = false;
+    public FogMode fogMode = FogMode.Exponential;
+    public Color fogColor = Color.white;
+    [HideIf("fogMode", FogMode.Linear), Range(0f, 1f)] public float fogDensity = 0;[EndIf]
+    [ShowIf("fogMode", FogMode.Linear)] public float fogStart = 0;[EndIf]
+    [ShowIf("fogMode", FogMode.Linear)] public float fogEnd = 300;
+    
+}
 
 
+[Serializable]
+public class TestEnvironmentSettings
+{
+    public GameObject environmentPrefab;
+    public Material floorMaterial;
+    public Vector3 floorScale = new Vector3(2000, 1, 2000);
+}
 
 
 [CreateAssetMenu(fileName = "Test", menuName = "SO Test/New Test")]
@@ -18,10 +43,9 @@ public class SOTest : ScriptableObject
     
     [Header("Audio")]
     [SerializeField] private SOAudioEvent theme;
-    
-    [Header("Environment")]
-    [SerializeField] private GameObject environmentPrefab;
-    [SerializeField] private Material floorMaterial;
+
+    [Header("World")] 
+    [SerializeField] private TestEnvironmentSettings environmentSettings;
     [SerializeField] private TestLightSettings lightSettings;
 
     
@@ -60,23 +84,23 @@ public class SOTest : ScriptableObject
     
     public GameObject GetPrefab()
     {
-        if (!environmentPrefab)
+        if (!environmentSettings.environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return null;
         }
-        return environmentPrefab;
+        return environmentSettings.environmentPrefab;
     }
     
     public Vector3 GetPlayerSpawnPoint()
     {
-        if (!environmentPrefab)
+        if (!environmentSettings.environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return Vector3.up;
         }
 
-        SpawnPlatform spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
+        SpawnPlatform spawnPlatform = environmentSettings.environmentPrefab.GetComponentInChildren<SpawnPlatform>();
         if (!spawnPlatform)
         {
             Debug.Log("No TestSpawnPosition in " + name);
@@ -99,19 +123,24 @@ public class SOTest : ScriptableObject
     
     public Material GetFloorMaterial()
     {
-        return floorMaterial;
+        return environmentSettings.floorMaterial;
+    }
+    
+    public Vector3 GetFloorScale()
+    {
+        return environmentSettings.floorScale;
     }
     
     
     public Vector3 GetRobotSpawnPoint()
     {
-        if (!environmentPrefab)
+        if (!environmentSettings.environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return Vector3.up;
         }
 
-        SpawnPlatform spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
+        SpawnPlatform spawnPlatform = environmentSettings.environmentPrefab.GetComponentInChildren<SpawnPlatform>();
         if (!spawnPlatform)
         {
             Debug.Log("No TestSpawnPosition in " + name);
@@ -124,13 +153,13 @@ public class SOTest : ScriptableObject
 
     public bool HasRobot()
     {
-        if (!environmentPrefab)
+        if (!environmentSettings.environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return false;
         }
 
-        RobotCompanion robot = environmentPrefab.GetComponentInChildren<RobotCompanion>();
+        RobotCompanion robot = environmentSettings.environmentPrefab.GetComponentInChildren<RobotCompanion>();
         if (!robot)
         {
             return false;
@@ -142,7 +171,7 @@ public class SOTest : ScriptableObject
     
     
     [Button]
-    private void ApplyLightingSetting()
+    private void TestLighting()
     {
         RenderSettings.ambientIntensity = lightSettings.ambientIntensity;
         RenderSettings.defaultReflectionMode = lightSettings.reflectionMode;

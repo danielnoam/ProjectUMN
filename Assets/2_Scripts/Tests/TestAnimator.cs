@@ -42,8 +42,7 @@ public class TestAnimator : MonoBehaviour
     [SerializeField] private List<GameObject> additionalObjectsToAnimate = new List<GameObject>();
     [SerializeField] private List<GameObject> excludedObjects = new List<GameObject>();
     [SerializeField] private bool excludePlayer = true;
-    [SerializeField] private bool excludeRobot = true;
-    [SerializeField] private bool excludeFloor = true;
+    [SerializeField] private bool excludeRobot = false;
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -146,7 +145,7 @@ public class TestAnimator : MonoBehaviour
         }
         
         // Check for Robot exclusion
-        if (excludeRobot && _testManager && _testManager.Robot)
+        if (_testManager && ( _testManager.CurrentTest && !_testManager.CurrentTest.HasRobot() || excludeRobot))
         {
             // Check if the object is the robot or a child of the robot
             GameObject robotObject = _testManager.Robot.gameObject;
@@ -154,7 +153,7 @@ public class TestAnimator : MonoBehaviour
                 return true;
         }
         
-        if (excludeFloor && _testManager && _testManager.FloorObject)
+        if (_testManager && _testManager.FloorObject)
         {
             // Check if the object is the floor or a child of the floor
             GameObject floorObject = _testManager.FloorObject.gameObject;
@@ -314,7 +313,7 @@ public class TestAnimator : MonoBehaviour
 
 
     [Button]
-    public void PlayScaleSequence(float animationTime)
+    public void PlayLoadSequence(float animationTime)
     {
         if (!_hasInitialized)
         {
@@ -380,11 +379,14 @@ public class TestAnimator : MonoBehaviour
                 )
             );
         }
+        
+        
+        TweenFloorScale(true, individualDuration * 3);
     }
     
     
     [Button]
-    public void PlayReverseSequence(float animationTime)
+    public void PlayUnLoadSequence(float animationTime)
     {
         if (!_hasInitialized)
         {
@@ -442,9 +444,41 @@ public class TestAnimator : MonoBehaviour
             );
         }
 
-        // Update debug values
+       
+        TweenFloorScale(false, individualDuration * 3);
         numberOfObjectsToAnimate = objectsToAnimate.Count;
-        totalAnimationTime = animationTime; // Total time is exactly animationTime
+        totalAnimationTime = animationTime; 
+    }
+    
+    private void TweenFloorScale(bool load, float duration, float delay = 0f)
+    {
+        // Only proceed if we have a valid TestManager and FloorObject
+        if (_testManager == null || _testManager.FloorObject == null || _testManager.CurrentTest == null)
+            return;
+        
+        // Get the floor object
+        Transform floorTransform = _testManager.FloorObject.transform;
+    
+        // Get the target scale from current test's environment settings
+        Vector3 targetFloorScale = load ?_testManager.CurrentTest.GetFloorScale() : _testManager.DefaultEnvironmentSettings.floorScale;
+    
+        // Get the current scale as the starting point
+        Vector3 currentScale = floorTransform.localScale;
+    
+        // Use the target floor scale directly with all components (including Y)
+        Vector3 endScale = targetFloorScale;
+    
+        // Add floor scaling to the sequence, always scaling from current to target
+        _animationSequence.Group(
+            Tween.Scale(
+                floorTransform,
+                startValue: currentScale,
+                endValue: endScale,
+                duration,
+                ease: Ease.Linear, 
+                startDelay: delay
+            )
+        );
     }
 
 
