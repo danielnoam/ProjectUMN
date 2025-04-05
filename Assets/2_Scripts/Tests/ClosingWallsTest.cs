@@ -6,27 +6,27 @@ using PrimeTween;
 public class ClosingWallsTest : MonoBehaviour
 {
     [Foldout("Animation")]
-    [Header("Initial Shake Effect")]
+    [Header("Part 1: Initial Shake Effect")]
     [SerializeField] private float initialShakeStartDelay = 0.5f;
     [SerializeField] private float initialShakeEndDelay = 0f;
     [SerializeField] private float initialShakeTime = 1f;
     [SerializeField] private int initialShakeFrequency = 10;
     [SerializeField] private Vector3 initialShakeStrength = new Vector3(0.2f, 0, 0);
     
-    [Header("Move to Semi-Closed")]
+    [Header("Part 2: Move to Semi-Closed")]
     [SerializeField] private float moveToSemiClosedStartDelay = 0.5f;
     [SerializeField] private float moveToSemiClosedEndDelay = 1f;
     [SerializeField] private float moveToSemiClosedTime = 3f;
     [SerializeField] private Ease moveToSemiClosedEase = Ease.Linear;
     
-    [Header("Second Shake Effect")]
+    [Header("Part 3: Second Shake Effect")]
     [SerializeField] private float secondShakeStartDelay = 0.5f;
     [SerializeField] private float secondShakeEndDelay = 0f;
     [SerializeField] private float secondShakeTime = 1.5f;
     [SerializeField] private int secondShakeFrequency = 15;
     [SerializeField] private Vector3 secondShakeStrength = new Vector3(0.3f, 0, 0);
     
-    [Header("Move to Closed")]
+    [Header("Part 4: Move to Closed")]
     [SerializeField] private float moveToClosedStartDelay = 0.5f;
     [SerializeField] private float moveToClosedEndDelay = 0f;
     [SerializeField] private float moveToClosedTime = 1f;
@@ -68,10 +68,8 @@ public class ClosingWallsTest : MonoBehaviour
     private void Awake()
     {
         // Check if we have any walls to animate
-        if (leftWall == null && rightWall == null)
-            return;
-            
-        // Store the initial positions as the opened positions
+        if (!leftWall || !rightWall)  return;
+        
         _openedPosL = leftWall.localPosition;
         _openedPosR = rightWall.localPosition;
         
@@ -82,20 +80,19 @@ public class ClosingWallsTest : MonoBehaviour
     [Button]
     public void Open()
     {
-        OpenWalls();
+        SetState(false, false);
     }
     
     [Button]
     public void Close()
     {
-        CloseWalls();
+        SetState(true, false);
     }
     
-    public void SetState(bool closed, bool instant = false)
+    private void SetState(bool closed, bool instant = false)
     {
         // Check if we have any walls to animate
-        if (leftWall == null && rightWall == null)
-            return;
+        if (!leftWall || !rightWall)  return;
             
         if (!Application.isPlaying || instant)
         {
@@ -115,9 +112,7 @@ public class ClosingWallsTest : MonoBehaviour
     
     private void ApplyStateImmediate(bool closed)
     {
-        // Check if we have any walls to animate
-        if (leftWall == null && rightWall == null)
-            return;
+        if (!leftWall || !rightWall)  return;
             
         isClosed = closed;
         isSemiClosed = closed;
@@ -134,24 +129,19 @@ public class ClosingWallsTest : MonoBehaviour
         }
     }
     
-    public Sequence OpenWalls()
+    private void OpenWalls()
     {
-        // Check if we have any walls to animate
-        if (leftWall == null && rightWall == null)
-            return Sequence.Create();
+        if (!leftWall || !rightWall)  return;
             
-        if (!isClosed && !isSemiClosed) 
-        {
-            return Sequence.Create();
-        }
-        
-        isClosed = false;
-        isSemiClosed = false;
+        if (!isClosed) return;
         
         if (_animationSequence.isAlive) 
         {
             _animationSequence.Stop();
         }
+        isClosed = false;
+        isSemiClosed = false;
+        
         
         var tweenSettings = new TweenSettings(openingTime, openingEase, startDelay: openingStartDelay, endDelay: openingEndDelay);
         _animationSequence = Sequence.Create();
@@ -164,21 +154,15 @@ public class ClosingWallsTest : MonoBehaviour
         _animationSequence = _animationSequence.Group(
             Tween.LocalPosition(rightWall, _openedPosR, tweenSettings)
         );
-        
-        return _animationSequence;
+
     }
     
-    public Sequence CloseWalls()
+    private void CloseWalls()
     {
-        // Check if we have any walls to animate
-        if (leftWall == null && rightWall == null)
-            return Sequence.Create();
-            
-        if (isClosed) 
-        {
-            return Sequence.Create();
-        }
+        if (!leftWall || !rightWall)  return;
         
+        if (isClosed)  return;
+
         if (_animationSequence.isAlive) 
         {
             _animationSequence.Stop();
@@ -186,55 +170,52 @@ public class ClosingWallsTest : MonoBehaviour
         
         _animationSequence = Sequence.Create();
         
-        // Part 1: Initial shake
-        _animationSequence = _animationSequence.Chain(
-            Tween.ShakeLocalPosition(leftWall, strength: initialShakeStrength, duration: initialShakeTime, frequency: initialShakeFrequency, startDelay: initialShakeStartDelay, endDelay: initialShakeEndDelay)
-        );
-        
-        _animationSequence = _animationSequence.Group(
-            Tween.ShakeLocalPosition(rightWall, strength: initialShakeStrength, duration: initialShakeTime, frequency: initialShakeFrequency, startDelay: initialShakeStartDelay, endDelay: initialShakeEndDelay)
-        );
-        
-        // Part 2: Move to semi-closed position
         var semiClosedSettings = new TweenSettings(moveToSemiClosedTime, moveToSemiClosedEase, startDelay: moveToSemiClosedStartDelay, endDelay: moveToSemiClosedEndDelay);
-        
-        _animationSequence = _animationSequence.Chain(
-            Tween.LocalPosition(leftWall, startValue: _openedPosL, endValue: SemiClosedPosLeftV, semiClosedSettings)
-                .OnComplete(() => isSemiClosed = true)
-        );
-        
-        _animationSequence = _animationSequence.Group(
-            Tween.LocalPosition(rightWall, startValue: _openedPosR, endValue: SemiClosedPosRightV, semiClosedSettings)
-        );
-        
-        // Part 3: Second shake (at semi-closed position)
-        // Apply the shake at the semi-closed position
-        _animationSequence = _animationSequence.ChainCallback(() => {
-            Tween.ShakeLocalPosition(leftWall, strength: secondShakeStrength, duration: secondShakeTime, frequency: secondShakeFrequency,
-                startDelay: secondShakeStartDelay, endDelay: secondShakeEndDelay);
-        });
-
-        _animationSequence = _animationSequence.ChainCallback(() => {
-            Tween.ShakeLocalPosition(rightWall, strength: secondShakeStrength, duration: secondShakeTime, frequency: secondShakeFrequency,
-                startDelay: secondShakeStartDelay, endDelay: secondShakeEndDelay);
-        });
-        
-
-        
-        // Part 4: Move to fully closed position from semi-closed position
         var closedSettings = new TweenSettings(moveToClosedTime, moveToClosedEase, startDelay: moveToClosedStartDelay, endDelay: moveToClosedEndDelay);
-        _animationSequence = _animationSequence.Chain(
-            Tween.LocalPosition(leftWall, startValue: SemiClosedPosLeftV, endValue: ClosedPosLeftV, closedSettings)
-        );
         
-        _animationSequence = _animationSequence.Group(
-            Tween.LocalPosition(rightWall, startValue: SemiClosedPosRightV, endValue: ClosedPosRightV, closedSettings)
-                .OnComplete(() => isClosed = true)
-        );
         
-        return _animationSequence;
+        _animationSequence = _animationSequence
+                
+            // Part 1: Initial shake
+            .ChainCallback(() => { Debug.Log("Initial Shake"); })  
+            .Chain(Tween.ShakeLocalPosition(leftWall, 
+                strength: initialShakeStrength, 
+                duration: initialShakeTime, 
+                frequency: initialShakeFrequency, 
+                startDelay: initialShakeStartDelay, endDelay: initialShakeEndDelay))
+            .Group(Tween.ShakeLocalPosition(rightWall, 
+                strength: initialShakeStrength, 
+                duration: initialShakeTime, 
+                frequency: initialShakeFrequency, 
+                startDelay: initialShakeStartDelay, endDelay: initialShakeEndDelay))
+            
+            // Part 2: Move to semi-closed position
+            .ChainCallback(() => { Debug.Log("Moving to semi-closed"); }) 
+            .Chain(Tween.LocalPosition(leftWall, startValue: _openedPosL, endValue: SemiClosedPosLeftV, semiClosedSettings))
+            .Group(Tween.LocalPosition(rightWall, startValue: _openedPosR, endValue: SemiClosedPosRightV, semiClosedSettings))
+            .ChainCallback(() => isSemiClosed = true)
+            
+            // // Part 3: Second shake (at semi-closed position)
+            // .ChainCallback(() => { Debug.Log("Second Shake"); })
+            // .Chain(Tween.ShakeLocalPosition(leftWall, 
+            //     strength: secondShakeStrength,
+            //     duration: secondShakeTime,
+            //     frequency: secondShakeFrequency,
+            //     startDelay: secondShakeStartDelay, endDelay: secondShakeEndDelay))
+            // .Group(Tween.ShakeLocalPosition(rightWall, 
+            //     strength: secondShakeStrength,
+            //     duration: secondShakeTime,
+            //     frequency: secondShakeFrequency,
+            //     startDelay: secondShakeStartDelay, endDelay: secondShakeEndDelay))
+            // .ChainDelay(secondShakeStartDelay + secondShakeTime + secondShakeEndDelay)
+            
+            // Part 4: Move to fully closed position from semi-closed position
+            .ChainCallback(() => { Debug.Log("Moving to closed"); })  
+            .Chain(Tween.LocalPosition(leftWall, startValue: SemiClosedPosLeftV, endValue: ClosedPosLeftV, closedSettings))
+            .Group(Tween.LocalPosition(rightWall, startValue: SemiClosedPosRightV, endValue: ClosedPosRightV, closedSettings))
+            .ChainCallback(() => isClosed = true);
     }
-    
+        
 
     
     

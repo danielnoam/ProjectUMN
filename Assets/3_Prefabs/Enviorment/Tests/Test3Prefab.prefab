@@ -435,31 +435,31 @@ MonoBehaviour:
   initialShakeTime: 1
   initialShakeFrequency: 10
   initialShakeStrength: {x: 0.2, y: 0, z: 0}
-  moveToSemiClosedStartDelay: 0.5
+  moveToSemiClosedStartDelay: 0
   moveToSemiClosedEndDelay: 1
   moveToSemiClosedTime: 3
-  moveToSemiClosedEase: 1
-  secondShakeStartDelay: 0.5
+  moveToSemiClosedEase: 3
+  secondShakeStartDelay: 0
   secondShakeEndDelay: 0
   secondShakeTime: 1.5
   secondShakeFrequency: 15
   secondShakeStrength: {x: 0.3, y: 0, z: 0}
-  moveToClosedStartDelay: 0.5
+  moveToClosedStartDelay: 0
   moveToClosedEndDelay: 0
   moveToClosedTime: 1
   moveToClosedEase: 23
   openingStartDelay: 0
   openingEndDelay: 0
-  openingTime: 5
-  openingEase: 1
+  openingTime: 2
+  openingEase: 4
   leftWall: {fileID: 7255800570931073720}
-  closedPosL: 9
   semiClosedPosL: 8
+  closedPosL: 9
   rightWall: {fileID: 5510087723527395150}
-  closedPosR: -9
   semiClosedPosR: -8
-  isClosed: 0
+  closedPosR: -9
   isSemiClosed: 0
+  isClosed: 0
 --- !u!1 &7382928112525089581
 GameObject:
   m_ObjectHideFlags: 0
@@ -2506,7 +2506,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1368655913133225241, guid: 204495d722bfc1f4da44b8eea878eb46, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 89.75
+      value: 91.75
       objectReference: {fileID: 0}
     - target: {fileID: 1368655913133225241, guid: 204495d722bfc1f4da44b8eea878eb46, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5568,6 +5568,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8435356268437599232}
     m_Modifications:
+    - target: {fileID: 1324497580259789410, guid: 204f5fbfd071d4a4db66e8196c3b879d, type: 3}
+      propertyPath: maxDistance
+      value: 25
+      objectReference: {fileID: 0}
     - target: {fileID: 4423075999923495798, guid: 204f5fbfd071d4a4db66e8196c3b879d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.75
