@@ -1,4 +1,4 @@
-using System;
+
 using System.Collections;
 using UnityEngine;
 using UnityEditor;
@@ -6,15 +6,6 @@ using CustomAttribute;
 using UnityEngine.Audio;
 using VInspector;
 using Random = UnityEngine.Random;
-using System;
-using System.Collections;
-using TMPro;
-using Unity.Mathematics;
-using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.Rendering;
-using UnityEngine.SceneManagement;
-using VInspector;
 
 
 [CreateAssetMenu(fileName = "AudioEvent", menuName = "SO Audio/Audio Event")]

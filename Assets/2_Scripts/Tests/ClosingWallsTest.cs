@@ -79,14 +79,14 @@ public class ClosingWallsTest : MonoBehaviour
     private void Start()
     {
         PlayerStateMachine.Instance?.onPlayerDeath.AddListener(Open);
-        TestManager.Instance?.Robot.onRobotDeath.AddListener(Open);
-        TestManager.Instance?.Robot.onRobotRespawn.AddListener(Open);
+        TestManager.Instance?.Robot?.onRobotDeath.AddListener(Open);
+        TestManager.Instance?.Robot?.onRobotRespawn.AddListener(Open);
     }
     
     private void OnDestroy()
     {
-        TestManager.Instance?.Robot.onRobotDeath.RemoveListener(Open);
-        TestManager.Instance?.Robot.onRobotRespawn.RemoveListener(Open);
+        TestManager.Instance?.Robot?.onRobotDeath.RemoveListener(Open);
+        TestManager.Instance?.Robot?.onRobotRespawn.RemoveListener(Open);
         PlayerStateMachine.Instance?.onPlayerDeath.RemoveListener(Open);
         _animationSequence.Stop();
     }
@@ -210,12 +210,12 @@ public class ClosingWallsTest : MonoBehaviour
             .ChainCallback(() => isClosed = true)
             .ChainCallback(() => { moveToClosedFinishedEvent?.Invoke(); });
     }
-        
 
-    
-    
-    
-    private void OnDrawGizmosSelected()
+
+
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
     {
         // Check if we have any walls to visualize
         if (leftWall == null && rightWall == null)
@@ -313,6 +313,9 @@ public class ClosingWallsTest : MonoBehaviour
         UnityEditor.Handles.color = rightWallColor;
         UnityEditor.Handles.Label(rightClosedPos + Vector3.up * labelOffset, "Closed");
     }
+    
+#endif
+
         
     
 }

@@ -110,38 +110,6 @@ public class EventTriggerObject : MonoBehaviour
 
     
     
-    
-
-#if UNITY_EDITOR
-
-    private void OnDrawGizmos()
-    {
-        if (triggerShape == TriggerShape.Box)
-        {
-            if (!_boxCollider) return;
-            
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireCube(transform.position, _boxCollider.bounds.size);
-        }
-        else if (triggerShape == TriggerShape.Sphere)
-        {
-            if (!_sphereCollider) return;
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, _sphereCollider.radius);
-        }
-
-        if (commandRobotOnTrigger)
-        {
-            GUIStyle style = new GUIStyle();
-            style.normal.textColor = Color.green;
-            style.fontSize = 8;
-            style.fontStyle = FontStyle.Bold;
-            style.alignment = TextAnchor.MiddleCenter;
-            UnityEditor.Handles.Label(transform.position + new Vector3(0f, 0.5f, 0f), "Command Robot " + commandToSend, style);
-        }
-
-    }
-
     private void OnValidate()
     {
         if (!commandRobotOnTrigger)
@@ -178,6 +146,37 @@ public class EventTriggerObject : MonoBehaviour
             _sphereCollider.enabled = false;
             _sphereCollider.radius = 0f;
         }
+    }
+    
+
+#if UNITY_EDITOR
+
+    private void OnDrawGizmos()
+    {
+        if (triggerShape == TriggerShape.Box)
+        {
+            if (!_boxCollider) return;
+            
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(transform.position, _boxCollider.bounds.size);
+        }
+        else if (triggerShape == TriggerShape.Sphere)
+        {
+            if (!_sphereCollider) return;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, _sphereCollider.radius);
+        }
+
+        if (commandRobotOnTrigger)
+        {
+            GUIStyle style = new GUIStyle();
+            style.normal.textColor = Color.green;
+            style.fontSize = 8;
+            style.fontStyle = FontStyle.Bold;
+            style.alignment = TextAnchor.MiddleCenter;
+            UnityEditor.Handles.Label(transform.position + new Vector3(0f, 0.5f, 0f), "Command Robot " + commandToSend, style);
+        }
+
     }
 #endif
 }

@@ -228,7 +228,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        _playerFollowPosition = _player.transform.GetChild(1);
        _playerAimingFollowPosition = _player.transform.GetChild(2);
        
-       if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
+       // if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
    }
    
    private void OnPlayerSpawned()
@@ -962,11 +962,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
    private void Teleport(Vector3 position, Quaternion rotation)
    {
-       Vector3 offset = new Vector3(-1, 0f, -1);
-       sphereCollider.enabled = false;
-       transform.position = position + offset;
-       transform.rotation = rotation;
-       sphereCollider.enabled = true;
+       Vector3 offset = new Vector3(1,1,1);
+       rigidBody.rotation = rotation;
+       rigidBody.position = position + offset;
    }
    
    private void UpdateEarRotation() 
