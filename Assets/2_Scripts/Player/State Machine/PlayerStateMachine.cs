@@ -105,6 +105,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public GameObject menu;
 
     [Header("Events")] 
+    public UnityEvent onPlayerDeath = new UnityEvent();
     public UnityEvent onPlayerSpawned = new UnityEvent();
     public UnityEvent onPlayerSpawnedFromCheckpoint = new UnityEvent();
     public UnityEvent onPlayerOpenedMenu = new UnityEvent();
@@ -293,6 +294,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         if (other.TryGetComponent(out LaserGround laserGround))
         {
+            if (!laserGround.AffectsPlayer) return;
+            
+            onPlayerDeath?.Invoke();
             SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentCheckpoint, Quaternion.Euler(0, 0, 0), 2f, true));
         }
     }
@@ -575,6 +579,10 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     #region State methods - Movement ---------------------------------------------------------------
     
     
+    public void ResetVelocity()
+    {
+        ActiveHorizontalVelocity = 0f;
+    }
     public void HandleMovement(bool allowMovement, bool isAirborne)
     {
         // Current velocity excluding vertical component

@@ -369,7 +369,7 @@ public class TestManager : MonoBehaviour
             
         } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
         {
-            currentRobot = Instantiate(robotPrefab);
+            currentRobot = Instantiate(robotPrefab, currentTest.GetRobotSpawnPoint(), quaternion.identity);
             currentRobot.TurnOn();
         }
         onTestStartLoading?.Invoke(currentTest);
@@ -435,7 +435,7 @@ public class TestManager : MonoBehaviour
         
         
         Destroy(currentEnvironment);
-        if (!currentRobot) currentRobot = null;
+        if (currentRobot && currentRobot.CurrentState == RobotState.Dead) Destroy(currentRobot.gameObject);
         currentTest = null;
         currentEnvironment = null;
         currentCheckpoint = null;

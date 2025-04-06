@@ -226,11 +226,21 @@ public class Interactable : MonoBehaviour
         
         return !_isInteracting && (!_interacted || allowMultipleInteractions) && !_markedForInteraction && interactorAllowed;
     }
+
+
+
+    public void ResetInteracted()
+    {
+        _interacted = false;
+        UnmarkForInteraction();
+        _isInteracting = false;
+    }
     
-   
+    #region Effect --------------------------------------------------------------------------------------------------------
+
     private void SetAlpha(Graphic graphic, float alpha)
     {
-        if (graphic == null) return;
+        if (!graphic) return;
         
         Color color = graphic.color;
         color.a = alpha;
@@ -238,10 +248,6 @@ public class Interactable : MonoBehaviour
     }
     
     
-    
-    
-    #region Effect --------------------------------------------------------------------------------------------------------
-
     private void FadePrompt(bool fadeIn)
     {
         _promptSequence.Stop();

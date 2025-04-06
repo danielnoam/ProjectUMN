@@ -148,7 +148,7 @@ public class SOTest : ScriptableObject
         }
 
 
-        return spawnPlatform.GetSpawnPosition();
+        return spawnPlatform.GetSpawnPosition() + new Vector3(1, 1, 1);
     }
 
     public bool HasRobot()

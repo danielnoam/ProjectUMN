@@ -1,6 +1,7 @@
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using VInspector;
 
 
@@ -134,6 +135,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private SOAudioEvent sfxTurnOn;
     [SerializeField] private SOAudioEvent sfxTurnOff;
+    [SerializeField] private SOAudioEvent sfxDeath;
     [SerializeField] private SOAudioEvent sfxReceiveCommand;
     [SerializeField] private SOAudioEvent sfxImpact;
     [EndFoldout]
@@ -160,6 +162,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     public RobotState CurrentState => currentState;
     public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
     public Interactable CurrentInteractable { get; private set;}
+    public UnityEvent onRobotDeath = new UnityEvent();
+    public UnityEvent onRobotRespawn = new UnityEvent();
 
    private void Awake()
    {
@@ -229,11 +233,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
    private void OnPlayerSpawned()
    {
-       if (currentState != RobotState.Off)
-       {
-           Teleport(_player.transform.position, Quaternion.identity);
-           CommandFollowPlayer();
-       }
+       if (currentState is RobotState.Off or RobotState.Dead) return;
+       
+       Teleport(_player.transform.position, Quaternion.identity);
+       CommandFollowPlayer();
    }
 
    private void OnCollisionEnter(Collision other)
@@ -256,6 +259,24 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            if (ground)
            {
                ground.GetHit(hit);
+           }
+       }
+   }
+   
+   private void OnTriggerEnter(Collider other)
+   {
+       if (other.TryGetComponent(out LaserGround laserGround))
+       {
+           if (!laserGround.AffectsRobot) return;
+
+           if (laserGround.DestroyRobot)
+           {
+               Die();
+           }
+           else
+           {
+               onRobotRespawn?.Invoke();
+               OnPlayerSpawned();
            }
        }
    }
@@ -321,11 +342,25 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (currentBattery <= 0) return;
        
-       sfxTurnOn?.Play(audioSource);
        currentState = RobotState.Idle;
+       sfxTurnOn?.Play(audioSource);
        rigidBody.useGravity = false;
        rigidBody.isKinematic = false;
        eye.gameObject.SetActive(true);
+   }
+
+   [Button]
+   public void Die()
+   {
+       if (currentState == RobotState.Dead) return;
+         
+       currentState = RobotState.Dead;
+       sfxDeath?.Play(audioSource);
+       onRobotDeath?.Invoke();
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = true;
+       eye.gameObject.SetActive(false);
+       
    }
 
 

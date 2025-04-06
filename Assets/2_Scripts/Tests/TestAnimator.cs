@@ -145,7 +145,7 @@ public class TestAnimator : MonoBehaviour
         }
         
         // Check for Robot exclusion
-        if (_testManager && ( _testManager.CurrentTest && !_testManager.CurrentTest.HasRobot() || excludeRobot))
+        if ( excludeRobot || _testManager &&  (_testManager.CurrentTest && !_testManager.CurrentTest.HasRobot() || _testManager.Robot  && _testManager.Robot.CurrentState == RobotState.Dead ))
         {
             // Check if the object is the robot or a child of the robot
             GameObject robotObject = _testManager.Robot.gameObject;
@@ -357,6 +357,9 @@ public class TestAnimator : MonoBehaviour
             ? animationTime * (1f - delayTimeFactor) // remaining portion for actual animation
             : animationTime;
 
+        TweenFloorScale(true, individualDuration * 2);
+        
+        
         // Create the animation sequence
         for (int i = 0; i < objectsToAnimate.Count; i++)
         {
@@ -381,7 +384,7 @@ public class TestAnimator : MonoBehaviour
         }
         
         
-        TweenFloorScale(true, individualDuration * 3);
+        
     }
     
     
@@ -421,6 +424,10 @@ public class TestAnimator : MonoBehaviour
             ? animationTime * (1f - delayTimeFactor) // remaining portion for actual animation
             : animationTime;
 
+        
+        TweenFloorScale(false, individualDuration * 2);
+        
+        
         // Create the animation sequence - from original scale to zero
         for (int i = 0; i < reversedObjects.Count; i++)
         {
@@ -445,7 +452,7 @@ public class TestAnimator : MonoBehaviour
         }
 
        
-        TweenFloorScale(false, individualDuration * 3);
+        
         numberOfObjectsToAnimate = objectsToAnimate.Count;
         totalAnimationTime = animationTime; 
     }
@@ -475,7 +482,7 @@ public class TestAnimator : MonoBehaviour
                 startValue: currentScale,
                 endValue: endScale,
                 duration,
-                ease: Ease.Linear, 
+                ease: Ease.InOutSine, 
                 startDelay: delay
             )
         );

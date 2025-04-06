@@ -27,6 +27,7 @@ public class PlayerTeleportingState : PlayerBaseState
     {
         StateMachine.SetCharacterCollider(false);
         StateMachine.ResetGravity();
+        StateMachine.ResetVelocity();   
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.ClearCurrentInteractable();
         StateMachine.transform.position = _teleportationDestination;
@@ -46,6 +47,7 @@ public class PlayerTeleportingState : PlayerBaseState
         _fromCheckpoint = false;
         _teleportationComplete = false;
         _teleportationTimer = 0f;
+        StateMachine.ResetVelocity();   
         StateMachine.SetCharacterCollider(true);
     }
 
