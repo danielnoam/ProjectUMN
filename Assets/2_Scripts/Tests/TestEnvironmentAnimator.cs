@@ -4,18 +4,8 @@ using UnityEngine;
 using PrimeTween;
 using VInspector;
 
-public enum AnimationSortMode
-{
-    None,           // Use order objects are found in scene
-    ByName,         // Sort alphabetically by name
-    ByDistance,     // Sort by distance from a reference point
-    ByHierarchy,    // Sort by hierarchy order in scene
-    Random,         // Randomize the order
-    Custom,         // Use a custom ordered list
-    DistanceFromPlayer  // Sort by distance from the player
-}
 
-public class TestAnimator : MonoBehaviour
+public class TestEnvironmentAnimator : MonoBehaviour
 {
 
     [Header("Settings")] 
@@ -52,14 +42,23 @@ public class TestAnimator : MonoBehaviour
     
     
     private readonly Dictionary<GameObject, Vector3> _originalScales = new Dictionary<GameObject, Vector3>();
-    private Sequence _animationSequence;
+    private bool IsDistanceSort => sortMode == AnimationSortMode.ByDistance || sortMode == AnimationSortMode.DistanceFromPlayer;
     private bool _hasInitialized = false;
+    private Sequence _animationSequence;
     private TestManager _testManager;
-
+    private enum AnimationSortMode
+    {
+        None,           // Use order objects are found in scene
+        ByName,         // Sort alphabetically by name
+        ByDistance,     // Sort by distance from a reference point
+        ByHierarchy,    // Sort by hierarchy order in scene
+        Random,         // Randomize the order
+        Custom,         // Use a custom ordered list
+        DistanceFromPlayer  // Sort by distance from the player
+    }
     public bool PlayOnTestLoading => playOnTestLoading;
     public bool PlayOnTestUnloading => playOnTestUnloading;
     public float TotalAnimationTime => totalAnimationTime;
-    private bool IsDistanceSort => sortMode == AnimationSortMode.ByDistance || sortMode == AnimationSortMode.DistanceFromPlayer;
 
     private void Awake()
     {

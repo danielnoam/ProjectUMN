@@ -261,7 +261,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnIntroSequenceStart()
     {
         robot = null;
-        SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, false));
+        SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, true));
         InputHandler.enabled = false;
     }
 

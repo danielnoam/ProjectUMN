@@ -16,6 +16,10 @@ public class CameraManager : MonoBehaviour
     [Header("Fov Settings")]
     [SerializeField] private float minFov = 40f;
     [SerializeField] private float maxFov = 65f;
+    [SerializeField] [Range(0f, 1f)] [Tooltip("How much velocity affects FOV (0 = no effect, 1 = maximum effect)")]
+    private float velocityFovFactor = 0.5f;
+    [SerializeField] [Range(0f, 1f)] [Tooltip("How much pitch affects FOV (0 = no effect, 1 = maximum effect)")]
+    private float pitchFovFactor = 0.5f;
     
     [Header("Noise Settings")]
     [SerializeField] private float maxAmplitude = 0.2f;
@@ -229,24 +233,6 @@ public class CameraManager : MonoBehaviour
         // Apply position with smooth offset
         aimCore.transform.position = _player.transform.position + _currentOffset;
         
-    
-        // // When not aiming, sync aim core rotation with free look camera
-        // if (!IsPlayerAiming && freeLookCamera)
-        // {
-        //     // Extract pitch and yaw from free look camera
-        //     Vector3 forward = freeLookCamera.transform.forward;
-        //     float pitch = -Mathf.Asin(forward.y) * Mathf.Rad2Deg;
-        //     float yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
-        //
-        //     // Update our accumulated values to match current free look camera
-        //     _pitchAccumulation = pitch;
-        //     _yawAccumulation = yaw;
-        //
-        //     // Apply rotation to aim core
-        //     aimCore.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
-        //     return;
-        // }
-        
 
         // Get the appropriate sensitivity based on current camera state
         float cameraSensitivity = IsAimCameraActive() 
@@ -325,15 +311,16 @@ public class CameraManager : MonoBehaviour
         float pitchFactor = Mathf.Abs(_pitchAccumulation) / aimMaxPitch;
         pitchFactor = Mathf.Clamp01(pitchFactor); // Ensure value is between 0-1
     
-        // Combine factors - give each factor a weight
-        // You can adjust these weights based on how much you want each to influence the FOV
-        float velocityWeight = 0.5f;
-        float pitchWeight = 0.5f;
-        float combinedFactor = (velocityFactor * velocityWeight) + (pitchFactor * pitchWeight);
+        // Apply the velocity and pitch factors independently
+        float velocityContribution = velocityFactor * velocityFovFactor;
+        float pitchContribution = pitchFactor * pitchFovFactor;
     
-        // Calculate fov offset and apply it to initial FOV
-        float fovOffset = maxFov - minFov;
-        float targetFOV = Mathf.Min(initialFOV + (fovOffset * combinedFactor), maxFov);
+        // Add the contributions (clamped to ensure we don't exceed 1.0)
+        float combinedFactor = Mathf.Clamp01(velocityContribution + pitchContribution);
+    
+        // Calculate FOV based on the combined factor
+        // Lerp between min and max FOV based on the combined factor
+        float targetFOV = Mathf.Lerp(minFov, maxFov, combinedFactor);
 
         // Smoothly interpolate to target FOV
         float currentFOV = _currentCamera.Lens.FieldOfView;
@@ -342,7 +329,6 @@ public class CameraManager : MonoBehaviour
         // Apply new FOV
         _currentCamera.Lens.FieldOfView = newFOV;
     }
-    
 
     private void HandleCameraSwitching()
     {

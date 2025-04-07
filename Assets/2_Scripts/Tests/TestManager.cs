@@ -9,7 +9,10 @@ using UnityEngine.SceneManagement;
 using VInspector;
 
 [SelectionBase]
+[DefaultExecutionOrder(-1)]
 [RequireComponent(typeof(AudioSource))]
+[RequireComponent(typeof(TestEnvironmentAnimator))]
+[RequireComponent(typeof(TestEffectsHandler))]
 public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
@@ -21,15 +24,15 @@ public class TestManager : MonoBehaviour
     [SerializeField] private TestLightSettings defaultLightSettings;
 
     [Header("Intro Sequence")] 
-    [SerializeField, Min(0)] private float introSequenceDuration = 7f;
+    [SerializeField, Min(0)] private float introSequenceDuration = 10f;
     [SerializeField] private SOAudioEvent introTheme;
-    
+    [Space(10)]
     
     [SerializeField] private SOTest[] tests;
     
     
     [Foldout("Debug")]
-    [SerializeField] private bool debugMode = true;
+    [SerializeField] private bool debugMode;
     [SerializeField] private TextMeshProUGUI debugTextRight;
     [SerializeField] private TextMeshProUGUI debugTextLeft;
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
@@ -63,6 +66,7 @@ public class TestManager : MonoBehaviour
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
     public  GameObject FloorObject => _testFloorObject;
+    public float IntroSequenceDuration => introSequenceDuration;
     public float IntroSequenceState => _introSequenceTime / introSequenceDuration;
     public bool IsIntroSequenceActive => _introSequenceTime > 0;
     
@@ -72,7 +76,7 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeSequenceCoroutine;
     private AudioSource _audioSource;
     private CameraManager _cameraManager;
-    private TestAnimator _testAnimator;
+    private TestEnvironmentAnimator _testEnvironmentAnimator;
     private Renderer _testFloorRenderer;
     private GameObject _testFloorObject;
     private float _introSequenceTime;
@@ -92,7 +96,7 @@ public class TestManager : MonoBehaviour
         PrimeTweenConfig.SetTweensCapacity(800);
         QualitySettings.shadowResolution = ShadowResolution.Medium;
         
-        _testAnimator = GetComponent<TestAnimator>();
+        _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _audioSource = GetComponent<AudioSource>();
     }
     
@@ -401,14 +405,14 @@ public class TestManager : MonoBehaviour
         onTestStartLoading?.Invoke(currentTest);
         
         // Play scale-up animation 
-        if (_testAnimator && _testAnimator.PlayOnTestLoading)
+        if (_testEnvironmentAnimator && _testEnvironmentAnimator.PlayOnTestLoading)
         {
             
             // Give a small delay before playing the animation
-            _testAnimator.RefreshForNewEnvironment();
-            _testAnimator.SetAllObjectsToZeroScale();
+            _testEnvironmentAnimator.RefreshForNewEnvironment();
+            _testEnvironmentAnimator.SetAllObjectsToZeroScale();
             yield return new WaitForSeconds(0.5f);
-            _testAnimator.PlayLoadSequence(currentTest.GetTimeToLoad());
+            _testEnvironmentAnimator.PlayLoadSequence(currentTest.GetTimeToLoad());
             
             
             // Wait for animation to complete
@@ -443,12 +447,12 @@ public class TestManager : MonoBehaviour
         StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
         
         // Play scale-down animation if enabled and MeshScaleSequence exists
-        if (_testAnimator && _testAnimator.PlayOnTestUnloading)
+        if (_testEnvironmentAnimator && _testEnvironmentAnimator.PlayOnTestUnloading)
         {
             // Give a small delay before playing the animation
-            _testAnimator.RefreshForNewEnvironment();
+            _testEnvironmentAnimator.RefreshForNewEnvironment();
             yield return new WaitForSeconds(0.5f);
-            _testAnimator.PlayUnLoadSequence(test.GetTimeToUnload());
+            _testEnvironmentAnimator.PlayUnLoadSequence(test.GetTimeToUnload());
             
             // Wait for animation to complete
             yield return new WaitForSeconds(test.GetTimeToUnload());

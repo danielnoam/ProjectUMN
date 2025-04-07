@@ -4,7 +4,7 @@ using VInspector;
 using PrimeTween;
 using UnityEngine.Events;
 
-public class ClosingWallsTest : MonoBehaviour
+public class TestClosingWalls : MonoBehaviour
 {
     [Foldout("Closing Animation")]
     [Header("Part 1: Initial Shake Effect")]

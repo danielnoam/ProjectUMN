@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using PrimeTween;
 using TMPEffects.Components;
@@ -41,36 +42,24 @@ public class TestInfoTextHandler : MonoBehaviour
         musicAuthorText.alpha = 0f;
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        if (TestManager.Instance)
-        {
-            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-            TestManager.Instance.onTestStartUnloading.AddListener(OnTestStartUnloading);
-        }
-
-        if (player)
-        {
-            player.onPlayerSpawned.AddListener(PlayTextAnimation);
-            player.onPlayerOpenedMenu.AddListener(ForceHideAnimation);
-        }
+        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartUnloading.AddListener(OnTestStartUnloading);
+        TestManager.Instance?.onIntroSequenceStart.AddListener(ForceHideAnimation);
+        player?.onPlayerSpawned.AddListener(PlayTextAnimation);
+        player?.onPlayerOpenedMenu.AddListener(ForceHideAnimation);
     }
-
-
+    
 
     private void OnDisable()
     {
-        if (TestManager.Instance)
-        {
-            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
-            TestManager.Instance.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
-        }
+        TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
+        TestManager.Instance?.onIntroSequenceStart.RemoveListener(ForceHideAnimation);
         
-        if (player)
-        {
-            player.onPlayerSpawned.RemoveListener(PlayTextAnimation);
-            player.onPlayerOpenedMenu.RemoveListener(ForceHideAnimation);
-        }
+        player?.onPlayerSpawned.RemoveListener(PlayTextAnimation);
+        player?.onPlayerOpenedMenu.RemoveListener(ForceHideAnimation);
     }
     
     private void OnTestLoaded(SOTest test)
