@@ -19,11 +19,13 @@ public class TestManager : MonoBehaviour
     [SerializeField] private RobotCompanion robotPrefab;
     [SerializeField] private TestEnvironmentSettings defaultEnvironmentSettings;
     [SerializeField] private TestLightSettings defaultLightSettings;
-    [SerializeField] private SOTest[] tests;
 
     [Header("Intro Sequence")] 
     [SerializeField, Min(0)] private float introSequenceDuration = 7f;
     [SerializeField] private SOAudioEvent introTheme;
+    
+    
+    [SerializeField] private SOTest[] tests;
     
     
     [Foldout("Debug")]
@@ -41,6 +43,7 @@ public class TestManager : MonoBehaviour
     
     [Foldout("Events")]
     public UnityEvent onIntroSequenceStart = new UnityEvent();
+    public UnityEvent onIntroSequenceEnd = new UnityEvent();
     public UnityEvent<SOTest> onTestStartLoading = new UnityEvent<SOTest>();
     public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
     public UnityEvent<SOTest> onTestStartUnloading = new UnityEvent<SOTest>();
@@ -61,6 +64,7 @@ public class TestManager : MonoBehaviour
     public TextMeshProUGUI DebugTextRight => debugTextRight;
     public  GameObject FloorObject => _testFloorObject;
     public float IntroSequenceState => _introSequenceTime / introSequenceDuration;
+    public bool IsIntroSequenceActive => _introSequenceTime > 0;
     
     
     private Coroutine _activeLoadCoroutine;
@@ -94,9 +98,9 @@ public class TestManager : MonoBehaviour
     
     private void Start()
     {
-        currentPlayer = FindFirstObjectByType<PlayerStateMachine>();
+        _cameraManager = CameraManager.Instance;
+        currentPlayer = PlayerStateMachine.Instance;
         currentRobot = FindFirstObjectByType<RobotCompanion>();
-        _cameraManager = FindFirstObjectByType<CameraManager>();
         _testFloorObject = GameObject.Find("Floor");
         _testFloorRenderer = _testFloorObject.GetComponent<Renderer>();
         
@@ -104,7 +108,7 @@ public class TestManager : MonoBehaviour
 
         if (SceneManager.GetActiveScene().buildIndex == 0)
         {
-            StartIntroSequence();   
+            StartIntroSequence();
         }
     }
     
@@ -224,18 +228,6 @@ public class TestManager : MonoBehaviour
         StartTest(testIndex);
     }
     
-
-    [Button]
-    private void StartIntroSequence()
-    {
-        if (!_cameraManager || !currentPlayer) return;
-        
-        RemoveCurrentTest();
-        _introSequenceTime = introSequenceDuration;
-        currentTheme = introTheme;
-        currentTheme?.Play(_audioSource);
-        onIntroSequenceStart?.Invoke();
-    }
     
     public void QuitApplication()
     {
@@ -284,8 +276,39 @@ public class TestManager : MonoBehaviour
     
     
     #endregion Test control ----------------------------------------------------------------------------
-    
 
+    
+    #region Intro Sequence ----------------------------------------------------------------------------
+
+    
+    [Button]
+    private void StartIntroSequence()
+    {
+        StartCoroutine(IntroSequenceCoroutine());
+    }
+
+    private IEnumerator IntroSequenceCoroutine()
+    {
+        
+        // RemoveCurrentTest();
+        _introSequenceTime = introSequenceDuration;
+        currentTheme = introTheme;
+        currentTheme?.Play(_audioSource);
+        onIntroSequenceStart?.Invoke();
+        
+        while (_introSequenceTime > 0 )
+        {
+            _introSequenceTime -= Time.deltaTime;
+            yield return null; 
+        }
+        
+        
+        onIntroSequenceEnd?.Invoke();
+    }
+
+    #endregion Intro Sequence ----------------------------------------------------------------------------
+    
+    
     
     #region Private methods ----------------------------------------------------------------------------
     

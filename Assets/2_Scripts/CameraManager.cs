@@ -21,6 +21,9 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private float maxAmplitude = 0.2f;
     [SerializeField] private float maxFrequency = 4f;
     
+    [Header("Intro Sequence")]
+    [SerializeField] private AnimationCurve introSequenceCameraCurve = AnimationCurve.EaseInOut(0,0,1,1);
+    
     [Header("References")]
     public CinemachineCamera freeLookCamera;
     public CinemachineCamera aimCamera;
@@ -90,46 +93,35 @@ public class CameraManager : MonoBehaviour
     }
 
 
-    private void Start()
+    private void OnEnable()
     {
         TestManager.Instance?.onIntroSequenceStart.AddListener(StartIntroSequenceCamera);
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         TestManager.Instance?.onIntroSequenceStart.RemoveListener(StartIntroSequenceCamera);
     }
 
     private void Update()
     {
-        if (IsIntroCameraActive())
+        if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
         {
-            switch (_introCameraDolly.CameraPosition)
+            float introState = TestManager.Instance.IntroSequenceState;
+            float easedPosition = introSequenceCameraCurve.Evaluate(1f - introState);
+            _introCameraDolly.CameraPosition = easedPosition;
+    
+            if (introState <= 0f)
             {
-                case >= 1f:
-                    SwitchToCamera(startMenuCamera, true);
-                    break;
-                case >= 0.9f when _player.CurrentState != _player.InMenuState:
-                    _player.SwitchState(_player.InMenuState);
-                    _player.InMenuState.SelectPage(_player.InMenuState.StartPage);
-                    break;            
-        
-                default:
-                    float startSpeed = 0.2f;
-                    float endSpeed = 0.03f;
-                    float t = Mathf.Clamp01(_introCameraDolly.CameraPosition / 1f);
-                    float speed = Mathf.Lerp(startSpeed, endSpeed, t);
-                    
-                    _introCameraDolly.CameraPosition += speed * Time.deltaTime;
-                    break;
+                SwitchToCamera(startMenuCamera, true);
             }
-
-            return;
         }
-        
-        HandleCameraSwitching();
-        UpdateCameraFOV();
-        UpdateCameraNoise();
+        else
+        {
+            HandleCameraSwitching();
+            UpdateCameraFOV();
+            UpdateCameraNoise();
+        }
     }
     
 
@@ -238,22 +230,22 @@ public class CameraManager : MonoBehaviour
         aimCore.transform.position = _player.transform.position + _currentOffset;
         
     
-        // When not aiming, sync aim core rotation with free look camera
-        if (!IsPlayerAiming && freeLookCamera)
-        {
-            // Extract pitch and yaw from free look camera
-            Vector3 forward = freeLookCamera.transform.forward;
-            float pitch = -Mathf.Asin(forward.y) * Mathf.Rad2Deg;
-            float yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
-        
-            // Update our accumulated values to match current free look camera
-            _pitchAccumulation = pitch;
-            _yawAccumulation = yaw;
-        
-            // Apply rotation to aim core
-            aimCore.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
-            return;
-        }
+        // // When not aiming, sync aim core rotation with free look camera
+        // if (!IsPlayerAiming && freeLookCamera)
+        // {
+        //     // Extract pitch and yaw from free look camera
+        //     Vector3 forward = freeLookCamera.transform.forward;
+        //     float pitch = -Mathf.Asin(forward.y) * Mathf.Rad2Deg;
+        //     float yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+        //
+        //     // Update our accumulated values to match current free look camera
+        //     _pitchAccumulation = pitch;
+        //     _yawAccumulation = yaw;
+        //
+        //     // Apply rotation to aim core
+        //     aimCore.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+        //     return;
+        // }
         
 
         // Get the appropriate sensitivity based on current camera state
@@ -399,7 +391,7 @@ public class CameraManager : MonoBehaviour
         introCamera.Priority = _introCameraPriority;
 
         _currentCamera = cam;
-        _freeLookCameraInput.enabled = cam == freeLookCamera;
+        // _freeLookCameraInput.enabled = cam == freeLookCamera;
         cam.Priority = 10;
         Cursor.lockState = enableCursor ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = enableCursor;

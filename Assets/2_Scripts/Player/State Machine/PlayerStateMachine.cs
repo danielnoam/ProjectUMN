@@ -179,29 +179,44 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void Start()
     {
         if (!robot) robot = FindFirstObjectByType<RobotCompanion>();
-        if (!cameraManager) cameraManager = FindFirstObjectByType<CameraManager>();
-        cameraManager.Initialize(this);
-
-        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
-        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
-        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
-        _debugText = TestManager.Instance?.DebugTextLeft;
+        cameraManager = CameraManager.Instance;
+        cameraManager?.Initialize(this);
     }
 
 
+    private void OnEnable()
+    {
+        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
+        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+        _debugText = TestManager.Instance?.DebugTextLeft;
+    }
 
-
-    private void OnDestroy()
+    private void OnDisable()
     {
         TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
         TestManager.Instance?.onTestStartLoading.RemoveListener(OnTestStartLoading);
         TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
         _debugText = null;
+        cameraManager = null;
     }
     
 
     private void Update()
     {
+        // Intro Sequence
+        if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
+        {
+            if (TestManager.Instance.IntroSequenceState <= 0.1f && CurrentState != InMenuState)
+            {
+                SwitchState(InMenuState);
+                InMenuState.SelectPage(InMenuState.StartPage);
+            }
+        }
+
+
         UpdateFallTime();
         UpdateDebugInformation();
         UpdateLineRenderer();
@@ -215,7 +230,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         
         
-        if (CurrentState == FallingState) // Ripple effect
+        // Ripple effect
+        if (CurrentState == FallingState) 
         {
             if (Physics.Raycast(transform.position + groundCheckOffset, Vector3.down, out var hit, 0.5f, environmentLayer))
             {
@@ -246,6 +262,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         robot = null;
         SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, false));
+        InputHandler.enabled = false;
+    }
+
+    private void OnIntroSequenceEnd()
+    {
+        InputHandler.enabled = true;
     }
 
 
@@ -1030,8 +1052,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                 robot.CommandFollowPlayer();
                 return;
             }
-            
-            robot.CommandIdle();
         }
     }
     

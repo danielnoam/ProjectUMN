@@ -150,10 +150,12 @@ public class TestInfoTextHandler : MonoBehaviour
     [Button]
     private void ForceHideAnimation()
     {
-        if (_textSequence.isAlive)
+        if (!_textSequence.isAlive)
         {
-            _textSequence.Stop();
+            return;
         }
+
+        _textSequence.Stop();
         
         _textSequence = Sequence.Create()
             .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: textFadeOutDuration/2))
@@ -172,6 +174,7 @@ public class TestInfoTextHandler : MonoBehaviour
         {
             _textSequence.Stop();
         }
+        
         
         _textSequence = Sequence.Create()
             .ChainCallback(() => { _testNameWriter.RestartWriter(); })

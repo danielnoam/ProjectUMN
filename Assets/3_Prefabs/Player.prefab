@@ -841,15 +841,15 @@ MonoBehaviour:
   ceilingCheckOffset: {x: 0, y: 0.63, z: 0}
   environmentLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 3
   interactableCheckRadius: 0.5
   interactableCheckPosition: {fileID: 6612204555609660401}
   interactableLayer:
     serializedVersion: 2
     m_Bits: 256
   aimRayMaxDistance: 45
+  lineVisibilityLerpSpeed: 10
   aimRayStartPosition: {fileID: 9001959687672841214}
-  menu: {fileID: 4000100949311149265}
   onPlayerDeath:
     m_PersistentCalls:
       m_Calls: []
@@ -2271,7 +2271,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 865356669041581405, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: m_text
-      value: <char>Game Name</>
+      value: Game Name
       objectReference: {fileID: 0}
     - target: {fileID: 2157142904626503177, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: selectables.Array.size
@@ -4445,7 +4445,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 865356669041581405, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: m_text
-      value: <char>Pause Menu</>
+      value: Pause Menu
       objectReference: {fileID: 0}
     - target: {fileID: 2157142904626503177, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: selectables.Array.size

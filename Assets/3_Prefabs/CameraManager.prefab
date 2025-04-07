@@ -235,7 +235,7 @@ MonoBehaviour:
     Enabled: 1
     m_Value: 8
   OutputChannel: 1
-  StandbyUpdate: 1
+  StandbyUpdate: 2
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
@@ -261,7 +261,7 @@ MonoBehaviour:
       Curvature: {x: 2, y: 11}
       BarrelClipping: 0.25
       Anamorphism: 0
-  BlendHint: 0
+  BlendHint: 8
 --- !u!114 &432415048053787396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -833,8 +833,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7572823565956892122}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.18936205, y: 0, z: 0, w: 0.98190737}
-  m_LocalPosition: {x: -1.3322525, y: 5.1622314, z: -89.035255}
+  m_LocalRotation: {x: 0.20813945, y: 0, z: 0, w: 0.97809917}
+  m_LocalPosition: {x: -1.3322525, y: 5.1622314, z: -88.718414}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -856,7 +856,7 @@ MonoBehaviour:
     Enabled: 1
     m_Value: 9
   OutputChannel: 1
-  StandbyUpdate: 1
+  StandbyUpdate: 2
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
@@ -882,7 +882,7 @@ MonoBehaviour:
       Curvature: {x: 2, y: 11}
       BarrelClipping: 0.25
       Anamorphism: 0
-  BlendHint: 0
+  BlendHint: 8
 --- !u!114 &1443527037989428333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -906,13 +906,13 @@ MonoBehaviour:
   Radius: 10
   Orbits:
     Top:
-      Radius: 2
+      Radius: 1
       Height: 4
     Center:
       Radius: 3
       Height: 2.5
     Bottom:
-      Radius: 3
+      Radius: 1
       Height: -0.5
     SplineCurvature: 0.5
   RecenteringTarget: 3
@@ -977,7 +977,7 @@ MonoBehaviour:
   IgnoreTag: Player
   TransparentLayers:
     serializedVersion: 2
-    m_Bits: 448
+    m_Bits: 450
   MinimumDistanceFromTarget: 0.3
   AvoidObstacles:
     Enabled: 1
@@ -1101,8 +1101,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7702849316814007445}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.18936205, y: 0, z: 0, w: 0.98190737}
-  m_LocalPosition: {x: -1.3322525, y: 5.1622314, z: -89.035255}
+  m_LocalRotation: {x: 0.20813945, y: 0, z: 0, w: 0.97809917}
+  m_LocalPosition: {x: -1.3322525, y: 5.1622314, z: -88.718414}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1301,6 +1301,30 @@ MonoBehaviour:
   maxFov: 65
   maxAmplitude: 0.2
   maxFrequency: 4
+  introSequenceCameraCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 1.7292595
+      outSlope: 1.7292595
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.051194537
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   freeLookCamera: {fileID: 1702355851979379484}
   aimCamera: {fileID: 2033067464421729276}
   menuCamera: {fileID: 4987048770402030740}
