@@ -227,13 +227,11 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        _player = TestManager.Instance.Player;
        _playerFollowPosition = _player.transform.GetChild(1);
        _playerAimingFollowPosition = _player.transform.GetChild(2);
-       
-       // if (!test.HasRobot()) { Teleport(test.GetRobotSpawnPoint(), Quaternion.identity); }
    }
    
    private void OnPlayerSpawned()
    {
-       if (currentState is RobotState.Off or RobotState.Dead) return;
+       if (!IsOn()) return;
        
        Teleport(_player.transform.position, Quaternion.identity);
        CommandFollowPlayer();

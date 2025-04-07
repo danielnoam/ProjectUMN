@@ -609,7 +609,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 98ed797b12400e541ac57912aca40e21, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -635,7 +635,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 0}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.2
+    widthMultiplier: 0.05
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -836,7 +836,7 @@ MonoBehaviour:
   fallThreshold: 0.1
   gravity: -15
   maxVerticalVelocity: -25
-  environmentCheckRadius: 0.3
+  environmentCheckRadius: 0.29
   groundCheckOffset: {x: 0, y: -0.67, z: 0}
   ceilingCheckOffset: {x: 0, y: 0.63, z: 0}
   environmentLayer:
@@ -850,6 +850,9 @@ MonoBehaviour:
   aimRayMaxDistance: 45
   aimRayStartPosition: {fileID: 9001959687672841214}
   menu: {fileID: 4000100949311149265}
+  onPlayerDeath:
+    m_PersistentCalls:
+      m_Calls: []
   onPlayerSpawned:
     m_PersistentCalls:
       m_Calls: []

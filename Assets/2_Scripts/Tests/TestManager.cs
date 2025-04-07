@@ -5,9 +5,7 @@ using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -19,12 +17,16 @@ public class TestManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private PlayerStateMachine playerPrefab;
     [SerializeField] private RobotCompanion robotPrefab;
-    [SerializeField] private SOAudioEvent introTheme;
     [SerializeField] private TestEnvironmentSettings defaultEnvironmentSettings;
     [SerializeField] private TestLightSettings defaultLightSettings;
     [SerializeField] private SOTest[] tests;
+
+    [Header("Intro Sequence")] 
+    [SerializeField, Min(0)] private float introSequenceDuration = 7f;
+    [SerializeField] private SOAudioEvent introTheme;
     
-    [Header("Debug")]
+    
+    [Foldout("Debug")]
     [SerializeField] private bool debugMode = true;
     [SerializeField] private TextMeshProUGUI debugTextRight;
     [SerializeField] private TextMeshProUGUI debugTextLeft;
@@ -35,7 +37,7 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private Transform currentCheckpoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
-    
+    [EndFoldout]
     
     [Foldout("Events")]
     public UnityEvent onIntroSequenceStart = new UnityEvent();
@@ -58,6 +60,8 @@ public class TestManager : MonoBehaviour
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
     public  GameObject FloorObject => _testFloorObject;
+    public float IntroSequenceState => _introSequenceTime / introSequenceDuration;
+    
     
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
@@ -67,6 +71,7 @@ public class TestManager : MonoBehaviour
     private TestAnimator _testAnimator;
     private Renderer _testFloorRenderer;
     private GameObject _testFloorObject;
+    private float _introSequenceTime;
     
     private void Awake()
     {
@@ -79,10 +84,9 @@ public class TestManager : MonoBehaviour
             Instance = this;
         }
         
-        // Graphic settings
+
         PrimeTweenConfig.SetTweensCapacity(800);
         QualitySettings.shadowResolution = ShadowResolution.Medium;
-        
         
         _testAnimator = GetComponent<TestAnimator>();
         _audioSource = GetComponent<AudioSource>();
@@ -127,7 +131,6 @@ public class TestManager : MonoBehaviour
         {
             RemoveCurrentTest();
         }
-        
         
         if (Input.GetKeyDown(KeyCode.Keypad9))
         {
@@ -223,15 +226,15 @@ public class TestManager : MonoBehaviour
     
 
     [Button]
-    public void StartIntroSequence()
+    private void StartIntroSequence()
     {
         if (!_cameraManager || !currentPlayer) return;
         
-        currentPlayer.SwitchState(currentPlayer.GroundedState);
-        currentPlayer.transform.position = Vector3.zero + new Vector3(0, 0.9f, 0);
+        RemoveCurrentTest();
+        _introSequenceTime = introSequenceDuration;
         currentTheme = introTheme;
         currentTheme?.Play(_audioSource);
-        _cameraManager.StartIntroSequenceCamera();
+        onIntroSequenceStart?.Invoke();
     }
     
     public void QuitApplication()

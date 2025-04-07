@@ -27,7 +27,7 @@ public class DynamicLight : MonoBehaviour
     {
         if (!TestManager.Instance)
         {
-            FadeLight(TestManager.Instance.DefaultLightSettings);
+            FadeLight(TestManager.Instance.DefaultLightSettings, 0.5f);
         }
         else
         {
@@ -50,17 +50,17 @@ public class DynamicLight : MonoBehaviour
 
     private void OnTestLoaded(SOTest test)
     {
-        FadeLight(test.GetLightSettings());
+        FadeLight(test.GetLightSettings(), fadeDuration);
     }
 
-    private void FadeLight(TestLightSettings lightSettings)
+    private void FadeLight(TestLightSettings lightSettings, float duration)
     {
         if (_tween.isAlive) _tween.Stop();
         bool fadeIn = lightSettings.ambientIntensity < 1;
         
         
         _light.enabled = true;
-        _tween = Tween.LightIntensity(_light,startValue: fadeIn ? 0 : _defaultIntensity, fadeIn ? _defaultIntensity : 0, fadeDuration);
+        _tween = Tween.LightIntensity(_light,startValue: fadeIn ? 0 : _defaultIntensity, fadeIn ? _defaultIntensity : 0, duration);
         _tween.OnComplete(() => { if (!fadeIn) _light.enabled = false; });
     }
 }

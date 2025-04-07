@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using VInspector;
 
@@ -422,4 +423,20 @@ public class TubeRenderer : MonoBehaviour
 
         return circle;
     }
+
+
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        // Draw sphere for each point
+        Gizmos.color = Color.red;
+        float sphereSize = 0.1f;
+        
+        foreach (var position in positions)
+        {
+            Gizmos.DrawSphere(position, sphereSize);
+        }
+    }
+#endif
+
 }

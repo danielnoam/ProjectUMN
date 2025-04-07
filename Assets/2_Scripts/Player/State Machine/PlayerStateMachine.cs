@@ -20,7 +20,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 {
     public static  PlayerStateMachine Instance { get; private set; }
     
-    
     public PlayerBaseState CurrentState { get; private set; }
     public PlayerGroundedState GroundedState { get; private set; }
     public PlayerCrouchingState CrouchingState { get; private set; }
@@ -34,14 +33,10 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Header("Movement")]
     [Tooltip("Controls whether the player can only aim or can toggle between aim and non-aim modes")]
     [SerializeField] private CameraMode cameraMode = CameraMode.ExplorationAndAim;
-    [Tooltip("Walking speed when holding the walk button")]
     public float walkSpeed = 3f;
-    [Tooltip("Default running speed")]
     public float runSpeed = 7.5f;
-    [Tooltip("If sprint gait is allowed")]
-    public bool allowSprint = true;
-    [EnableIf("allowSprint"), Tooltip("Maximum speed when sprinting with sufficient input")]
-    public float sprintSpeed = 10f; [EndIf]
+    public bool allowSprint = false;
+    [EnableIf("allowSprint")] public float sprintSpeed = 10f; [EndIf]
     [Tooltip("Speed multiplier when strafing (moving sideways)")]
     public float strafeSpeedMultiplier = 0.7f;
     [Tooltip("Speed multiplier when moving backward")]
@@ -52,7 +47,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float groundDrag = 10f;
     [Tooltip("Anti-bump force to prevent sticking to slopes")]
     public float antiBumpForce = 4f;
-    [Tooltip("Base rotation speed when turning on the ground")]
+    [Tooltip("Rotation speed when turning on the ground")]
     public float rotationSpeed = 2f;
     [Tooltip("How quickly player rotates to align with camera when idle")]
     public float idleAlignmentSpeed = 2f;
@@ -64,11 +59,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Tooltip("How quickly the character reaches target speed in air")]
     public float airAcceleration = 5f;
     [Tooltip("Drag force applied to movement in air")]
-    public float airDrag = 5f;
+    public float airDrag = 7f;
     [Tooltip("Rotation speed when turning while aiming")]
     public float aimRotationSpeed = 4f;
     [Tooltip("Initial upward velocity applied when jumping")]
-    public float jumpForce = 2f;
+    public float jumpForce = 1.5f;
     [Tooltip("Minimum time falling before impact animations trigger")]
     public float fallThreshold = 0.1f;
 
@@ -79,11 +74,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float maxVerticalVelocity = -25f;
 
 
-
-
-    [Header("Collision Check")]
+    [Header("Collision")]
     [Tooltip("Radius of the sphere used to detect environment")]
-    [SerializeField] private float environmentCheckRadius = 0.3f;
+    [SerializeField] private float environmentCheckRadius = 0.29f;
     [Tooltip("Offset from character position for ground detection")]
     [SerializeField] private Vector3 groundCheckOffset = new Vector3(0, -0.7f, 0);
     [Tooltip("Offset from character position for ceiling detection")]
@@ -97,12 +90,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [Tooltip("Layer mask defining what objects count as interactable")]
     [SerializeField] private LayerMask interactableLayer = 1;
     [Tooltip("Maximum distance the aim ray will travel")]
-    public float aimRayMaxDistance = 25f;
+    public float aimRayMaxDistance = 45f;
+    [SerializeField] private float lineVisibilityLerpSpeed = 10f;
     [Tooltip("The start position of the aim ray")]
     public Transform aimRayStartPosition;
-
-    [Header("References")] 
-    public GameObject menu;
+    
 
     [Header("Events")] 
     public UnityEvent onPlayerDeath = new UnityEvent();
@@ -128,11 +120,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public bool IsRotatingToTarget { get; private set; }
     public RobotCompanion robot { get; private set; }
     public CameraManager cameraManager { get; private set; }
-    private TextMeshProUGUI _debugText;
     
-
+    
+    private TextMeshProUGUI _debugText;
     private CharacterController _controller;
     private LineRenderer _lineRenderer;
+    private float _lineRendererDefaultWidth;
+    private Vector3 _targetLineEndPosition = Vector3.zero;
+    private bool _isLineVisible = false;
     private float _defaultCharacterHeight;
     private Vector3 _defaultCharacterCenter;
     private readonly float _crouchCharacterHeight = 1.2333f;
@@ -147,8 +142,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private Quaternion _targetIdleRotation = Quaternion.identity;
     private float _rotationProgress = 1.0f; 
     
-
     
+
     
 
 
@@ -176,8 +171,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         _defaultCharacterHeight = _controller.height;
         _defaultCharacterCenter = _controller.center;
         
-        _lineRenderer.positionCount = 2;
-        _lineRenderer.enabled = false;
+        _lineRendererDefaultWidth = _lineRenderer.startWidth;
         IsAiming = cameraMode == CameraMode.AimOnly;
         SwitchState(GroundedState);
     }
@@ -188,24 +182,21 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (!cameraManager) cameraManager = FindFirstObjectByType<CameraManager>();
         cameraManager.Initialize(this);
 
-        if (TestManager.Instance)
-        {
-            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
-            TestManager.Instance.onTestStartLoading.AddListener(OnTestStartLoading);
-            _debugText = TestManager.Instance.DebugTextLeft;
-        }
-        
+        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
+        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        _debugText = TestManager.Instance?.DebugTextLeft;
     }
-    
-    
-    private void OnDisable()
+
+
+
+
+    private void OnDestroy()
     {
-        if (TestManager.Instance)
-        {
-            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
-            TestManager.Instance.onTestStartLoading.RemoveListener(OnTestStartLoading);
-            _debugText = null;
-        }
+        TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartLoading.RemoveListener(OnTestStartLoading);
+        TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        _debugText = null;
     }
     
 
@@ -213,6 +204,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         UpdateFallTime();
         UpdateDebugInformation();
+        UpdateLineRenderer();
         CurrentState.UpdateState();
     }
 
@@ -225,8 +217,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         if (CurrentState == FallingState) // Ripple effect
         {
-            RaycastHit hit;
-            if (Physics.Raycast(transform.position + groundCheckOffset, Vector3.down, out hit, 0.5f, environmentLayer))
+            if (Physics.Raycast(transform.position + groundCheckOffset, Vector3.down, out var hit, 0.5f, environmentLayer))
             {
             
                 var ground = hit.transform.GetComponent<GroundRipple>();
@@ -251,6 +242,11 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), test.GetTimeToLoad(), false));
     }
     
+    private void OnIntroSequenceStart()
+    {
+        robot = null;
+        SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, false));
+    }
 
 
     
@@ -515,9 +511,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         // Get ray direction from camera
         Vector3 rayDirection = cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0);
 
-        // Set first point of line renderer
-        _lineRenderer.SetPosition(0, rayOrigin);
-
         // Create a layer mask that includes both interactable objects AND environment/walls
         // This ensures we hit walls first if they're in the way
         LayerMask raycastMask = interactableLayer | environmentLayer;
@@ -528,9 +521,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         // Perform raycast to see if we hit anything
         if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, raycastMask))
         {
-            // Set second point of line renderer to hit position
-            _lineRenderer.SetPosition(1, hitInfo.point);
-            
             // Check if the hit object is on the interactable layer
             if (((1 << hitInfo.collider.gameObject.layer) & interactableLayer) != 0)
             {
@@ -563,14 +553,81 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
         else
         {
-            // No hit, set line end point to max distance
-            _lineRenderer.SetPosition(1, rayOrigin + (rayDirection * aimRayMaxDistance));
-            
-            // Clear current target if we had one
+            // No hit, clear current target if we had one
             ClearCurrentAimedInteractable();
         }
     }
     
+
+    private void UpdateLineRenderer()
+    {
+        if (!robot || !robot.IsOn() || !aimRayStartPosition || !_lineRenderer) return;
+
+        // Handle line renderer visibility based on aiming state
+        if (IsAiming && !_isLineVisible)
+        {
+            _lineRenderer.enabled = true;
+            _isLineVisible = true;
+        }
+        else if (!IsAiming && _isLineVisible)
+        {
+            // Instead of immediately disabling, we'll wait until the line has lerped back
+            // to zero length, which happens in the lerping code below
+            _isLineVisible = false;
+        }
+        
+        // Set ray origin 
+        Vector3 rayOrigin = aimRayStartPosition.position;
+
+        // Get ray direction from camera
+        Vector3 rayDirection = cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f, 0);
+
+        // Set first point of line renderer
+        _lineRenderer.SetPosition(0, rayOrigin);
+
+        // Set lerp speed based on whether the line is visible or not
+        float lerpSpeed;
+
+        // Calculate the target end position of the line
+        if (_isLineVisible)
+        {
+            // Create the actual ray for Physics ray-casting
+            Ray aimRay = new Ray(rayOrigin, rayDirection);
+
+            // Perform raycast to see if we hit anything
+            if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, interactableLayer | environmentLayer))
+            {
+                // Set target to hit position
+                _targetLineEndPosition = hitInfo.point;
+            }
+            else
+            {
+                // No hit, set target to max distance
+                _targetLineEndPosition = rayOrigin + (rayDirection * aimRayMaxDistance);
+            }
+
+            lerpSpeed = lineVisibilityLerpSpeed;
+        }
+        else
+        {
+            // When not aiming, target position is the same as ray origin (zero length)
+            _targetLineEndPosition = rayOrigin;
+            lerpSpeed = lineVisibilityLerpSpeed * 2f;
+        }
+
+        // Get current end position
+        Vector3 currentEndPosition = _lineRenderer.GetPosition(1);
+        
+        // Lerp towards target position
+        Vector3 newEndPosition = Vector3.Lerp(currentEndPosition, _targetLineEndPosition, lerpSpeed * Time.deltaTime);
+        _lineRenderer.SetPosition(1, newEndPosition);
+        
+        // If line is nearly invisible, and we're not aiming, disable it completely
+        if (!_isLineVisible && Vector3.Distance(rayOrigin, newEndPosition) < 0.5f)
+        {
+            _lineRenderer.enabled = false;
+        }
+    }
     
 
     #endregion States methods - Collisions ---------------------------------------------------------------
@@ -923,7 +980,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                     IsAiming = true;
                 }
                 break;
-            
+        
             case CameraMode.ExplorationAndAim:
                 // Toggle aim mode based on input (original behavior)
                 if (InputHandler.AimInput)
@@ -1004,7 +1061,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     }
 
     #endregion State methods - Utility ---------------------------------------------------------------
-
     
     
     #region Debug ---------------------------------------------------------------
@@ -1043,18 +1099,15 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  ;
             }
             
-            if (!_lineRenderer.enabled)
-            {
-                _lineRenderer.enabled = true;
-            }
+            _lineRenderer.startWidth = _lineRendererDefaultWidth * 2;
+            _lineRenderer.endWidth = _lineRendererDefaultWidth * 2;
+
         
         }
         else
         {
-            if (_lineRenderer.enabled)
-            {
-                _lineRenderer.enabled = false;
-            }
+            _lineRenderer.startWidth = _lineRendererDefaultWidth;
+            _lineRenderer.endWidth = _lineRendererDefaultWidth;
         
         }
     }

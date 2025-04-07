@@ -21,10 +21,12 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: GM-Grid-URP-Custom-Platform
-  m_Shader: {fileID: -6465566751694194690, guid: 44f8dfd6d74d14469bb0ef07b544f59e, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 72e83e4c692b51842b39cc343ee1d5fc, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _DISSOLVE_STYLE_SWAPTEXTURES
+  - _UVPOSITION_OBJECT
   m_InvalidKeywords: []
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
@@ -37,6 +39,14 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Texture2D_4204C0C8:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_80A5EEF3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Base_Texture:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -67,7 +77,15 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - Vector1_8ED1EA40: 0.1
+    - Vector1_D632FD56: 2
+    - Vector1_FBD9E64: 0.05
+    - _Ambient_Occlusion: 1
     - _Blend: 1
+    - _DISSOLVE_STYLE: 0
+    - _Dissolve_Noise_Move_Speed: 0.3
+    - _Dissolve_Noise_Strength: 1
+    - _Dither: 0
     - _Emission: 1
     - _Metallic: 1
     - _QueueControl: 0
@@ -75,8 +93,10 @@ Material:
     - _Smoothness: 0.5
     - _Tile: 1
     - _Tiling: 1
+    - _UVPOSITION: 0
     m_Colors:
-    - _Base_Color: {r: 0.2735849, g: 0.2735849, b: 0.2735849, a: 0}
+    - Color_F69F1A11: {r: 0, g: 1, b: 0.8703723, a: 1}
+    - _Base_Color: {r: 0.27358475, g: 0.27358475, b: 0.27358475, a: 1}
     - _Emission_Color: {r: 6.88318, g: 3.1457925, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

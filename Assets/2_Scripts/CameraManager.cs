@@ -88,8 +88,18 @@ public class CameraManager : MonoBehaviour
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
         _introCameraDolly = introCamera.GetComponent<CinemachineSplineDolly>();
     }
-    
-    
+
+
+    private void Start()
+    {
+        TestManager.Instance?.onIntroSequenceStart.AddListener(StartIntroSequenceCamera);
+    }
+
+    private void OnDestroy()
+    {
+        TestManager.Instance?.onIntroSequenceStart.RemoveListener(StartIntroSequenceCamera);
+    }
+
     private void Update()
     {
         if (IsIntroCameraActive())
@@ -120,8 +130,8 @@ public class CameraManager : MonoBehaviour
         HandleCameraSwitching();
         UpdateCameraFOV();
         UpdateCameraNoise();
-        
     }
+    
 
     private void LateUpdate()
     {
@@ -202,13 +212,7 @@ public class CameraManager : MonoBehaviour
         _lastAimDirection = cameraForward;
         return cameraForward;
     }
-
-
-    public void StartIntroSequenceCamera()
-    {
-        SwitchToCamera(introCamera, false);
-        _introCameraDolly.CameraPosition = 0;
-    }
+    
     
 
     #endregion Public methods ----------------------------------------------------------------------------
@@ -384,7 +388,7 @@ public class CameraManager : MonoBehaviour
     }
     
     
-
+    
    
     private void SwitchToCamera(CinemachineCamera cam, bool enableCursor)
     {
@@ -401,6 +405,13 @@ public class CameraManager : MonoBehaviour
         Cursor.visible = enableCursor;
         
     }
+    
+    private void StartIntroSequenceCamera()
+    {
+        _introCameraDolly.CameraPosition = 0;
+        SwitchToCamera(introCamera, false);
+    }
+    
     
     #endregion Private methods ----------------------------------------------------------------------------
     
