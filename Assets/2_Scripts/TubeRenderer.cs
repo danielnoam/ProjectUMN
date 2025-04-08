@@ -1,4 +1,5 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 using VInspector;
 
@@ -434,7 +435,8 @@ public class TubeRenderer : MonoBehaviour
         
         foreach (var position in positions)
         {
-            Gizmos.DrawSphere(position, sphereSize);
+            Gizmos.DrawSphere(transform.position + position, sphereSize);
+            Handles.Label(transform.position + position + Vector3.up * 0.2f, $"Point: {Array.IndexOf(positions, position)}");
         }
     }
 #endif

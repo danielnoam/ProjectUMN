@@ -129,8 +129,8 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-  - From: AimCameraThirdPerson
-    To: FreeCameraOrbital
+  - From: AimCamera
+    To: FreeLookCamera
     Blend:
       Style: 1
       Time: 0.7
@@ -158,8 +158,8 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-  - From: FreeCameraOrbital
-    To: AimCameraThirdPerson
+  - From: FreeLookCamera
+    To: AimCamera
     Blend:
       Style: 1
       Time: 0.3

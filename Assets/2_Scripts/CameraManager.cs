@@ -20,6 +20,8 @@ public class CameraManager : MonoBehaviour
     private float velocityFovFactor = 0.5f;
     [SerializeField] [Range(0f, 1f)] [Tooltip("How much pitch affects FOV (0 = no effect, 1 = maximum effect)")]
     private float pitchFovFactor = 0.5f;
+    [SerializeField] [Range(0f, 80f)] [Tooltip("Pitch angle threshold in degrees before pitch starts affecting FOV")]
+    private float pitchFovThreshold = 20f;
     
     [Header("Noise Settings")]
     [SerializeField] private float maxAmplitude = 0.2f;
@@ -43,7 +45,6 @@ public class CameraManager : MonoBehaviour
     private CinemachineThirdPersonFollow _menuCameraFollow;
     private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
     private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
-    private CinemachineInputAxisController _freeLookCameraInput;
     private CinemachineSplineDolly _introCameraDolly;
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
@@ -91,7 +92,6 @@ public class CameraManager : MonoBehaviour
         _introCameraPriority = introCamera.Priority;
         _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
-        _freeLookCameraInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
         _introCameraDolly = introCamera.GetComponent<CinemachineSplineDolly>();
     }
@@ -300,16 +300,22 @@ public class CameraManager : MonoBehaviour
         // Skip if player reference is missing or menu camera is active
         if (!_player || IsMenuCameraActive()|| IsStartMenuCameraActive()) return;
 
-        // Determine which camera is active and its initial FOV
-        var initialFOV = IsAimCameraActive() ? _aimInitialFOV : _freeLookInitialFOV;
+        // Note: The initialFOV line is removed as it's not being used
 
         // Calculate velocity factor (0 to 1)
         float velocityFactor = Mathf.Clamp01(_player.ActiveHorizontalVelocity / _player.sprintSpeed);
     
         // Calculate pitch factor (0 to 1) based on how close we are to maximum pitch
-        // Take the absolute value of pitch to handle looking up or down equally
-        float pitchFactor = Mathf.Abs(_pitchAccumulation) / aimMaxPitch;
-        pitchFactor = Mathf.Clamp01(pitchFactor); // Ensure value is between 0-1
+        // Only apply effect if pitch is above the threshold
+        float pitchAbs = Mathf.Abs(_pitchAccumulation);
+        float pitchFactor = 0f;
+    
+        if (pitchAbs > pitchFovThreshold)
+        {
+            // Remap the range from [threshold, maxPitch] to [0, 1]
+            pitchFactor = (pitchAbs - pitchFovThreshold) / (aimMaxPitch - pitchFovThreshold);
+            pitchFactor = Mathf.Clamp01(pitchFactor); // Ensure value is between 0-1
+        }
     
         // Apply the velocity and pitch factors independently
         float velocityContribution = velocityFactor * velocityFovFactor;
@@ -377,7 +383,6 @@ public class CameraManager : MonoBehaviour
         introCamera.Priority = _introCameraPriority;
 
         _currentCamera = cam;
-        // _freeLookCameraInput.enabled = cam == freeLookCamera;
         cam.Priority = 10;
         Cursor.lockState = enableCursor ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = enableCursor;

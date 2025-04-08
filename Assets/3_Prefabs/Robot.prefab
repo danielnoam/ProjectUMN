@@ -172,6 +172,62 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1721126804885228799
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4032388177357897875}
+  - component: {fileID: 4104844281109572341}
+  m_Layer: 0
+  m_Name: DissolverPosition
+  m_TagString: Untagged
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4032388177357897875
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721126804885228799}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.15, z: 1.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2166472278060442356}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4104844281109572341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721126804885228799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff58f8aee14c29248af5a69ce759f609, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  radius: 1
+  animateRadius: 1
+  animationSpeed: 1
+  minRadius: 1
+  maxRadius: 1.1
+  enableRaycastMovement: 1
+  movementSpeed: 15
+  maxRaycastDistance: 10
+  raycastLayers:
+    serializedVersion: 2
+    m_Bits: 67
+  targetRenderers: []
 --- !u!1 &2337091407459209569
 GameObject:
   m_ObjectHideFlags: 0
@@ -625,6 +681,7 @@ Transform:
   - {fileID: 4707711408890963151}
   - {fileID: 6631523453387643233}
   - {fileID: 5380237225979921613}
+  - {fileID: 4032388177357897875}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &7216424626492076193
@@ -858,6 +915,8 @@ MonoBehaviour:
   hoverSpeed: 1
   rotationStability: 4
   maxAngularVelocity: 3
+  sittingRotationStability: 10
+  sittingMaxAngularVelocity: 6
   rotationCurve:
     serializedVersion: 2
     m_Curve:
@@ -904,18 +963,26 @@ MonoBehaviour:
   maxEarBend: 45
   earRotationSmoothness: 0.2
   maxSpeedForEarRotation: 4
+  enableTeleportWhenStuck: 1
+  teleportAfterStuckTime: 5
+  maxFollowTeleportDistance: 10
+  minMovementSpeed: 1
   eye: {fileID: 7687609520431025120}
   eyeLight: {fileID: 6026187158545299600}
   eyeAreaLight: {fileID: 2702829901955178225}
   leftEarPivot: {fileID: 6631523453387643233}
   rightEarPivot: {fileID: 5380237225979921613}
-  rigidBody: {fileID: 7216424626492076193}
-  sphereCollider: {fileID: 3648063352551605096}
-  audioSource: {fileID: 7554109476326350533}
   sfxTurnOn: {fileID: 11400000, guid: 772b06472fee76447aa6411c893dc3d8, type: 2}
   sfxTurnOff: {fileID: 11400000, guid: 6d4d8a90168073f47be7610b26262e0f, type: 2}
+  sfxDeath: {fileID: 11400000, guid: 4539be226c814de46b9b800aa279cfdd, type: 2}
   sfxReceiveCommand: {fileID: 11400000, guid: c41535d2d7921a4469148d2cfa7891c8, type: 2}
   sfxImpact: {fileID: 11400000, guid: b3907550452511542a59c86f47711303, type: 2}
+  onRobotDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onRobotRespawn:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7300311048934344313
 GameObject:
   m_ObjectHideFlags: 0

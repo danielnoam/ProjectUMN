@@ -94,7 +94,7 @@ public class TestManager : MonoBehaviour
         
 
         PrimeTweenConfig.SetTweensCapacity(800);
-        QualitySettings.shadowResolution = ShadowResolution.Medium;
+        // QualitySettings.shadowResolution = ShadowResolution.Medium;
         
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _audioSource = GetComponent<AudioSource>();

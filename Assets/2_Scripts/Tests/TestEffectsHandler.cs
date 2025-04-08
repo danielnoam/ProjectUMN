@@ -4,12 +4,13 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using PrimeTween;
+using UnityEngine.Serialization;
 
 public class TestEffectsHandler : MonoBehaviour
 {
-
+    
     [Header("Settings")]
-    [SerializeField, Min(0.1f)] private float fadeInMultiplier = 0.7f;
+    [SerializeField, Min(0f)] private float introDurationEffectMultiplier = 0.7f;
     
     [Header("References")]
     [SerializeField] private Image fullscreenImage;
@@ -45,7 +46,7 @@ public class TestEffectsHandler : MonoBehaviour
     
     private void OnIntroSequenceStart()
     {
-        FadeScreen(_testManager.IntroSequenceDuration * fadeInMultiplier, true);
+        FadeScreen(_testManager.IntroSequenceDuration * introDurationEffectMultiplier, true);
     }
     
     

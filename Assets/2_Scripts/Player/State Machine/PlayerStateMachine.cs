@@ -1041,7 +1041,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         {
             InputHandler.ConsumeCommandRobotBuffer();
             
-            if (CurrentAimedInteractable)
+            if (CurrentAimedInteractable && !CurrentAimedInteractable.OnlyPlayerCanInteract)
             {
                 robot.CommandInteractWith(CurrentAimedInteractable);
                 return;
