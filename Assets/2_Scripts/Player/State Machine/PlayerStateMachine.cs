@@ -96,12 +96,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public Transform aimRayStartPosition;
     
 
-    [Header("Events")] 
+    [Foldout("Events")] 
     public UnityEvent onPlayerDeath = new UnityEvent();
     public UnityEvent onPlayerSpawned = new UnityEvent();
     public UnityEvent onPlayerSpawnedFromCheckpoint = new UnityEvent();
     public UnityEvent onPlayerOpenedMenu = new UnityEvent();
-    
+    [EndFoldout]
     
     public InteractorType InteractorType { get; } = InteractorType.Player;
     public CameraMode CurrentCameraMode => cameraMode;
@@ -110,6 +110,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float ActiveHorizontalVelocity { get; private set; }
     public float ActiveVerticalVelocity { get; set; }
     public Vector3 ActiveMoveDirection { get; private set; } = Vector3.zero;
+    public Vector3 LookAtPosition { get; private set; } = Vector3.zero;
     public bool IsGrounded { get; private set; }
     public bool CanStand { get; private set; }
     public bool IsAiming { get; private set; }
@@ -532,6 +533,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
         // Get ray direction from camera
         Vector3 rayDirection = cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0);
+        LookAtPosition = rayDirection;
 
         // Create a layer mask that includes both interactable objects AND environment/walls
         // This ensures we hit walls first if they're in the way

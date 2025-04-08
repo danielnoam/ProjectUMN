@@ -931,7 +931,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         // Determine target rotation based on the current state
         if (currentState == RobotState.FollowingPlayer)
         {
-            Vector3 directionToTarget = _player.IsAiming ? (_player.cameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f,0)).normalized 
+            Vector3 directionToTarget = _player.IsAiming ? (_player.LookAtPosition + new Vector3(0, -0.1f, 0)).normalized 
                 : (_player.transform.position + new Vector3(0,0.5f, 0) - transform.position).normalized;
             
             targetRotation = Quaternion.LookRotation(directionToTarget);

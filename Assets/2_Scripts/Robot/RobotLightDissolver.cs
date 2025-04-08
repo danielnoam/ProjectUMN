@@ -7,19 +7,18 @@ public class RobotLightDissolver : MonoBehaviour
 {
 
     [Header("Shape Settings")]
-    public float radius = 5.0f;
-    public bool animateRadius;
+    public float radius = 1.0f;
+    public bool animateRadius = true;
     public float animationSpeed = 1.0f;
-    public float minRadius;
-    public float maxRadius = 10.0f;
+    public float minRadius = 1;
+    public float maxRadius = 1.1f;
     
     
     [Header("Raycast Movement")]
     public bool enableRaycastMovement = true;
-    public float movementSpeed = 5.0f;
-    public float maxRaycastDistance = 20.0f;
+    public float movementSpeed = 15.0f;
+    public float maxRaycastDistance = 10.0f;
     public LayerMask raycastLayers;
-    
     
     
     [Header("Affected Renderers")]
