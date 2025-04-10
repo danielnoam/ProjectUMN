@@ -95,15 +95,24 @@ public class RobotLightDissolver : MonoBehaviour
         }
 
         // Handle raycast movement if enabled
-        if (enableRaycastMovement && _robot != null)
+        if (enableRaycastMovement && _robot)
         {
             HandleRaycastMovement();
         }
 
         // Move towards target position if needed
-        if (_isMoving)
+        if (_isMoving && _robot.PlayerIsAiming)
         {
             MoveTowardsTarget();
+        }
+        else
+        {
+            // move to the original position
+            transform.position = Vector3.MoveTowards(
+                transform.position, 
+                _robot.transform.position, 
+                movementSpeed * Time.deltaTime
+            );
         }
 
         // Update single interactor mode for specified renderers

@@ -187,6 +187,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     private float _stuckTimer = 0f;
     private bool _isCheckingStuck = false;
     
+    public bool PlayerIsAiming => _player && _player.IsAiming;
     public RobotState CurrentState => currentState;
     public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
     public Interactable CurrentInteractable { get; private set;}
