@@ -7,11 +7,11 @@ public class RobotLightDissolver : MonoBehaviour
 {
 
     [Header("Shape Settings")]
-    public float radius = 1.0f;
+    public float radius = 1.7f;
     public bool animateRadius = true;
     public float animationSpeed = 1.0f;
-    public float minRadius = 1;
-    public float maxRadius = 1.1f;
+    public float minRadius = 1.7f;
+    public float maxRadius = 1.75f;
     
     
     [Header("Raycast Movement")]
@@ -27,20 +27,24 @@ public class RobotLightDissolver : MonoBehaviour
     
 
     
+    private RobotCompanion _robot;
+    private Vector3 _targetPosition;
+    private bool _isMoving;
+    private bool MoveToTarget => _robot.PlayerIsAiming && _robot.IsOn() && _robot.CurrentState != RobotState.Sitting;
+    
+    
+    // Static variables for managing multiple interactors
     private const int MaxInteractors = 20;
     private static readonly List<RobotLightDissolver> ActiveInteractors = new List<RobotLightDissolver>();
     private readonly List<Renderer> _affectedRenderers = new List<Renderer>();
-    private bool _needsRefresh = true;
     private static readonly int PositionID = Shader.PropertyToID("_Position");
     private static readonly int RadiusID = Shader.PropertyToID("_Radius");
     private static readonly int ShapeTypeID = Shader.PropertyToID("_ShapeType");
     private static readonly int InteractorCountID = Shader.PropertyToID("_InteractorCount");
     private static readonly int InteractorPositionsID = Shader.PropertyToID("_ShaderInteractorsPositions");
     private static readonly int InteractorRadiusesID = Shader.PropertyToID("_ShaderInteractorsRadiuses");
-
-    private RobotCompanion _robot;
-    private Vector3 _targetPosition;
-    private bool _isMoving;
+    private bool _needsRefresh = true;
+    
 
     private void Awake()
     {
@@ -101,7 +105,7 @@ public class RobotLightDissolver : MonoBehaviour
         }
 
         // Move towards target position if needed
-        if (_isMoving && _robot.PlayerIsAiming)
+        if (_isMoving && MoveToTarget)
         {
             MoveTowardsTarget();
         }

@@ -19,6 +19,7 @@ public class StateChanger : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private bool cycleStates = true;
+    [SerializeField, Min(0)] private int startingStateIndex = 0;
     [SerializeField] private State[] states;
     
     
@@ -26,13 +27,17 @@ public class StateChanger : MonoBehaviour
     [SerializeField, ReadOnly] private string previousStateName;
     private State _currentState;
     private State _previousState;
-    
-    
+
+    private void OnValidate()
+    {
+        if (startingStateIndex >= states.Length) startingStateIndex = states.Length - 1;
+    }
+
     private void Start()
     {
         if (states.Length == 0) return;
 
-        ChangeState(states[0].name);
+        ChangeState(states[startingStateIndex].name);
     }
 
     private void Update()
