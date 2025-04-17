@@ -25,7 +25,12 @@ public class TestManager : MonoBehaviour
 
     [Header("Intro Sequence")] 
     [SerializeField, Min(0)] private float introSequenceDuration = 10f;
-    [SerializeField] private SOAudioEvent introTheme;
+    [SerializeField] private SOTest introTest;
+        
+    [Header("Credits Sequence")] 
+    [SerializeField, Min(0)] private float creditsSequenceDuration = 40f;
+    [SerializeField] private SOTest creditsTest;
+    [SerializeField] private SOAudioEvent robotSfx;
     [Space(10)]
     
     [SerializeField] private SOTest[] tests;
@@ -47,6 +52,8 @@ public class TestManager : MonoBehaviour
     [Foldout("Events")]
     public UnityEvent onIntroSequenceStart = new UnityEvent();
     public UnityEvent onIntroSequenceEnd = new UnityEvent();
+    public UnityEvent onCreditsSequenceStart = new UnityEvent();
+    public UnityEvent onCreditsSequenceEnd = new UnityEvent();
     public UnityEvent<SOTest> onTestStartLoading = new UnityEvent<SOTest>();
     public UnityEvent<SOTest> onTestLoaded = new UnityEvent<SOTest>();
     public UnityEvent<SOTest> onTestStartUnloading = new UnityEvent<SOTest>();
@@ -69,6 +76,9 @@ public class TestManager : MonoBehaviour
     public float IntroSequenceDuration => introSequenceDuration;
     public float IntroSequenceState => _introSequenceTime / introSequenceDuration;
     public bool IsIntroSequenceActive => _introSequenceTime > 0;
+    public float CreditsSequenceDuration => creditsSequenceDuration;
+    public float CreditsSequenceState => _creditsSequenceTime / creditsSequenceDuration;
+    public bool IsCreditsSequenceActive => _creditsSequenceTime > 0;
     
     
     private Coroutine _activeLoadCoroutine;
@@ -80,6 +90,7 @@ public class TestManager : MonoBehaviour
     private Renderer _testFloorRenderer;
     private GameObject _testFloorObject;
     private float _introSequenceTime;
+    private float _creditsSequenceTime;
     
     private void Awake()
     {
@@ -290,13 +301,18 @@ public class TestManager : MonoBehaviour
     {
         StartCoroutine(IntroSequenceCoroutine());
     }
-
+    
     private IEnumerator IntroSequenceCoroutine()
     {
+        if (currentTest) 
+        {
+            yield return UnLoadTest();
+        }
         
-        // RemoveCurrentTest();
+        yield return LoadTest(introTest);
+        
         _introSequenceTime = introSequenceDuration;
-        currentTheme = introTheme;
+        currentTheme = introTest.GetTheme();
         currentTheme?.Play(_audioSource);
         onIntroSequenceStart?.Invoke();
         
@@ -306,13 +322,58 @@ public class TestManager : MonoBehaviour
             yield return null; 
         }
         
-        
         onIntroSequenceEnd?.Invoke();
     }
 
     #endregion Intro Sequence ----------------------------------------------------------------------------
     
+        
+    #region Credits Sequence ----------------------------------------------------------------------------
     
+    [Button]
+    private void StartCreditsSequence()
+    {
+        StartCoroutine(CreditsSequenceCoroutine());
+    }
+    
+    private IEnumerator CreditsSequenceCoroutine()
+    {
+        bool playedSfx = false;
+        
+        if (currentTest) 
+        {
+            yield return UnLoadTest();
+        }
+        
+        StartCoroutine(LoadTest(creditsTest));
+        _creditsSequenceTime = creditsSequenceDuration;
+        currentTheme = creditsTest.GetTheme();
+        currentTheme?.Play(_audioSource);
+        onCreditsSequenceStart?.Invoke();
+        
+        
+        
+        while (_creditsSequenceTime > 0)
+        {
+            // Check if we've reached 80% of the sequence
+            if (_creditsSequenceTime <= creditsSequenceDuration * 0.2f && !playedSfx)
+            {
+                playedSfx = true;
+                robotSfx?.PlayAtPoint();
+            }
+        
+            _creditsSequenceTime -= Time.deltaTime;
+            yield return null; 
+        }
+        
+        onCreditsSequenceEnd?.Invoke();
+        StartIntroSequence();
+    }
+
+
+
+    #endregion Credits Sequence ----------------------------------------------------------------------------
+
     
     #region Private methods ----------------------------------------------------------------------------
     
@@ -352,7 +413,7 @@ public class TestManager : MonoBehaviour
             else
             {
                 // Start a new load operation
-                _activeLoadCoroutine = StartCoroutine(LoadTest(testIndex, false));
+                _activeLoadCoroutine = StartCoroutine(LoadTest(tests[testIndex], false));
                 yield return _activeLoadCoroutine;
             }
         }
@@ -366,7 +427,7 @@ public class TestManager : MonoBehaviour
             else
             {
                 // Start a new load operation
-                _activeLoadCoroutine = StartCoroutine(LoadTest(testIndex, false));
+                _activeLoadCoroutine = StartCoroutine(LoadTest(tests[testIndex], false));
                 yield return _activeLoadCoroutine;
             }
         }
@@ -375,33 +436,54 @@ public class TestManager : MonoBehaviour
         _activeSequenceCoroutine = null;
     }
     
-    private IEnumerator LoadTest(int testIndex, bool isStandaloneCall = true)
+
+    private IEnumerator LoadTest(SOTest testIndex, bool isStandaloneCall = true)
     {
-        if (tests.Length <= 0 || testIndex >= tests.Length)
+        if (testIndex == null)
         {
             if (isStandaloneCall) _activeLoadCoroutine = null;
             yield break;
         }
         
-        Debug.Log("Loading... " + tests[testIndex].GetName());
+        Debug.Log("Loading... " + testIndex.Name);
         
-        currentTest = tests[testIndex];
+        currentTest = testIndex;
         currentTheme = currentTest.GetTheme();
         ApplyLightSettings(currentTest.GetLightSettings());
         if (_testFloorRenderer) _testFloorRenderer.material = new Material(currentTest.GetFloorMaterial()); 
         currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0), quaternion.identity); // a bit of offset for the intersection effect
-        currentEnvironment.name = currentTest.GetName() + " Environment";
-        if (currentTest.HasRobot()) // The new test has a robot in it
+        currentEnvironment.name = currentTest.Name + " Environment";
+
+        if (currentTest.NeedsPlayer)
+        {
+            if (!currentPlayer) currentPlayer = Instantiate(playerPrefab, currentTest.GetPlayerSpawnPoint(), quaternion.identity);
+        }
+        else
+        {
+            if (currentPlayer) Destroy(currentPlayer.gameObject);
+            currentPlayer = null;
+        }
+        
+        if (currentTest.NeedsRobot)
+        {
+            if (currentTest.HasRobot()) // The new test has a robot in it
+            {
+                if (currentRobot) Destroy(currentRobot.gameObject);
+                currentRobot = null;
+                currentRobot = FindFirstObjectByType<RobotCompanion>();
+            
+            } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
+            {
+                currentRobot = Instantiate(robotPrefab, currentTest.GetRobotSpawnPoint(), quaternion.identity);
+                currentRobot.TurnOn();
+            }
+        }
+        else
         {
             if (currentRobot) Destroy(currentRobot.gameObject);
             currentRobot = null;
-            currentRobot = FindFirstObjectByType<RobotCompanion>();
-            
-        } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
-        {
-            currentRobot = Instantiate(robotPrefab, currentTest.GetRobotSpawnPoint(), quaternion.identity);
-            currentRobot.TurnOn();
         }
+
         onTestStartLoading?.Invoke(currentTest);
         
         // Play scale-up animation 
@@ -427,7 +509,8 @@ public class TestManager : MonoBehaviour
         currentTheme?.Play(_audioSource);
         _activeLoadCoroutine = null;
         onTestLoaded?.Invoke(currentTest);
-        Debug.Log("Loaded " + currentTest.GetName());
+        Debug.Log("Loaded " + currentTest.Name);
+        
     }
     
     
@@ -442,7 +525,7 @@ public class TestManager : MonoBehaviour
         
         
         SOTest test = currentTest;
-        Debug.Log("Unloading... " + test.GetName());
+        Debug.Log("Unloading... " + test.Name);
         onTestStartUnloading?.Invoke(test);
         StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
         
@@ -474,7 +557,7 @@ public class TestManager : MonoBehaviour
         if (_testFloorRenderer) _testFloorRenderer.material = new Material(defaultEnvironmentSettings.floorMaterial);
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
-        Debug.Log("Unloaded " + test.GetName());
+        Debug.Log("Unloaded " + test.Name);
     }
     
     #endregion Private methods ----------------------------------------------------------------------------

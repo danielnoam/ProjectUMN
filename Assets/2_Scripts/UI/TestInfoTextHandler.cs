@@ -64,14 +64,24 @@ public class TestInfoTextHandler : MonoBehaviour
     
     private void OnTestLoaded(SOTest test)
     {
-        string prfix = "";
-        string suffix = "";
+
         
-        
-        testNameText.text = $"{prfix}{test.GetName()}{suffix}";
-        testDescriptionText.text = $"{prfix}{test.GetDescription()}{suffix}";
-        musicNameText.text = $"{prfix}'{test.GetTheme().aoName}'{suffix}";
-        musicAuthorText.text = $"{prfix}By {test.GetTheme().aoAuthor}{suffix}";
+        if (test.ShowTestInfo)
+        {
+            string prfix = "";
+            string suffix = "";
+            testNameText.text = $"{prfix}{test.Name}{suffix}";
+            testDescriptionText.text = $"{prfix}{test.Description}{suffix}";
+            musicNameText.text = $"{prfix}'{test.GetTheme().aoName}'{suffix}";
+            musicAuthorText.text = $"{prfix}By {test.GetTheme().aoAuthor}{suffix}";
+        }
+        else
+        {
+            testNameText.text = "";
+            testDescriptionText.text = "";
+            musicNameText.text = "";
+            musicAuthorText.text = "";
+        }
     }
     
     private void OnTestStartUnloading(SOTest test)

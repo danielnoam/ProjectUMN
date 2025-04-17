@@ -31,8 +31,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
     [SerializeField] private bool findAllMeshesInScene = true;
     [SerializeField] private List<GameObject> additionalObjectsToAnimate = new List<GameObject>();
     [SerializeField] private List<GameObject> excludedObjects = new List<GameObject>();
-    [SerializeField] private bool excludePlayer = true;
-    [SerializeField] private bool excludeRobot = false;
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -123,7 +121,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         // Direct match in excluded objects list
         if (excludedObjects.Contains(obj))
             return true;
-            
+                
         // Always check if object is a child of any excluded object (recursively)
         foreach (GameObject excludedObj in excludedObjects)
         {
@@ -135,7 +133,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         }
         
         // Check for Player exclusion
-        if (excludePlayer && _testManager && _testManager.Player)
+        if (true && _testManager != null && _testManager.Player != null)
         {
             // Check if the object is the player or a child of the player
             GameObject playerObject = _testManager.Player.gameObject;
@@ -144,15 +142,27 @@ public class TestEnvironmentAnimator : MonoBehaviour
         }
         
         // Check for Robot exclusion
-        if ( excludeRobot || _testManager &&  (_testManager.CurrentTest && !_testManager.CurrentTest.HasRobot() || _testManager.Robot  && _testManager.Robot.CurrentState == RobotState.Dead ))
+        if (_testManager != null)
         {
-            // Check if the object is the robot or a child of the robot
-            GameObject robotObject = _testManager.Robot.gameObject;
-            if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
-                return true;
+            bool shouldExcludeRobot = false;
+            
+            // Check conditions for robot exclusion
+            if (_testManager.CurrentTest != null && !_testManager.CurrentTest.HasRobot())
+                shouldExcludeRobot = true;
+            else if (_testManager.Robot != null && _testManager.Robot.CurrentState == RobotState.Dead)
+                shouldExcludeRobot = true;
+                
+            if (shouldExcludeRobot && _testManager.Robot != null)
+            {
+                // Check if the object is the robot or a child of the robot
+                GameObject robotObject = _testManager.Robot.gameObject;
+                if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
+                    return true;
+            }
         }
         
-        if (_testManager && _testManager.FloorObject)
+        // Check for Floor exclusion
+        if (_testManager != null && _testManager.FloorObject != null)
         {
             // Check if the object is the floor or a child of the floor
             GameObject floorObject = _testManager.FloorObject.gameObject;
@@ -162,7 +172,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
         
         return false;
     }
-
     // Helper method to check if a transform is a child of another transform (recursive)
     private bool IsChildOf(Transform child, Transform parent)
     {

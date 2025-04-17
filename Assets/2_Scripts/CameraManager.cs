@@ -36,6 +36,7 @@ public class CameraManager : MonoBehaviour
     public CinemachineCamera menuCamera;
     public CinemachineCamera startMenuCamera;
     public CinemachineCamera introCamera;
+    public CinemachineCamera creditsCamera;
     public GameObject aimCore;
     public Transform targetTransform;
 
@@ -61,7 +62,8 @@ public class CameraManager : MonoBehaviour
     private int _aimCameraPriority;
     private int _menuCameraPriority;
     private int _startMenuCameraPriority;
-    private int _introCameraPriority;
+    private int _introCameraPriority;  
+    private int _creditsCameraPriority;
     
 
     private void Awake()
@@ -90,6 +92,7 @@ public class CameraManager : MonoBehaviour
         _menuCameraPriority = menuCamera.Priority;
         _startMenuCameraPriority = startMenuCamera.Priority;
         _introCameraPriority = introCamera.Priority;
+        _creditsCameraPriority = creditsCamera.Priority;
         _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
@@ -100,24 +103,32 @@ public class CameraManager : MonoBehaviour
     private void OnEnable()
     {
         TestManager.Instance?.onIntroSequenceStart.AddListener(StartIntroSequenceCamera);
+        TestManager.Instance?.onCreditsSequenceStart.AddListener(StartCreditsCamera);
     }
 
     private void OnDisable()
     {
         TestManager.Instance?.onIntroSequenceStart.RemoveListener(StartIntroSequenceCamera);
+        TestManager.Instance?.onCreditsSequenceStart.RemoveListener(StartCreditsCamera);
     }
 
     private void Update()
     {
         if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
         {
-            float introState = TestManager.Instance.IntroSequenceState;
-            float easedPosition = introSequenceCameraCurve.Evaluate(1f - introState);
+            float easedPosition = introSequenceCameraCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
             _introCameraDolly.CameraPosition = easedPosition;
     
-            if (introState <= 0f)
+            if (!TestManager.Instance.IsIntroSequenceActive)
             {
                 SwitchToCamera(startMenuCamera, true);
+            }
+        }
+        else if (TestManager.Instance && TestManager.Instance.IsCreditsSequenceActive)
+        {
+            if (!TestManager.Instance.IsCreditsSequenceActive)
+            {
+                SwitchToCamera(freeLookCamera, true);
             }
         }
         else
@@ -338,6 +349,8 @@ public class CameraManager : MonoBehaviour
 
     private void HandleCameraSwitching()
     {
+        if (!_player) return;
+        
         if (IsMenuActive)
         {
             if (!IsMenuCameraActive() && _player.InMenuState.CurrentPage != _player.InMenuState.StartPage)
@@ -393,6 +406,11 @@ public class CameraManager : MonoBehaviour
     {
         _introCameraDolly.CameraPosition = 0;
         SwitchToCamera(introCamera, false);
+    }
+    
+    private void StartCreditsCamera()
+    {
+        SwitchToCamera(creditsCamera, false);
     }
     
     

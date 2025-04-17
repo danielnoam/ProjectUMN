@@ -40,6 +40,9 @@ public class SOTest : ScriptableObject
     [SerializeField, Multiline(1)] private string description = "This is a test";
     [SerializeField, Min(0)] private int timeToLoad = 1;
     [SerializeField, Min(0)] private int timeToUnload = 1;
+    [SerializeField] private bool needsPlayer = true;
+    [SerializeField] private bool needsRobot = true;
+    [SerializeField] private bool showTestInfo = true;
     
     [Header("Audio")]
     [SerializeField] private SOAudioEvent theme;
@@ -49,18 +52,13 @@ public class SOTest : ScriptableObject
     [SerializeField] private TestLightSettings lightSettings;
 
     
+    public string Name => name;
+    public string Description => description;
+    public bool NeedsPlayer => needsPlayer;
+    public bool NeedsRobot => needsRobot;
+    public bool ShowTestInfo => showTestInfo;
     
     
-    
-    public string GetName()
-    {
-        return name;
-    }
-    
-    public string GetDescription()
-    {
-        return description;
-    }
     
     public int GetTimeToLoad()
     {

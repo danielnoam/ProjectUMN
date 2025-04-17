@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -14,6 +15,10 @@ public class CreditsText : MonoBehaviour
     [SerializeField, Min(0)] private float categorySpacing = 1f;
     [SerializeField] private Vector3 scrollDirection = Vector3.up;
     [SerializeField] private Vector3 startingOffset = Vector3.down; 
+    
+    [Header("Duration")]
+    [SerializeField] private bool useDurationMode = false;
+    [SerializeField] private float creditsDuration = 60f;
     
     [Header("Loop")]
     [SerializeField] private bool loopCredits;
@@ -41,7 +46,27 @@ public class CreditsText : MonoBehaviour
     private bool _useScrollSpeedMultiplier;
     private Vector3 _normalizedDirection;
     private Coroutine _loopCoroutine;
+    public float CurrentCreditsDuration
+    {
+        get
+        {
+            float distance = CalculateTotalScrollDistance();
+            if (scrollSpeed <= 0f) return 0f;
+            return distance / scrollSpeed;
+        }
+    }
+
+
+    private void OnEnable()
+    {
+        TestManager.Instance?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+    }
     
+    private void OnDisable()
+    {
+        TestManager.Instance?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+    }
+
     private void Start()
     {
         if (!creditsTextPrefab || !creditsHeaderPrefab || credits.Length == 0)
@@ -54,7 +79,48 @@ public class CreditsText : MonoBehaviour
         _normalizedDirection = scrollDirection.normalized;
         
         // Create all credit text objects
-        if (autoStart) CreateCreditsText();
+        if (autoStart)
+        {
+            CreateCreditsText();
+            
+            // If using duration mode, adjust the scroll speed
+            if (useDurationMode && creditsDuration > 0f)
+            {
+                AdjustSpeedForDuration(creditsDuration);
+            }
+        }
+    }
+    
+    private void Update()
+    {
+        if (_isPaused) return;
+        
+        MoveCredits();
+        ApplyFadeEffect();
+        
+        // Check if we need to loop
+        if (loopCredits && _creditTexts.Count > 0)
+        {
+            CheckForLooping();
+        }
+    }
+    
+    private void OnCreditsSequenceStart()
+    {
+        // Set duration mode to true
+        useDurationMode = true;
+    
+        // Restart the credits
+        CreateCreditsText();
+    
+        // Use the duration from TestManager, not the local creditsDuration
+        if (useDurationMode && TestManager.Instance.CreditsSequenceDuration > 0f)
+        {
+            AdjustSpeedForDuration(TestManager.Instance.CreditsSequenceDuration);
+        }
+    
+        // Ensure credits are playing
+        _isPaused = false;
     }
     
     private void CreateCreditsText()
@@ -207,19 +273,7 @@ public class CreditsText : MonoBehaviour
         _creditTexts.Add(gameByText);
     }
     
-    private void Update()
-    {
-        if (_isPaused) return;
-        
-        MoveCredits();
-        ApplyFadeEffect();
-        
-        // Check if we need to loop
-        if (loopCredits && _creditTexts.Count > 0)
-        {
-            CheckForLooping();
-        }
-    }
+
     
     private void CheckForLooping()
     {
@@ -308,6 +362,77 @@ public class CreditsText : MonoBehaviour
         }
     }
     
+    // Calculate the total distance the credits need to travel
+    private float CalculateTotalScrollDistance()
+    {
+        if (_creditTexts.Count == 0)
+        {
+            return 0f;
+        }
+        
+        // Get first and last credit positions
+        Vector3 firstPosition = _creditTexts[0].transform.position;
+        Vector3 lastPosition = _creditTexts[^1].transform.position;
+        
+        // Add the height of the last credit to ensure it scrolls completely off-screen
+        if (_creditTexts[^1].TryGetComponent<RectTransform>(out RectTransform lastRect))
+        {
+            lastPosition += _normalizedDirection * lastRect.rect.height;
+        }
+        
+        // Calculate the position where the last credit should end (the center position plus max fade distance)
+        Vector3 endPosition = transform.position + (_normalizedDirection * maxFadeDistance);
+        
+        // Calculate total distance: from first credit to the point where last credit is fully offscreen
+        float totalDistance = Vector3.Distance(firstPosition, endPosition) + 
+                              Vector3.Distance(lastPosition, firstPosition);
+        
+        return totalDistance;
+    }
+    
+    // Adjust the scroll speed based on the desired duration
+    private void AdjustSpeedForDuration(float durationInSeconds)
+    {
+        if (durationInSeconds <= 0f)
+        {
+            Debug.LogError("Duration must be greater than zero!");
+            return;
+        }
+        
+        float totalDistance = CalculateTotalScrollDistance();
+        
+        // Calculate the required speed based on the distance and duration
+        float requiredSpeed = totalDistance / durationInSeconds;
+        
+        // Set the scroll speed
+        scrollSpeed = requiredSpeed;
+        
+        // Ensure speed multiplier is disabled
+        _useScrollSpeedMultiplier = false;
+    }
+    
+    [Button]
+    public void PlayCreditsWithDuration(float durationInSeconds)
+    {
+        if (durationInSeconds <= 0f)
+        {
+            Debug.LogError("Duration must be greater than zero!");
+            return;
+        }
+        
+        // Make sure credits are created and positioned
+        if (_creditTexts.Count == 0)
+        {
+            CreateCreditsText();
+        }
+        
+        // Adjust the speed for the specified duration
+        AdjustSpeedForDuration(durationInSeconds);
+        
+        // Make sure credits are playing
+        _isPaused = false;
+    }
+    
     [Button]
     public void RestartCredits()
     {
@@ -321,6 +446,12 @@ public class CreditsText : MonoBehaviour
         // Reset all credits to initial positions
         CreateCreditsText();
         
+        // If using duration mode, adjust the scroll speed
+        if (useDurationMode && creditsDuration > 0f)
+        {
+            AdjustSpeedForDuration(creditsDuration);
+        }
+        
         // Ensure credits are playing
         _isPaused = false;
     }
@@ -331,11 +462,21 @@ public class CreditsText : MonoBehaviour
         _isPaused = !_isPaused;
     }
     
-    
     [Button]
     public void ToggleScrollSpeedMultiplier()
     {
         _useScrollSpeedMultiplier = !_useScrollSpeedMultiplier;
+    }
+    
+    [Button]
+    public void ToggleDurationMode()
+    {
+        useDurationMode = !useDurationMode;
+        
+        if (useDurationMode && creditsDuration > 0f)
+        {
+            AdjustSpeedForDuration(creditsDuration);
+        }
     }
     
     [Button]
@@ -387,6 +528,13 @@ public class CreditsText : MonoBehaviour
             DrawLabel(center + new Vector3(0, resetDistance, 0), "Reset Distance");
         }
         DrawLabel(center + startingOffset, "Start Position");
+        
+        // Draw current duration information if using duration mode
+        if (useDurationMode)
+        {
+            string durationInfo = $"Duration: {CurrentCreditsDuration:F1}s";
+            DrawLabel(center + new Vector3(0, -2, 0), durationInfo);
+        }
     }
     
     private void DrawCircle(Vector3 center, float radius, int segments)

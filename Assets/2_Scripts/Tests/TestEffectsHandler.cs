@@ -11,6 +11,7 @@ public class TestEffectsHandler : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField, Min(0f)] private float introDurationEffectMultiplier = 0.7f;
+    [SerializeField, Min(0f)] private float creditsDurationEffectMultiplier = 0.7f;
     
     [Header("References")]
     [SerializeField] private Image fullscreenImage;
@@ -36,22 +37,17 @@ public class TestEffectsHandler : MonoBehaviour
     private void OnEnable()
     {
         _testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        _testManager?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
     }
 
     private void OnDisable()
     {
         _testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        _testManager?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
         _fadeSequence.Stop();
     }
     
     private void OnIntroSequenceStart()
-    {
-        FadeScreen(_testManager.IntroSequenceDuration * introDurationEffectMultiplier, true);
-    }
-    
-    
-    
-    public void FadeScreen(float time, bool fadeIn)
     {
         if (_fadeSequence.isAlive) 
         {
@@ -59,23 +55,41 @@ public class TestEffectsHandler : MonoBehaviour
         }
         
         
-        _fadeSequence = Sequence.Create();
+        
 
         _chromaticAberration.active = true;
         _chromaticAberration.intensity.overrideState = true;
-        float startValue = fadeIn ? 1 : 0;
-        float endValue = fadeIn ? 0 : 1;
+        float time = _testManager.IntroSequenceDuration * introDurationEffectMultiplier;
+        float startValue = 1;
+        float endValue = 0;
 
+        _fadeSequence = Sequence.Create();
         _fadeSequence = _fadeSequence
-            .Group(Tween.Alpha(fullscreenImage, startValue, endValue, duration: time / 2f))
-            .Group(Tween.Custom(startValue, endValue,  duration: time / 1.5f, onValueChange: val => _vignette.intensity.value = val))
-            .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
-            .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
-
-
-
+                .Group(Tween.Alpha(fullscreenImage, startValue, endValue, duration: time / 2f))
+                .Group(Tween.Custom(startValue, endValue,  duration: time / 1.5f, onValueChange: val => _vignette.intensity.value = val))
+                .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
+                .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
             ;
     }
     
+    private void OnCreditsSequenceStart()
+    {
+        
+        if (_fadeSequence.isAlive) 
+        {
+            _fadeSequence.Stop();
+        }
+        
+        _chromaticAberration.active = true;
+        _chromaticAberration.intensity.overrideState = true;
+        float time = _testManager.CreditsSequenceDuration * creditsDurationEffectMultiplier;
+
+        _fadeSequence = Sequence.Create();
+        _fadeSequence = _fadeSequence
+                .Group(Tween.Custom(0, 0.3f,  duration: time, onValueChange: val => _vignette.intensity.value = val))
+            ;
+    }
+    
+
 
 }
