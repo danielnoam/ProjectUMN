@@ -33,15 +33,18 @@ namespace SingularityGroup.HotReload {
         public readonly List<SMethod> patchedSMethods = new List<SMethod>();
         public bool inspectorModified;
         public readonly List<Tuple<SMethod, string>> patchFailures = new List<Tuple<SMethod, string>>();
+        public readonly List<string> patchExceptions = new List<string>();
     }
 
     class FieldHandler {
-        public readonly Action<Type, string, Type> storeField;
+        public readonly Action<Type, FieldInfo> storeField;
+        public readonly Action<Type, FieldInfo, FieldInfo> registerInspectorFieldAttributes;
         public readonly Func<Type, string, bool> hideField;
 
-        public FieldHandler(Action<Type, string, Type> storeField, Func<Type, string, bool> hideField) {
+        public FieldHandler(Action<Type, FieldInfo> storeField, Func<Type, string, bool> hideField, Action<Type, FieldInfo, FieldInfo> registerInspectorFieldAttributes) {
             this.storeField = storeField;
             this.hideField = hideField;
+            this.registerInspectorFieldAttributes = registerInspectorFieldAttributes;
         }
     }
     
@@ -142,6 +145,9 @@ namespace SingularityGroup.HotReload {
                     RegisterNewFieldInitializers(response);
                     HandleReshapedFields(response);
                     RemoveOldFieldInitializers(response);
+#if UNITY_EDITOR
+                    RegisterInspectorFieldAttributes(result, response);
+#endif
 
                     HandleMethodPatchResponse(response, result);
                     patchHistory.Add(response);
@@ -223,7 +229,7 @@ namespace SingularityGroup.HotReload {
                         { StatKey.PatchId, patch.patchId },
                         { StatKey.Detailed_Exception, ex.ToString() },
                     }).Forget();
-                    Log.Warning("Failed to apply patch with id: {0}\n{1}", patch.patchId, ex);
+                    result.patchExceptions.Add($"Edit requires full recompile to apply: Encountered exception when applying a patch.\nCommon causes: editing code that failed to patch previously, an unsupported change, or a real bug in Hot Reload.\nIf you think this is a bug, please report the issue on Discord and include a code-snippet before/after.\nException: {ex}");
                 }
             }
         }
@@ -300,6 +306,7 @@ namespace SingularityGroup.HotReload {
                 } catch (Exception e) {
                     RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.UnregisterFieldInitializer), new EditorExtraData {
                         { StatKey.PatchId, resp.id },
+                        { StatKey.Detailed_Exception, e.ToString() },
                     }).Forget();
                     Log.Warning($"Failed removing initializer for field {sField.fieldName} in {sField.declaringType.typeName}. Field value might not be initialized correctly. Exception: {e.Message}");
                 }
@@ -322,6 +329,7 @@ namespace SingularityGroup.HotReload {
                     } catch (Exception e) {
                         RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.ClearHolders), new EditorExtraData {
                             { StatKey.PatchId, resp.id },
+                            { StatKey.Detailed_Exception, e.ToString() },
                         }).Forget();
                         Log.Warning($"Failed removing field value from {f.fieldName} in {f.declaringType.typeName}. Field value in code might not be up to date. Exception: {e.Message}");
                     }
@@ -344,6 +352,7 @@ namespace SingularityGroup.HotReload {
                     } catch (Exception e) {
                         RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.MoveHolders), new EditorExtraData {
                             { StatKey.PatchId, resp.id },
+                            { StatKey.Detailed_Exception, e.ToString() },
                         }).Forget();
                         Log.Warning($"Failed moving field value from {fromField} to {toField} in {toField.declaringType.typeName}. Field value in code might not be up to date. Exception: {e.Message}");
                     }
@@ -371,26 +380,47 @@ namespace SingularityGroup.HotReload {
         }
 
 #if UNITY_EDITOR
+        internal void RegisterInspectorFieldAttributes(RegisterPatchesResult result, MethodPatchResponse resp) {
+            foreach (var patch in resp.patches) {
+                var propertyAttributesFieldOriginal = patch.propertyAttributesFieldOriginal ?? Array.Empty<SField>();
+                var propertyAttributesFieldUpdated = patch.propertyAttributesFieldUpdated ?? Array.Empty<SField>();
+                for (var i = 0; i < propertyAttributesFieldOriginal.Length; i++) {
+                    var original = propertyAttributesFieldOriginal[i];
+                    var updated = propertyAttributesFieldUpdated[i];
+                    try {
+                        var declaringType = SymbolResolver.Resolve(original.declaringType);
+                        var originalField = SymbolResolver.Resolve(original);
+                        var updatedField = SymbolResolver.Resolve(updated);
+                        fieldHandler?.registerInspectorFieldAttributes?.Invoke(declaringType, originalField, updatedField);
+                        result.inspectorModified = true;
+                    } catch (Exception e) {
+                        RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.MoveHolders), new EditorExtraData {
+                            { StatKey.PatchId, resp.id },
+                            { StatKey.Detailed_Exception, e.ToString() },
+                        }).Forget();
+                        Log.Warning($"Failed updating field attributes of {original.fieldName} in {original.declaringType.typeName}. Updates might not reflect in the inspector. Exception: {e.Message}");
+                    }
+                }
+            }
+        }
+        
         internal void HandleNewFields(string patchId, RegisterPatchesResult result, SField[] sFields) {
-            bool fieldDrawerAdded = false;
             foreach (var sField in sFields) {
                 if (!sField.serializable) {
                     continue;
                 }
                 try {
                     var declaringType = SymbolResolver.Resolve(sField.declaringType);
-                    var fieldType = SymbolResolver.Resolve(sField).FieldType;
-                    fieldDrawerAdded = true;
-                    fieldHandler?.storeField?.Invoke(declaringType, sField.fieldName, fieldType);
+                    var field = SymbolResolver.Resolve(sField);
+                    fieldHandler?.storeField?.Invoke(declaringType, field);
+                    result.inspectorModified = true;
                 } catch (Exception e) {
                     RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.AddInspectorField), new EditorExtraData {
                         { StatKey.PatchId, patchId },
+                        { StatKey.Detailed_Exception, e.ToString() },
                     }).Forget();
                     Log.Warning($"Failed adding field {sField.fieldName}:{sField.declaringType.typeName} to the inspector. Field will not be displayed. Exception: {e.Message}");
                 }
-            }
-            if (fieldDrawerAdded) {
-                result.inspectorModified = true;
             }
             result.addedFields.AddRange(sFields);
         }
@@ -410,6 +440,7 @@ namespace SingularityGroup.HotReload {
                 } catch(Exception e) {
                     RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.HideInspectorField), new EditorExtraData {
                         { StatKey.PatchId, patchId },
+                        { StatKey.Detailed_Exception, e.ToString() },
                     }).Forget();
                     Log.Warning($"Failed hiding field {sField.fieldName}:{sField.declaringType.typeName} from the inspector. Exception: {e.Message}");
                 }
@@ -435,8 +466,7 @@ namespace SingularityGroup.HotReload {
                 }
 
                 if(state.match == null) {
-                    var error = "Method mismatch: {0}, patch: {1}. This can indicate a bug in Hot Reload. Please send us a reproduce (code before/after), and we'll get it fixed for you";
-                    Log.Warning(error, sOriginalMethod.simpleName, patchMethod.Name);
+                    var error = "Edit requires full recompile to apply: Method mismatch: {0}, patch: {1}. \nCommon causes: editing code that failed to patch previously, an unsupported change, or a real bug in Hot Reload.\nIf you think this is a bug, please report the issue on Discord and include a code-snippet before/after.";
                     RequestHelper.RequestEditorEventWithRetry(new Stat(StatSource.Client, StatLevel.Error, StatFeature.Patching, StatEventType.MethodMismatch), new EditorExtraData {
                         { StatKey.PatchId, patchId },
                     }).Forget();
@@ -579,11 +609,7 @@ namespace SingularityGroup.HotReload {
         }
     
         string HandleMethodPatchFailure(SMethod method, Exception exception) {
-            var err = $"Failed to apply patch for method {method.displayName} in assembly {method.assemblyName}\n{exception}"
-                + $"\n\n{method.assemblyName}\n{method.displayName}";
-
-            Log.Warning(err);
-            return err;
+            return $"Edit requires full recompile to apply: Failed to apply patch for method {method.displayName} in assembly {method.assemblyName}.\nCommon causes: editing code that failed to patch previously, an unsupported change, or a real bug in Hot Reload.\nIf you think this is a bug, please report the issue on Discord and include a code-snippet before/after.\nException: {exception}";
         }
 
         void EnsureSymbolResolver() {

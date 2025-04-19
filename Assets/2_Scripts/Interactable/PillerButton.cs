@@ -13,7 +13,7 @@ public class PillerButton : MonoBehaviour
     [Header("Button Feedback")]
     [SerializeField] private Transform buttonTransform;     
     [SerializeField] private SOAudioEvent sfxButtonPress;
-    [SerializeField, Min(0.1f)] private float buttonAnimationHeight = 0.1f;            
+    [SerializeField] private float buttonAnimationHeight = 0.1f;            
     [SerializeField] private float buttonAnimationSpeed = 5f;
     [SerializeField] private float autoReleaseDelay = 0.5f;
     
