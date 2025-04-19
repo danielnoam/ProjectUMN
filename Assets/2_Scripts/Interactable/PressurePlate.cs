@@ -14,7 +14,7 @@ public class PressurePlate : MonoBehaviour
     
     [Header("Pressure Plate Visuals")]
     [SerializeField] private Transform plateTransform;            
-    [SerializeField, Min(0.1f)] private float plateAnimationHeight = 0.1f;            
+    [SerializeField] private float plateAnimationHeight = 0.1f;            
     [SerializeField] private float plateAnimationSpeed = 5f;
     
     [Header("Pressure Plate Events")]
