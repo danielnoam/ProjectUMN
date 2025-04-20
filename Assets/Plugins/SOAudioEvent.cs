@@ -17,8 +17,8 @@ public class SOAudioEvent : ScriptableObject
     public AudioMixerGroup mixerGroup;
     [MinMaxRange(0f, 1f)] public RangedFloat volume = 1f;
     [MinMaxRange(-3f, 3f)] public RangedFloat pitch = 1f;
-    [Range(-1f, 1f)] public float stereoPan = 0f;
-    [Range(0f, 1f)] public float spatialBlend = 0f; 
+    [Range(-1f, 1f), Tooltip("Left,Right")] public float stereoPan = 0f;
+    [Range(0f, 1f), Tooltip("2D,3D")] public float spatialBlend = 0f; 
     [Range(0f, 1.1f)] public float reverbZoneMix = 1f;
     public bool bypassEffects;
     public bool bypassListenerEffects;

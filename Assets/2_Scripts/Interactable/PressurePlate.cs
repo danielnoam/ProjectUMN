@@ -4,20 +4,23 @@ using System.Collections.Generic;
 using UnityEngine.Serialization;
 
 [SelectionBase]
+[RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(Interactable))]
 public class PressurePlate : MonoBehaviour
 {
-    [Header("Pressure Plate Settings")]
+    [Header("Settings")]
     [SerializeField] private Vector3 checkBoxOffset = new Vector3(0f, 0f, 0f);
     [SerializeField] private Vector3 checkBoxSize = new Vector3(1f, 0.5f, 1f);
     [SerializeField] private LayerMask interactableLayer;
     
-    [Header("Pressure Plate Visuals")]
+    [Header("Feedback")]
     [SerializeField] private Transform plateTransform;            
     [SerializeField] private float plateAnimationHeight = 0.1f;            
-    [SerializeField] private float plateAnimationSpeed = 5f;
+    [SerializeField] private float plateAnimationSpeed = 8f;
+    [SerializeField] private SOAudioEvent sfxPlatePress;
+    [SerializeField] private SOAudioEvent sfxPlateRelease;
     
-    [Header("Pressure Plate Events")]
+    [Header("Events")]
     [SerializeField] private UnityEvent onPlateActivated;           
     [SerializeField] private UnityEvent onPlateDeactivated;         
     
@@ -26,11 +29,13 @@ public class PressurePlate : MonoBehaviour
     private bool _isActivated = false;                            
     private readonly HashSet<GameObject> _objectsOnPlate = new HashSet<GameObject>(); 
     private Interactable _interactable;
+    private AudioSource _audioSource;
     
     private void Awake()
     {
         // Get the Interactable component
         _interactable = GetComponent<Interactable>();
+        _audioSource = GetComponent<AudioSource>();
         
         // Find the moving plate part (first child by default)
         if (!plateTransform)
@@ -109,6 +114,7 @@ public class PressurePlate : MonoBehaviour
         if (_isActivated) return;
 
         _isActivated = true;
+        sfxPlatePress?.Play(_audioSource);
         onPlateActivated?.Invoke();
     }
     
@@ -117,6 +123,7 @@ public class PressurePlate : MonoBehaviour
         if (!_isActivated) return;
 
         _isActivated = false;
+        sfxPlateRelease?.Play(_audioSource);
         onPlateDeactivated?.Invoke();
     }
 
