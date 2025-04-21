@@ -7,6 +7,7 @@ using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 [SelectionBase]
+[RequireComponent(typeof(AudioSource))]
 public class SlidingDoor : MonoBehaviour
 {
 
@@ -17,7 +18,9 @@ public class SlidingDoor : MonoBehaviour
     [SerializeField ,Min(1),ShowIf("usePowerSystem")] private float powerSourcesNeeded = 1;
     [EndIf]
     
-    [Header("Animation")]
+    [Header("Feedback")]
+    [SerializeField] private SOAudioEvent sfxDoorMoving;
+    [SerializeField] private SOAudioEvent sfxDoorFinishedMoving;
     [SerializeField] private float animationTime = 0.4f;
     [SerializeField] private float animationStartDelay = 0.4f;
     [SerializeField] private Ease animationEase = Ease.OutBack;
@@ -40,9 +43,11 @@ public class SlidingDoor : MonoBehaviour
     
     private Sequence _animationSequence;
     private readonly HashSet<Object> _powerSources = new HashSet<Object>();
+    private AudioSource _audioSource;
 
     private void Awake()
     {
+        _audioSource = GetComponent<AudioSource>();
         ApplyStateImmediate(isClosed);
     }
 
@@ -141,9 +146,12 @@ public class SlidingDoor : MonoBehaviour
         }
         
         var tweenSettings = new TweenSettings(animationTime, animationEase, startDelay: animationStartDelay);
-        _animationSequence =
-            Tween.LocalPosition(leftAnchor, closed ? closedPosL : openedPosL, tweenSettings)
-                .Group(Tween.LocalPosition(rightAnchor, closed ? closedPosR : openedPosR, tweenSettings));
+
+        _animationSequence = Sequence.Create()
+            .ChainCallback(() => { sfxDoorMoving?.Play(_audioSource); })
+            .Group(Tween.LocalPosition(rightAnchor, closed ? closedPosR : openedPosR, tweenSettings))
+            .Group(Tween.LocalPosition(leftAnchor, closed ? closedPosL : openedPosL, tweenSettings))
+            .ChainCallback(() => { if (closed) sfxDoorFinishedMoving?.Play(_audioSource); });
         
         return _animationSequence;
     }

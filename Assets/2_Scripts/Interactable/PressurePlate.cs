@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections.Generic;
-using UnityEngine.Serialization;
 
 [SelectionBase]
 [RequireComponent(typeof(AudioSource))]
@@ -19,6 +18,7 @@ public class PressurePlate : MonoBehaviour
     [SerializeField] private float plateAnimationSpeed = 8f;
     [SerializeField] private SOAudioEvent sfxPlatePress;
     [SerializeField] private SOAudioEvent sfxPlateRelease;
+    [SerializeField] private Cable[] connectedCables;
     
     [Header("Events")]
     [SerializeField] private UnityEvent onPlateActivated;           
@@ -114,6 +114,7 @@ public class PressurePlate : MonoBehaviour
         if (_isActivated) return;
 
         _isActivated = true;
+        ToggleConnectedCables();
         sfxPlatePress?.Play(_audioSource);
         onPlateActivated?.Invoke();
     }
@@ -123,6 +124,7 @@ public class PressurePlate : MonoBehaviour
         if (!_isActivated) return;
 
         _isActivated = false;
+        ToggleConnectedCables();
         sfxPlateRelease?.Play(_audioSource);
         onPlateDeactivated?.Invoke();
     }
@@ -137,6 +139,28 @@ public class PressurePlate : MonoBehaviour
 
     }
 
+
+    private void ToggleConnectedCables(bool state)
+    {
+        if (connectedCables == null || connectedCables.Length == 0) return;
+
+        foreach (var cable in connectedCables)
+        {
+            if (cable == null) continue;
+            cable.SetState(state);
+        }
+    }
+    
+    private void ToggleConnectedCables()
+    {
+        if (connectedCables == null || connectedCables.Length == 0) return;
+
+        foreach (var cable in connectedCables)
+        {
+            if (cable == null) continue;
+            cable.Toggle();
+        }
+    }
 
 
 #if UNITY_EDITOR

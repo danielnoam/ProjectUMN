@@ -487,7 +487,7 @@ public class CreditsText : MonoBehaviour
     }
     
 #if UNITY_EDITOR
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (!fadeEnabled)
             return;

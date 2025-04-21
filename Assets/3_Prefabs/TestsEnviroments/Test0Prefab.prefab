@@ -183,8 +183,6 @@ Transform:
   - {fileID: 8276023300495650113}
   - {fileID: 1400982025686385679}
   - {fileID: 6145162810073938867}
-  - {fileID: 4992387656187128522}
-  - {fileID: 7580694052483670026}
   m_Father: {fileID: 6315362760598890297}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7121465310114482337
@@ -1871,11 +1869,15 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6807049516123485203}
+    m_TransformParent: {fileID: 6315362760598890297}
     m_Modifications:
     - target: {fileID: 2001434069593992560, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: m_Name
       value: Cable
+      objectReference: {fileID: 0}
+    - target: {fileID: 2777837031888732977, guid: 4d139c5642691d9498670105193ab164, type: 3}
+      propertyPath: isOn
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8454528397643827014, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: positions.Array.size
@@ -1978,6 +1980,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d139c5642691d9498670105193ab164, type: 3}
+--- !u!114 &3746089937136316163 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2777837031888732977, guid: 4d139c5642691d9498670105193ab164, type: 3}
+  m_PrefabInstance: {fileID: 1544757638016511026}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ef7c420c4009e74e825164823798658, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &7580694052483670026 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8954314878755998776, guid: 4d139c5642691d9498670105193ab164, type: 3}
@@ -5293,6 +5306,12 @@ PrefabInstance:
       addedObject: {fileID: 1024742768129565626}
     - targetCorrespondingSourceObject: {fileID: 7368622496297785464, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 4992387656187128522}
+    - targetCorrespondingSourceObject: {fileID: 7368622496297785464, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7580694052483670026}
+    - targetCorrespondingSourceObject: {fileID: 7368622496297785464, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 5979970181422386322}
     - targetCorrespondingSourceObject: {fileID: 7368622496297785464, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
       insertIndex: -1
@@ -6437,11 +6456,15 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6807049516123485203}
+    m_TransformParent: {fileID: 6315362760598890297}
     m_Modifications:
     - target: {fileID: 2001434069593992560, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: m_Name
       value: Cable (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2777837031888732977, guid: 4d139c5642691d9498670105193ab164, type: 3}
+      propertyPath: isOn
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8454528397643827014, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: positions.Array.size
@@ -6504,6 +6527,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d139c5642691d9498670105193ab164, type: 3}
+--- !u!114 &2269893376873358787 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2777837031888732977, guid: 4d139c5642691d9498670105193ab164, type: 3}
+  m_PrefabInstance: {fileID: 4110832014694491890}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ef7c420c4009e74e825164823798658, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &4992387656187128522 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8954314878755998776, guid: 4d139c5642691d9498670105193ab164, type: 3}
@@ -10924,6 +10958,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Button
       objectReference: {fileID: 0}
+    - target: {fileID: 3615582205148944545, guid: 3ed922aa09685d949942bf5a04386872, type: 3}
+      propertyPath: connectedCables.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3615582205148944545, guid: 3ed922aa09685d949942bf5a04386872, type: 3}
+      propertyPath: 'connectedCables.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2269893376873358787}
+    - target: {fileID: 3615582205148944545, guid: 3ed922aa09685d949942bf5a04386872, type: 3}
+      propertyPath: 'connectedCables.Array.data[1]'
+      value: 
+      objectReference: {fileID: 3746089937136316163}
     - target: {fileID: 3615582205148944545, guid: 3ed922aa09685d949942bf5a04386872, type: 3}
       propertyPath: onButtonPressed.m_PersistentCalls.m_Calls.Array.size
       value: 5

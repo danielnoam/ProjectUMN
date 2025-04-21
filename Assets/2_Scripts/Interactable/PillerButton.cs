@@ -1,8 +1,7 @@
-using System;
+
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -16,6 +15,8 @@ public class PillerButton : MonoBehaviour
     [SerializeField] private float buttonAnimationHeight = 0.1f;            
     [SerializeField] private float buttonAnimationSpeed = 5f;
     [SerializeField] private float autoReleaseDelay = 0.5f;
+    [SerializeField] private CableState cableStateOnPress = CableState.Toggle;
+    [SerializeField] private Cable[] connectedCables;
     
     [Header("Button Events")]
     [SerializeField] private UnityEvent onButtonPressed; 
@@ -53,6 +54,7 @@ public class PillerButton : MonoBehaviour
         
 
         sfxButtonPress?.Play(_audioSource);
+        ToggleConnectedCables();
         onButtonPressed.Invoke();
         
 
@@ -69,5 +71,27 @@ public class PillerButton : MonoBehaviour
         // Release the button
         _isPressed = false;
         _releaseCoroutine = null;
+    }
+    
+    private void ToggleConnectedCables()
+    {
+        if (connectedCables == null || connectedCables.Length == 0) return;
+
+        foreach (var cable in connectedCables)
+        {
+            if (cable == null) continue;
+            switch (cableStateOnPress)
+            {
+                case CableState.On:
+                    cable.SetState(true);
+                    break;
+                case CableState.Off:
+                    cable.SetState(false);
+                    break;
+                case CableState.Toggle:
+                    cable.Toggle();
+                    break;
+            }
+        }
     }
 }

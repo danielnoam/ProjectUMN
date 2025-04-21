@@ -185,7 +185,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 7a4bd07221d35d3459cfa58ad5fb40dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -272,7 +272,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0f3b436a7323dba438388f5b3004b47a, type: 2}
+  - {fileID: 2100000, guid: 8aa2ad6800a8eb24f88db619bc00aa3b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -484,6 +484,7 @@ MonoBehaviour:
   powerSourcesNeeded: 1
   powerCurve: 3
   stayActiveAfterFirstActivation: 0
+  sfxLoop: {fileID: 11400000, guid: bacbb89623f7207419795fddba1c3f62, type: 2}
   rotationPivot: {fileID: 815008496850535695}
   rotationSpeed: 500
   rotationAcceleration: 100
@@ -495,8 +496,8 @@ MonoBehaviour:
   lightAcceleration: 1
   lightDeceleration: 1.5
   materialRenderer: {fileID: 1431242944131415894}
-  maxEmissionIntensity: 5
-  emissionColor: {r: 0, g: 1, b: 1, a: 1}
+  maxEmissionIntensity: 8
+  emissionColor: {r: 0, g: 0.5243802, b: 1, a: 1}
   emissionAcceleration: 1
   emissionDeceleration: 1.5
   onActivated:

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using PrimeTween;
 using VInspector;
@@ -48,6 +49,7 @@ public class LaserSource : MonoBehaviour
     private Tween _activationTween;
     private Tween _delayTween;
     private float _currentBeamLength = 0f;
+    private bool _wasActive;
     
     
     private void Awake() {
@@ -61,7 +63,21 @@ public class LaserSource : MonoBehaviour
         
         SetLaserActive(isActive);
     }
+
+    private void OnDisable()
+    {
+        _wasActive = isActive;
+        SetLaserActive(false);
+    }
     
+    private void OnEnable()
+    {
+        if (_wasActive)
+        {
+            SetLaserActive(true);
+        }
+    }
+
     private void Update() {
         if (isActive || _currentBeamLength > 0) {
             Vector3 startPosition = originTransform.position;
@@ -118,7 +134,7 @@ public class LaserSource : MonoBehaviour
     }
     
     private void StartActivationAnimation(bool active) {
-        // Stop any current animation
+
         _activationTween.Stop();
         
         // Determine animation time based on direction
@@ -128,6 +144,7 @@ public class LaserSource : MonoBehaviour
         float targetLength = active ? beamLength : 0f;
         
         // Animate the laser beam length
+        if (active) { activateSfx?.Play(_audioSource); }
         _activationTween = Tween.Custom(
             startValue: _currentBeamLength,
             endValue: targetLength,
@@ -141,14 +158,7 @@ public class LaserSource : MonoBehaviour
                 }
             }
         )
-        .OnComplete(() => {
-            // Play sound effect when animation completes
-            if (active) {
-                activateSfx?.Play(_audioSource);
-            } else {
-                deactivateSfx?.Play(_audioSource);
-            }
-        });
+        .OnComplete(() => { if (!active) {deactivateSfx?.Play(_audioSource);} });
     }
 
 }

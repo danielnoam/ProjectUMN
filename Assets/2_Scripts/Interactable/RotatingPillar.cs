@@ -29,10 +29,10 @@ public class RotatingPillar : MonoBehaviour
     private Ease animationEase = Ease.Linear;
     
     [SerializeField, Tooltip("Sound effect to play when the pillar is activated")]
-    private AudioClip activateSfx;
+    private SOAudioEvent activateSfx;
     
     [SerializeField, Tooltip("Sound effect to play when the pillar is deactivated")]
-    private AudioClip deactivateSfx;
+    private SOAudioEvent deactivateSfx;
     
     [Header("Debug")]
     [SerializeField, ReadOnly] private bool isActive = false;
@@ -177,6 +177,14 @@ public class RotatingPillar : MonoBehaviour
         // Add 360 degrees clockwise for activation, 360 counterclockwise for deactivation
         endRotation.y += active ? 360 : -360;
         
+        if (active && activateSfx != null)
+        {
+            activateSfx?.Play(_audioSource);
+        }
+        else if (!active && deactivateSfx != null)
+        {
+            deactivateSfx?.Play(_audioSource);
+        }
         // Create a sequence containing both position and rotation animations
         _animationSequence = Sequence.Create()
             // Add position animation to the sequence
@@ -193,22 +201,7 @@ public class RotatingPillar : MonoBehaviour
                 endValue: endRotation,
                 duration: animTime,
                 ease: animationEase
-            ))
-            .OnComplete(() => {
-                
-                // Play sound effect when animation completes
-                if (_audioSource != null)
-                {
-                    if (active && activateSfx != null)
-                    {
-                        _audioSource.PlayOneShot(activateSfx);
-                    }
-                    else if (!active && deactivateSfx != null)
-                    {
-                        _audioSource.PlayOneShot(deactivateSfx);
-                    }
-                }
-            });
+            ));
     }
     
     

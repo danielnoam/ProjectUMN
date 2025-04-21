@@ -357,7 +357,7 @@ public class RobotLightDissolver : MonoBehaviour
     
     #region Gizmos
     
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         DrawShapeGizmo();
         DrawConnectionGizmos();

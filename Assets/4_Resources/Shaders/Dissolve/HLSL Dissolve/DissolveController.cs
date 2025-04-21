@@ -320,7 +320,7 @@ public class DissolveController : MonoBehaviour
     
     #region Gizmos
     
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         DrawShapeGizmo();
         DrawConnectionGizmos();

@@ -18,6 +18,8 @@ public class PowerPoint : MonoBehaviour
     [SerializeField, Tooltip("If enabled, the power point will remain active after first activation, even if power sources are removed")]
     private bool stayActiveAfterFirstActivation = false;
 
+    [Header("Sfx")] 
+    [SerializeField] private SOAudioEvent sfxLoop;
     
     [Header("Rotation")]
     [SerializeField, Tooltip("The transform that will rotate when power is applied")]
@@ -208,7 +210,7 @@ public class PowerPoint : MonoBehaviour
         {
             if (!_audioSource.isPlaying)
             {
-                _audioSource.Play();
+                sfxLoop?.Play(_audioSource);
             }
         }
         else

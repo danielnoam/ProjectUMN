@@ -70,7 +70,7 @@ public class PlayerGroundedState : PlayerBaseState
             }
         }
         
-        // Toggle menu
+        // SetState menu
         if (StateMachine.InputHandler.ToggleMenuInput)
         {
             StateMachine.SwitchState(StateMachine.InMenuState);

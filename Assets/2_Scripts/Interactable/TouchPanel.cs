@@ -5,6 +5,8 @@ using UnityEngine.Events;
 using VInspector;
 using PrimeTween;
 
+
+
 [SelectionBase]
 [RequireComponent(typeof(Interactable))]
 [RequireComponent(typeof(AudioSource))]
@@ -18,6 +20,8 @@ public class TouchPanel : MonoBehaviour
     [SerializeField] private Renderer panelRenderer;
     [SerializeField] private Color punchEmissionColor = Color.white;
     [SerializeField] private float punchDuration = 0.5f;
+    [SerializeField] private Cable[] connectedCables;
+    [SerializeField] private CableState cableStateOnPress = CableState.Toggle;
     
     [Header("Panel Events")]
     [SerializeField] private UnityEvent onPanelPressed; 
@@ -55,7 +59,8 @@ public class TouchPanel : MonoBehaviour
         
         PunchEmissionColor();
 
-        onPanelPressed.Invoke();
+        ToggleConnectedCables();
+        onPanelPressed?.Invoke();
 
         if (_releaseCoroutine != null) StopCoroutine(_releaseCoroutine);
             
@@ -98,5 +103,27 @@ public class TouchPanel : MonoBehaviour
         // Release the button
         _isPressed = false;
         _releaseCoroutine = null;
+    }
+    
+    private void ToggleConnectedCables()
+    {
+        if (connectedCables == null || connectedCables.Length == 0) return;
+
+        foreach (var cable in connectedCables)
+        {
+            if (cable == null) continue;
+            switch (cableStateOnPress)
+            {
+                case CableState.On:
+                    cable.SetState(true);
+                    break;
+                case CableState.Off:
+                    cable.SetState(false);
+                    break;
+                case CableState.Toggle:
+                    cable.Toggle();
+                    break;
+            }
+        }
     }
 }
