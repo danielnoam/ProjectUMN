@@ -100,9 +100,9 @@ public class PlayerIKHandler : MonoBehaviour
             return;
         }
         
-        if (_stateMachine.robot && !_stateMachine.IsAiming && followRobot)
+        if (_stateMachine.Robot && !_stateMachine.IsAiming && followRobot)
         {
-            float distanceToRobot = Vector3.Distance(transform.position, _stateMachine.robot.transform.position);
+            float distanceToRobot = Vector3.Distance(transform.position, _stateMachine.Robot.transform.position);
             if (distanceToRobot < robotDistanceThreshold)
             {
                 _currentIKTarget = IKTarget.Robot;
@@ -121,7 +121,7 @@ public class PlayerIKHandler : MonoBehaviour
             return;
         }
         
-        if (_stateMachine.cameraManager)
+        if (_stateMachine.CameraManager)
         {
             _currentIKTarget = IKTarget.CameraAimDir;
             return;
@@ -233,13 +233,13 @@ public class PlayerIKHandler : MonoBehaviour
         switch (_currentIKTarget)
         {
             case IKTarget.Robot:
-                return _stateMachine.robot.transform.position;
+                return _stateMachine.Robot.transform.position;
                 
             case IKTarget.Interactable:
                 return _stateMachine.CurrentInteractable.GetInteractPosition(_stateMachine).position;
                 
             case IKTarget.CameraAimDir:
-                return _stateMachine.cameraManager.targetTransform.position + new Vector3(0, 0.2F, 0);
+                return _stateMachine.CameraManager.targetTransform.position + new Vector3(0, 0.2F, 0);
                 
             case IKTarget.Menu:
                 // Get mouse position in screen coordinates

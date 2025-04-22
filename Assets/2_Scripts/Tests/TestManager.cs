@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 using VInspector;
 
 [SelectionBase]
-[DefaultExecutionOrder(-1)]
+[DefaultExecutionOrder(-5)]
 [RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(TestEnvironmentAnimator))]
 [RequireComponent(typeof(TestEffectsHandler))]
