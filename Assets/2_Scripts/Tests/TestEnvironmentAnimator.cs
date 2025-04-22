@@ -31,6 +31,8 @@ public class TestEnvironmentAnimator : MonoBehaviour
     [SerializeField] private bool findAllMeshesInScene = true;
     [SerializeField] private List<GameObject> additionalObjectsToAnimate = new List<GameObject>();
     [SerializeField] private List<GameObject> excludedObjects = new List<GameObject>();
+    [SerializeField] private bool excludePlayer = true;
+    [SerializeField] private bool excludeFloor = true;
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -44,6 +46,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
     private bool _hasInitialized = false;
     private Sequence _animationSequence;
     private TestManager _testManager;
+    private GameObject _floorGameObject;
     private enum AnimationSortMode
     {
         None,           // Use order objects are found in scene
@@ -132,27 +135,18 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 return true;
         }
         
-        // Check for Player exclusion
-        if (true && _testManager != null && _testManager.Player != null)
-        {
-            // Check if the object is the player or a child of the player
-            GameObject playerObject = _testManager.Player.gameObject;
-            if (obj == playerObject || IsChildOf(obj.transform, playerObject.transform))
-                return true;
-        }
-        
         // Check for Robot exclusion
-        if (_testManager != null)
+        if (_testManager)
         {
             bool shouldExcludeRobot = false;
             
             // Check conditions for robot exclusion
-            if (_testManager.CurrentTest != null && !_testManager.CurrentTest.HasRobot())
+            if (_testManager.CurrentTest && !_testManager.CurrentTest.HasRobot())
                 shouldExcludeRobot = true;
-            else if (_testManager.Robot != null && _testManager.Robot.CurrentState == RobotState.Dead)
+            else if (_testManager.Robot && _testManager.Robot.CurrentState == RobotState.Dead)
                 shouldExcludeRobot = true;
                 
-            if (shouldExcludeRobot && _testManager.Robot != null)
+            if (shouldExcludeRobot && _testManager.Robot)
             {
                 // Check if the object is the robot or a child of the robot
                 GameObject robotObject = _testManager.Robot.gameObject;
@@ -161,35 +155,28 @@ public class TestEnvironmentAnimator : MonoBehaviour
             }
         }
         
+        // Check for Player exclusion
+        if (_testManager && _testManager.Player && excludePlayer)
+        {
+            // Check if the object is the player or a child of the player
+            GameObject playerObject = _testManager.Player.gameObject;
+            if (obj == playerObject || IsChildOf(obj.transform, playerObject.transform))
+                return true;
+        }
+        
         // Check for Floor exclusion
-        if (_testManager != null && _testManager.FloorObject != null)
+        _floorGameObject = GameObject.Find("Floor");
+        if (_testManager && _floorGameObject && excludeFloor)
         {
             // Check if the object is the floor or a child of the floor
-            GameObject floorObject = _testManager.FloorObject.gameObject;
-            if (obj == floorObject || IsChildOf(obj.transform, floorObject.transform))
+            if (obj == _floorGameObject || IsChildOf(obj.transform, _floorGameObject.transform))
                 return true;
         }
         
         return false;
     }
-    // Helper method to check if a transform is a child of another transform (recursive)
-    private bool IsChildOf(Transform child, Transform parent)
-    {
-        if (child == null || parent == null)
-            return false;
-            
-        Transform currentParent = child.parent;
-        
-        while (currentParent != null)
-        {
-            if (currentParent == parent)
-                return true;
-                
-            currentParent = currentParent.parent;
-        }
-        
-        return false;
-    }
+
+
     
     private void SortObjectsBasedOnSortMode()
     {
@@ -295,6 +282,13 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 // Append any remaining objects that weren't in the custom list
                 sortedList.AddRange(objectsToAnimate);
                 
+                // Make sure the floor object is always at the end
+                if (_floorGameObject  && !excludeFloor && sortedList.Contains(_floorGameObject))
+                {
+                    sortedList.Remove(_floorGameObject);
+                    sortedList.Add(_floorGameObject);
+                }
+                
                 // Replace the original list with our sorted one
                 objectsToAnimate.Clear();
                 objectsToAnimate.AddRange(sortedList);
@@ -302,23 +296,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
         }
     }
     
-    private string GetHierarchyPath(Transform transform)
-    {
-        if (transform == null) return "";
-        
-        // Build the full path from root to this transform
-        string path = transform.name;
-        Transform parent = transform.parent;
-        
-        while (parent)
-        {
-            path = parent.name + "/" + path;
-            parent = parent.parent;
-        }
-        
-        return path;
-    }
-
 
     [Button]
     public void PlayLoadSequence(float animationTime)
@@ -364,8 +341,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         float individualDuration = objectsToAnimate.Count > 1 
             ? animationTime * (1f - delayTimeFactor) // remaining portion for actual animation
             : animationTime;
-
-        TweenFloorScale(true, individualDuration * 2);
+        
         
         
         // Create the animation sequence
@@ -433,8 +409,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
             : animationTime;
 
         
-        TweenFloorScale(false, individualDuration * 2);
-        
         
         // Create the animation sequence - from original scale to zero
         for (int i = 0; i < reversedObjects.Count; i++)
@@ -465,36 +439,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
         totalAnimationTime = animationTime; 
     }
     
-    private void TweenFloorScale(bool load, float duration, float delay = 0f)
-    {
-        // Only proceed if we have a valid TestManager and FloorObject
-        if (_testManager == null || _testManager.FloorObject == null || _testManager.CurrentTest == null)
-            return;
-        
-        // Get the floor object
-        Transform floorTransform = _testManager.FloorObject.transform;
-    
-        // Get the target scale from current test's environment settings
-        Vector3 targetFloorScale = load ?_testManager.CurrentTest.GetFloorScale() : _testManager.DefaultEnvironmentSettings.floorScale;
-    
-        // Get the current scale as the starting point
-        Vector3 currentScale = floorTransform.localScale;
-    
-        // Use the target floor scale directly with all components (including Y)
-        Vector3 endScale = targetFloorScale;
-    
-        // Add floor scaling to the sequence, always scaling from current to target
-        _animationSequence.Group(
-            Tween.Scale(
-                floorTransform,
-                startValue: currentScale,
-                endValue: endScale,
-                duration,
-                ease: Ease.InOutSine, 
-                startDelay: delay
-            )
-        );
-    }
 
 
     public void SetAllObjectsToZeroScale()
@@ -540,6 +484,41 @@ public class TestEnvironmentAnimator : MonoBehaviour
 
     
     
+    private bool IsChildOf(Transform child, Transform parent)
+    {
+        if (child == null || parent == null)
+            return false;
+            
+        Transform currentParent = child.parent;
+        
+        while (currentParent != null)
+        {
+            if (currentParent == parent)
+                return true;
+                
+            currentParent = currentParent.parent;
+        }
+        
+        return false;
+    }
+    
+    private string GetHierarchyPath(Transform transform)
+    {
+        if (transform == null) return "";
+        
+        // Build the full path from root to this transform
+        string path = transform.name;
+        Transform parent = transform.parent;
+        
+        while (parent)
+        {
+            path = parent.name + "/" + path;
+            parent = parent.parent;
+        }
+        
+        return path;
+    }
+
     
     
     #region Editor Functions

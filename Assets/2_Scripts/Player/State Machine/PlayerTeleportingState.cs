@@ -61,7 +61,7 @@ public class PlayerTeleportingState : PlayerBaseState
                 _teleportationComplete = true;
             }
         }
-        
+        Debug.Log(_teleportationTimer);
         StateMachine.HandleAiming(false);
         CheckStateTransitions();
     }

@@ -38,12 +38,18 @@ public class TestEffectsHandler : MonoBehaviour
     {
         _testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
         _testManager?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+        _testManager?.onTestStartLoading.AddListener(OnTestStartLoading);
+        _testManager?.onTestStartUnloading.AddListener(OnTestStartUnloading);
     }
+
+
 
     private void OnDisable()
     {
         _testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
         _testManager?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+        _testManager?.onTestStartLoading.RemoveListener(OnTestStartLoading);
+        _testManager?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
         _fadeSequence.Stop();
     }
     
@@ -56,7 +62,6 @@ public class TestEffectsHandler : MonoBehaviour
         
         
         
-
         _chromaticAberration.active = true;
         _chromaticAberration.intensity.overrideState = true;
         float time = _testManager.IntroSequenceDuration * introDurationEffectMultiplier;
@@ -90,6 +95,16 @@ public class TestEffectsHandler : MonoBehaviour
             ;
     }
     
+    
+    private void OnTestStartUnloading(SOTest test)
+    {
+
+    }
+
+    private void OnTestStartLoading(SOTest test)
+    {
+
+    }
 
 
 }

@@ -22,14 +22,6 @@ public class TestLightSettings {
 }
 
 
-[Serializable]
-public class TestEnvironmentSettings
-{
-    public GameObject environmentPrefab;
-    public Material floorMaterial;
-    public Vector3 floorScale = new Vector3(2000, 1, 2000);
-}
-
 
 [CreateAssetMenu(fileName = "Test", menuName = "SO Test/New Test")]
 public class SOTest : ScriptableObject
@@ -48,7 +40,7 @@ public class SOTest : ScriptableObject
     [SerializeField] private SOAudioEvent theme;
 
     [Header("World")] 
-    [SerializeField] private TestEnvironmentSettings environmentSettings;
+    [SerializeField] private GameObject environmentPrefab;
     [SerializeField] private TestLightSettings lightSettings;
 
     
@@ -82,23 +74,23 @@ public class SOTest : ScriptableObject
     
     public GameObject GetPrefab()
     {
-        if (!environmentSettings.environmentPrefab)
+        if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return null;
         }
-        return environmentSettings.environmentPrefab;
+        return environmentPrefab;
     }
     
     public Vector3 GetPlayerSpawnPoint()
     {
-        if (!environmentSettings.environmentPrefab)
+        if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return Vector3.up;
         }
 
-        SpawnPlatform spawnPlatform = environmentSettings.environmentPrefab.GetComponentInChildren<SpawnPlatform>();
+        SpawnPlatform spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
         if (!spawnPlatform)
         {
             Debug.Log("No TestSpawnPosition in " + name);
@@ -119,26 +111,16 @@ public class SOTest : ScriptableObject
         return lightSettings;
     }
     
-    public Material GetFloorMaterial()
-    {
-        return environmentSettings.floorMaterial;
-    }
-    
-    public Vector3 GetFloorScale()
-    {
-        return environmentSettings.floorScale;
-    }
-    
     
     public Vector3 GetRobotSpawnPoint()
     {
-        if (!environmentSettings.environmentPrefab)
+        if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return Vector3.up;
         }
 
-        SpawnPlatform spawnPlatform = environmentSettings.environmentPrefab.GetComponentInChildren<SpawnPlatform>();
+        SpawnPlatform spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
         if (!spawnPlatform)
         {
             Debug.Log("No TestSpawnPosition in " + name);
@@ -151,13 +133,13 @@ public class SOTest : ScriptableObject
 
     public bool HasRobot()
     {
-        if (!environmentSettings.environmentPrefab)
+        if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
             return false;
         }
 
-        RobotCompanion robot = environmentSettings.environmentPrefab.GetComponentInChildren<RobotCompanion>();
+        RobotCompanion robot = environmentPrefab.GetComponentInChildren<RobotCompanion>();
         if (!robot)
         {
             return false;

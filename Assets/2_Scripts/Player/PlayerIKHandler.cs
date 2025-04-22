@@ -18,6 +18,7 @@ public class PlayerIKHandler : MonoBehaviour
     [Header("IK")]
     [SerializeField] private Transform ikTarget;
     [SerializeField] private Rig rig;
+    [SerializeField] private bool followRobot;
     
     [Header("Head")]
     [SerializeField] private MultiAimConstraint headIK;
@@ -37,8 +38,8 @@ public class PlayerIKHandler : MonoBehaviour
     
     private PlayerStateMachine _stateMachine;
     private Camera _camera;
-    private float _targetHeadWeight = 1f;
-    private float _targetSpineWeight = 1f;
+    private readonly float _targetHeadWeight = 1f;
+    private readonly float _targetSpineWeight = 1f;
     private Vector3 _currentIKPosition;
     private IKTarget _currentIKTarget = IKTarget.None;
 
@@ -70,7 +71,7 @@ public class PlayerIKHandler : MonoBehaviour
             return;
         }
         
-        if (_stateMachine.robot && !_stateMachine.IsAiming && false)
+        if (_stateMachine.robot && !_stateMachine.IsAiming && followRobot)
         {
             float distanceToRobot = Vector3.Distance(transform.position, _stateMachine.robot.transform.position);
             if (distanceToRobot < robotDistanceThreshold)
@@ -106,8 +107,16 @@ public class PlayerIKHandler : MonoBehaviour
         
         Vector3 targetPosition = GetTargetPositionForCurrentIKTarget();
         
-        // Only update if we have a valid target
-        if (_currentIKTarget != IKTarget.None)
+       
+        if (_currentIKTarget == IKTarget.Menu)
+        {
+            // Lerp the position
+            _currentIKPosition = Vector3.Lerp(_currentIKPosition, targetPosition, Time.deltaTime * ikSmoothSpeed * 0.5f);
+            
+            // Apply the lerped position
+            ikTarget.transform.position = _currentIKPosition;
+        }
+        else if (_currentIKTarget != IKTarget.None)
         {
             // Lerp the position
             _currentIKPosition = Vector3.Lerp(_currentIKPosition, targetPosition, Time.deltaTime * ikSmoothSpeed);
@@ -188,7 +197,7 @@ public class PlayerIKHandler : MonoBehaviour
                 Ray ray = _camera.ScreenPointToRay(mousePos);
                 
                 // Default position will be a point along the ray
-                return ray.origin + ray.direction * 10;
+                return ray.origin + ray.direction * 2;
                 
             case IKTarget.None:
             default:

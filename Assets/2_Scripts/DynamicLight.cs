@@ -50,7 +50,13 @@ public class DynamicLight : MonoBehaviour
 
     private void OnTestLoaded(SOTest test)
     {
-        FadeLight(test.GetLightSettings(), fadeDuration);
+        TestLightSettings lightSettings = test.GetLightSettings();
+        bool fadeIn = lightSettings.ambientIntensity < 1;
+
+        if (fadeIn)
+        {
+            FadeLight(lightSettings, fadeDuration);
+        }
     }
 
     private void FadeLight(TestLightSettings lightSettings, float duration)

@@ -609,6 +609,8 @@ MonoBehaviour:
   findAllMeshesInScene: 1
   additionalObjectsToAnimate: []
   excludedObjects: []
+  excludePlayer: 1
+  excludeFloor: 0
   totalAnimationTime: 0
   numberOfObjectsToAnimate: 0
   objectsToAnimate: []
@@ -641,19 +643,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 7928860610601458710, guid: 7113d65132abc894daea15c16ab13751, type: 3}
   robotPrefab: {fileID: 4432918703769448186, guid: df63db802e516df4784a7b51bed7cfa5, type: 3}
-  defaultEnvironmentSettings:
-    environmentPrefab: {fileID: 0}
-    floorMaterial: {fileID: 2100000, guid: 4a49eb56841be324499885aeb3d6327a, type: 2}
-    floorScale: {x: 2000, y: 1, z: 2000}
-  defaultLightSettings:
-    ambientIntensity: 1
-    reflectionMode: 0
-    useFog: 0
-    fogMode: 2
-    fogColor: {r: 1, g: 1, b: 1, a: 1}
-    fogDensity: 0
-    fogStart: 0
-    fogEnd: 300
+  defaultTest: {fileID: 11400000, guid: fecaa2c40ab17704eb44450039a533e9, type: 2}
   introSequenceDuration: 10
   introTest: {fileID: 11400000, guid: f8dc08a105e066c488c549ce1c4f61eb, type: 2}
   creditsSequenceDuration: 40

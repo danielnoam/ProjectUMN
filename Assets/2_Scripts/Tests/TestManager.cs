@@ -20,8 +20,7 @@ public class TestManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private PlayerStateMachine playerPrefab;
     [SerializeField] private RobotCompanion robotPrefab;
-    [SerializeField] private TestEnvironmentSettings defaultEnvironmentSettings;
-    [SerializeField] private TestLightSettings defaultLightSettings;
+    [SerializeField] private SOTest defaultTest;
 
     [Header("Intro Sequence")] 
     [SerializeField, Min(0)] private float introSequenceDuration = 10f;
@@ -62,8 +61,8 @@ public class TestManager : MonoBehaviour
     
     
     public bool DebugMode => debugMode;
-    public TestLightSettings DefaultLightSettings => defaultLightSettings;
-    public TestEnvironmentSettings DefaultEnvironmentSettings => defaultEnvironmentSettings;
+    public TestLightSettings DefaultLightSettings => defaultTest.GetLightSettings();
+    public GameObject DefaultEnvironment => defaultTest.GetPrefab();
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
@@ -72,7 +71,6 @@ public class TestManager : MonoBehaviour
     public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
-    public  GameObject FloorObject => _testFloorObject;
     public float IntroSequenceDuration => introSequenceDuration;
     public float IntroSequenceState => _introSequenceTime / introSequenceDuration;
     public bool IsIntroSequenceActive => _introSequenceTime > 0;
@@ -85,10 +83,7 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
     private AudioSource _audioSource;
-    private CameraManager _cameraManager;
     private TestEnvironmentAnimator _testEnvironmentAnimator;
-    private Renderer _testFloorRenderer;
-    private GameObject _testFloorObject;
     private float _introSequenceTime;
     private float _creditsSequenceTime;
     
@@ -105,25 +100,23 @@ public class TestManager : MonoBehaviour
         
 
         PrimeTweenConfig.SetTweensCapacity(800);
-        // QualitySettings.shadowResolution = ShadowResolution.Medium;
-        
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _audioSource = GetComponent<AudioSource>();
     }
     
     private void Start()
     {
-        _cameraManager = CameraManager.Instance;
         currentPlayer = PlayerStateMachine.Instance;
         currentRobot = FindFirstObjectByType<RobotCompanion>();
-        _testFloorObject = GameObject.Find("Floor");
-        _testFloorRenderer = _testFloorObject.GetComponent<Renderer>();
-        
         
 
         if (SceneManager.GetActiveScene().buildIndex == 0)
         {
             StartIntroSequence();
+        }
+        else
+        {
+            _activeLoadCoroutine = StartCoroutine(LoadTest(defaultTest, false));
         }
     }
     
@@ -154,14 +147,6 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad9))
         {
             ToggleDebugMode();
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad8))
-        {
-            ApplyLightSettings(tests[2].GetLightSettings());
-        }
-        if (Input.GetKeyDown(KeyCode.Keypad7))
-        {
-            ApplyLightSettings(defaultLightSettings);
         }
     }
     
@@ -450,8 +435,7 @@ public class TestManager : MonoBehaviour
         currentTest = testIndex;
         currentTheme = currentTest.GetTheme();
         ApplyLightSettings(currentTest.GetLightSettings());
-        if (_testFloorRenderer) _testFloorRenderer.material = new Material(currentTest.GetFloorMaterial()); 
-        currentEnvironment = Instantiate(currentTest.GetPrefab(), new Vector3(0,-0.03f,0), quaternion.identity); // a bit of offset for the intersection effect
+        currentEnvironment = Instantiate(currentTest.GetPrefab());
         currentEnvironment.name = currentTest.Name + " Environment";
 
         if (currentTest.NeedsPlayer)
@@ -553,8 +537,7 @@ public class TestManager : MonoBehaviour
         currentEnvironment = null;
         currentCheckpoint = null;
         currentTheme = null;
-        ApplyLightSettings(defaultLightSettings);
-        if (_testFloorRenderer) _testFloorRenderer.material = new Material(defaultEnvironmentSettings.floorMaterial);
+        ApplyLightSettings(defaultTest.GetLightSettings());
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
         Debug.Log("Unloaded " + test.Name);
