@@ -10,11 +10,13 @@ public class EndPlatform : MonoBehaviour
     [SerializeField] private bool isActive;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private Light pointLight;
+    [SerializeField] private Transform endPoint;
     [SerializeField] private ParticleSystem[] particleSystems;
     
     private TestManager _testManager;
     private float _lightIntensity;
-    
+    public Transform EndPoint => endPoint;
+    public bool IsActive => isActive;
     
 
     private void Awake()

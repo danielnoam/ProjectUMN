@@ -16,6 +16,7 @@ public enum IKTarget
 public class PlayerIKHandler : MonoBehaviour
 {
     [Header("IK")]
+    [SerializeField] private bool enableIK = true;
     [SerializeField] private Transform ikTarget;
     [SerializeField] private Rig rig;
     [SerializeField] private bool followRobot;
@@ -37,6 +38,7 @@ public class PlayerIKHandler : MonoBehaviour
     [SerializeField] private float ikSmoothSpeed = 5f;
     
     private PlayerStateMachine _stateMachine;
+    private TestManager _testManager;
     private Camera _camera;
     private readonly float _targetHeadWeight = 1f;
     private readonly float _targetSpineWeight = 1f;
@@ -51,15 +53,42 @@ public class PlayerIKHandler : MonoBehaviour
     private void Start()
     {
         if (!_camera) _camera = Camera.main;
+        _testManager = _stateMachine.TestManager;
     }
 
+    private void OnEnable()
+    {
+        _testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        _testManager?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+
+    }
+
+    private void OnDisable()
+    {
+        _testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        _testManager?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
+    }
+    
     private void Update()
     {
+        if (!enableIK) return;
+        
         DetermineCurrentIKTarget();
         UpdateIKTarget();
         UpdateHeadIK();
         UpdateSpineIK();
     }
+    
+    private void OnIntroSequenceStart()
+    {
+        SetIKState(false);
+    }
+    
+    private void OnIntroSequenceEnd()
+    {
+        SetIKState(true);
+    }
+    
     
     #region IK -------------------------------------------------------------------------------------------------------
 
@@ -167,8 +196,31 @@ public class PlayerIKHandler : MonoBehaviour
         }
     }
     
+    private void SetIKState(bool enable)
+    {
+        enableIK = enable;
+        ResetIK();
+    }
     
-    
+    private void ResetIK()
+    {
+        if (headIK)
+        {
+            headIK.weight = 0f;
+        }
+        
+        if (spineIK)
+        {
+            spineIK.weight = 0f;
+        }
+        
+        if (ikTarget)
+        {
+            ikTarget.transform.position = _stateMachine.transform.position;
+        }
+        
+        _currentIKPosition = _stateMachine.transform.position;
+    }
 
 
     #endregion IK -------------------------------------------------------------------------------------------------------

@@ -3,73 +3,123 @@ using System.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
+public enum TeleportationType
+{
+    Checkpoint,
+    SpawnPoint,
+    EndPoint
+}
+
 public class PlayerTeleportingState : PlayerBaseState
 {
     
-    public PlayerTeleportingState(PlayerStateMachine stateMachine, Vector3 destination, Quaternion rotation, float teleportationTime, bool fromCheckpoint) : base(stateMachine)
+    public PlayerTeleportingState(PlayerStateMachine stateMachine, Vector3 destination, Quaternion rotation, float time, TeleportationType type) : base(stateMachine)
     {
         StateMachine.TeleportingState = this;
         _teleportationDestination = destination;
         _teleportationRotation = rotation;
-        _teleportationTime = teleportationTime;
-        _fromCheckpoint = fromCheckpoint;
+        _time = time;
+        _teleportationType = type;
     }
 
-    private readonly float _teleportationTime;
+    private readonly float _time;
     private readonly Vector3 _teleportationDestination;
     private readonly Quaternion _teleportationRotation;
     private bool _teleportationComplete = false;
-    private bool _fromCheckpoint = false;
     private float _teleportationTimer = 0f;
+    private TeleportationType _teleportationType;
 
     
     public override void EnterState()
     {
-        StateMachine.SetCharacterCollider(false);
-        StateMachine.ResetGravity();
-        StateMachine.ResetVelocity();   
+        Debug.Log($"Entered PlayerTeleportingState");
+        StateMachine.ResetVerticalVelocity();
+        StateMachine.ResetHorizontalVelocity();   
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.ClearCurrentInteractable();
-        StateMachine.transform.position = _teleportationDestination;
-        StateMachine.transform.rotation = _teleportationRotation;
+        switch (_teleportationType)
+        {
+            case TeleportationType.Checkpoint:
+                StateMachine.SetCharacterColliderState(false);
+                StateMachine.SetCharacterPosition(_teleportationDestination, _teleportationRotation);
+                break;
+            case TeleportationType.SpawnPoint:
+                StateMachine.SetCharacterColliderState(false);
+                StateMachine.SetCharacterPosition(_teleportationDestination, _teleportationRotation);
+                break;
+            case TeleportationType.EndPoint:
+                break;
+        }
+        
     }
     
     public override void ExitState()
     {
-        if (_fromCheckpoint)
+        switch (_teleportationType)
         {
-            StateMachine.onPlayerSpawnedFromCheckpoint?.Invoke();
+            case TeleportationType.Checkpoint:
+                StateMachine.onPlayerSpawnedFromCheckpoint?.Invoke();
+                StateMachine.SetCharacterColliderState(true);
+                break;
+            case TeleportationType.SpawnPoint:
+                StateMachine.onPlayerSpawned?.Invoke();
+                StateMachine.SetCharacterColliderState(true);
+                break;
+            case TeleportationType.EndPoint:
+                break;
         }
-        else
-        {
-            StateMachine.onPlayerSpawned?.Invoke();
-        }
-        _fromCheckpoint = false;
+        
         _teleportationComplete = false;
         _teleportationTimer = 0f;
-        StateMachine.ResetVelocity();   
-        StateMachine.SetCharacterCollider(true);
+        StateMachine.ResetHorizontalVelocity();   
     }
 
     public override void UpdateState()
     {
-        if (!_teleportationComplete && _teleportationTimer < _teleportationTime)
+        switch (_teleportationType)
+        {
+            case TeleportationType.Checkpoint:
+                CheckStateTransitions();
+                break;
+            case TeleportationType.SpawnPoint:
+                CheckStateTransitions();
+                break;
+            case TeleportationType.EndPoint:
+                
+                break;
+        }
+        
+        if (!_teleportationComplete && _teleportationTimer < _time)
         {
             _teleportationTimer += Time.deltaTime;
-            if (_teleportationTimer >= _teleportationTime)
+            if (_teleportationTimer >= _time)
             {
                 _teleportationComplete = true;
             }
         }
-        Debug.Log(_teleportationTimer);
+        
         StateMachine.HandleAiming(false);
-        CheckStateTransitions();
     }
 
     public override void FixedUpdateState()
     {
-        StateMachine.HandleMovement(allowMovement: false, isAirborne: false);
-        StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
+        switch (_teleportationType)
+        {
+            case TeleportationType.Checkpoint:
+                StateMachine.HandleMovement(allowMovement: false, isAirborne: false);
+                StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
+                break;
+            case TeleportationType.SpawnPoint:
+                StateMachine.HandleMovement(allowMovement: false, isAirborne: false);
+                StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
+                break;
+            case TeleportationType.EndPoint:
+                StateMachine.MoveInDirection(Vector3.up, new Vector3(0,0.5f,0));
+                StateMachine.HandleRotation(allowRotation: false, alignWithCameraWhenIdle: false);
+                break;
+        }
+        
+
     }
     
     private void CheckStateTransitions()

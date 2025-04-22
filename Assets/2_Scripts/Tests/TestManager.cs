@@ -116,7 +116,7 @@ public class TestManager : MonoBehaviour
         }
         else
         {
-            _activeLoadCoroutine = StartCoroutine(LoadTest(defaultTest, false));
+            StartClearTestSequence();
         }
     }
     
@@ -141,7 +141,7 @@ public class TestManager : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.KeypadPeriod))
         {
-            RemoveCurrentTest();
+            StartClearTestSequence();
         }
         
         if (Input.GetKeyDown(KeyCode.Keypad9))
@@ -153,7 +153,21 @@ public class TestManager : MonoBehaviour
 
     #region Test control ----------------------------------------------------------------------------
 
-    [Button]
+
+    public void StartClearTestSequence()
+    {
+        StartCoroutine(ClearTestSequence());
+    }
+    
+    private IEnumerator ClearTestSequence()
+    {
+        if (currentTest)
+        {
+            yield return UnLoadTest();
+        }
+        yield return LoadTest(defaultTest);
+    }
+    
     public void StartTest(int testIndex)
     {
         // Check if a sequence is already running
@@ -167,21 +181,7 @@ public class TestManager : MonoBehaviour
         _activeSequenceCoroutine = StartCoroutine(StartTestLoadingSequence(testIndex));
     }
     
-    [Button]
-    public void RemoveCurrentTest()
-    {
-        if (!currentTest) return;
-        
-        // Check if an unload operation is already running
-        if (_activeUnloadCoroutine != null)
-        {
-            Debug.Log("A test is currently unloading. Please wait...");
-            return;
-        }
-        
-        // Start and track the unload coroutine
-        _activeUnloadCoroutine = StartCoroutine(UnLoadTest());
-    }
+    
     
     [Button]
     public void LoadNextTest()
@@ -312,7 +312,8 @@ public class TestManager : MonoBehaviour
 
     #endregion Intro Sequence ----------------------------------------------------------------------------
     
-        
+    
+    
     #region Credits Sequence ----------------------------------------------------------------------------
     
     [Button]
@@ -511,7 +512,7 @@ public class TestManager : MonoBehaviour
         SOTest test = currentTest;
         Debug.Log("Unloading... " + test.Name);
         onTestStartUnloading?.Invoke(test);
-        StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
+        if (currentTheme) StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
         
         // Play scale-down animation if enabled and MeshScaleSequence exists
         if (_testEnvironmentAnimator && _testEnvironmentAnimator.PlayOnTestUnloading)

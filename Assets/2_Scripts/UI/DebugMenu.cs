@@ -43,7 +43,7 @@ public class DebugMenu : MonoBehaviour
             
             removeCurrentTestButton.onClick.AddListener(() =>
             {
-                TestManager.Instance.RemoveCurrentTest();
+                TestManager.Instance.StartClearTestSequence();
                 player.InMenuState.ExitMenu();
             });
             

@@ -121,7 +121,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public bool IsRotatingToTarget { get; private set; }
     public RobotCompanion robot { get; private set; }
     public CameraManager cameraManager { get; private set; }
-    
+    public TestManager TestManager { get; private set; }
     
     private TextMeshProUGUI _debugText;
     private CharacterController _controller;
@@ -180,6 +180,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void Start()
     {
         if (!robot) robot = FindFirstObjectByType<RobotCompanion>();
+        TestManager = TestManager.Instance;
         cameraManager = CameraManager.Instance;
         cameraManager?.Initialize(this);
     }
@@ -187,19 +188,21 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private void OnEnable()
     {
-        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
-        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
-        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
-        TestManager.Instance?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
-        _debugText = TestManager.Instance?.DebugTextLeft;
+        TestManager?.onTestLoaded.AddListener(OnTestLoaded);
+        TestManager?.onTestStartLoading.AddListener(OnTestStartLoading);
+        TestManager?.onTestStartUnloading.AddListener(OnTestStartUnLoading);
+        TestManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        TestManager?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+        _debugText = TestManager?.DebugTextLeft;
     }
 
     private void OnDisable()
     {
-        TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
-        TestManager.Instance?.onTestStartLoading.RemoveListener(OnTestStartLoading);
-        TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
-        TestManager.Instance?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
+        TestManager?.onTestLoaded.RemoveListener(OnTestLoaded);
+        TestManager?.onTestStartLoading.RemoveListener(OnTestStartLoading);
+        TestManager?.onTestStartUnloading.RemoveListener(OnTestStartUnLoading);
+        TestManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        TestManager?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
         _debugText = null;
         cameraManager = null;
     }
@@ -208,9 +211,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void Update()
     {
         // Intro Sequence
-        if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
+        if (TestManager && TestManager.IsIntroSequenceActive)
         {
-            if (TestManager.Instance.IntroSequenceState <= 0.1f && CurrentState != InMenuState)
+            if (TestManager.IntroSequenceState <= 0.1f && CurrentState != InMenuState)
             {
                 SwitchState(InMenuState);
                 InMenuState.SelectPage(InMenuState.StartPage);
@@ -249,20 +252,25 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private void OnTestLoaded(SOTest test)
     {
-        robot = TestManager.Instance.Robot;
+        robot = TestManager.Robot;
         
     }
     
     private void OnTestStartLoading(SOTest test)
     {
         robot = null;
-        SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), test.GetTimeToLoad(), false));
+        SwitchState(new PlayerTeleportingState(this, TestManager.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), test.GetTimeToLoad(), TeleportationType.SpawnPoint));
+    }
+    
+    private void OnTestStartUnLoading(SOTest test)
+    {
+        SwitchState(new PlayerTeleportingState(this, transform.position + Vector3.up, Quaternion.Euler(0, 0, 0), 5f, TeleportationType.EndPoint));
     }
     
     private void OnIntroSequenceStart()
     {
         robot = null;
-        SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, true));
+        SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, TeleportationType.Checkpoint));
         InputHandler.enabled = false;
     }
 
@@ -271,6 +279,16 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         InputHandler.enabled = true;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.TryGetComponent(out LaserGround laserGround))
+        {
+            if (!laserGround.AffectsPlayer) return;
+            
+            onPlayerDeath?.Invoke();
+            SwitchState(new PlayerTeleportingState(this, TestManager.CurrentCheckpoint, Quaternion.Euler(0, 0, 0), 2f, TeleportationType.Checkpoint));
+        }
+    }
 
     
     #region State machine ---------------------------------------------------------------
@@ -309,16 +327,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         CurrentState.EnterState();
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.TryGetComponent(out LaserGround laserGround))
-        {
-            if (!laserGround.AffectsPlayer) return;
-            
-            onPlayerDeath?.Invoke();
-            SwitchState(new PlayerTeleportingState(this, TestManager.Instance.CurrentCheckpoint, Quaternion.Euler(0, 0, 0), 2f, true));
-        }
-    }
 
     #endregion State machine ---------------------------------------------------------------
     
@@ -660,7 +668,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     #region State methods - Movement ---------------------------------------------------------------
     
     
-    public void ResetVelocity()
+    public void ResetHorizontalVelocity()
     {
         ActiveHorizontalVelocity = 0f;
     }
@@ -971,9 +979,35 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         _lastGroundedState = isGrounded;
     }
 
-    public void ResetGravity()
+    public void ResetVerticalVelocity()
     {
         ActiveVerticalVelocity = 0f;
+    }
+
+    public void MoveInDirection(Vector3 direction, Vector3 velocity)
+    {
+        // Calculate the new velocity based on the direction and speed
+        Vector3 newVelocity = direction.normalized * velocity.magnitude;
+        
+        // Apply the new velocity to the character controller
+        _controller.Move(newVelocity * Time.fixedDeltaTime);
+        
+        // Update the active move direction
+        ActiveMoveDirection = newVelocity.normalized;
+    }
+
+    public void SetCharacterPosition(Vector3 position, Quaternion rotation)
+    {
+        _controller.transform.position = position;
+        _controller.transform.rotation = rotation;
+    }
+    
+    public void SetCharacterColliderState(bool enabled)
+    {
+        if (_controller)
+        {
+            _controller.enabled = enabled;
+        }
     }
     
     
@@ -1077,11 +1111,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
     }
     
-    public void SetCharacterCollider(bool state)
-    {
-        _controller.enabled = state;
-    }
-
     #endregion State methods - Utility ---------------------------------------------------------------
     
     
@@ -1090,7 +1119,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     private void UpdateDebugInformation()
     {
-        if (TestManager.Instance && TestManager.Instance.DebugMode)
+        if (TestManager && TestManager.DebugMode)
         {
             if (_debugText)
             {
