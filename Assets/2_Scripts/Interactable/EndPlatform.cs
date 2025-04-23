@@ -59,6 +59,7 @@ public class EndPlatform : MonoBehaviour
             if (startCreditsSequence)
             {
                 _testManager.StartCreditsSequence();
+                _testManager.OnGameCompleted();
             }
             else
             {

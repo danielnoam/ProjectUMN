@@ -14,52 +14,65 @@ public class CollectableItem : MonoBehaviour
     [SerializeField] private Vector3 animationMovePosition = Vector3.up;
     
     [Header("Post Pick Up Effect")]
-    [SerializeField] private float hoverSpeed = 1f;
-    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float hoverSpeed = 0.3f;
+    [SerializeField] private float hoverHeight = 0.5f;
+    [SerializeField] private AnimationCurve hoverCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [SerializeField] private float rotationSpeed = 1f;
+    [SerializeField] private Vector3 rotationDirection = Vector3.up;
     
-    private bool _pickedUp;
+    private bool _animationComplete = false;
+    private bool _pickedUp = false;
     private Vector3 _itemStartPosition;
     private Quaternion _itemStartRotation;
     private Vector3 _itemStartScale;
     private Sequence _effectSequence;
+    private float _timeOffset;
 
     private void Awake()
     {
         _itemStartPosition = itemObject.transform.localPosition;
         _itemStartRotation = itemObject.transform.rotation;
         _itemStartScale = itemObject.transform.localScale;
+        _timeOffset = UnityEngine.Random.Range(0f, 1f);
     }
 
     private void Update()
     {
-        if (!_pickedUp) return;
+        // Only apply hover effect after animation is complete
+        if (!_animationComplete) return;
         
-        // Hover in place
-        itemObject.transform.localPosition = new Vector3(itemObject.transform.localPosition.x, itemObject.transform.localPosition.y + Mathf.Sin(Time.time * hoverSpeed) * Time.deltaTime, itemObject.transform.localPosition.z);
+        // Hover in place using animation curve
+        float time = Mathf.PingPong(Time.time * hoverSpeed + _timeOffset, 1f);
+        Vector3 newPosition = _itemStartPosition;
+        newPosition.y += hoverCurve.Evaluate(time) * hoverHeight;
         
-        // Rotate
+        itemObject.transform.localPosition = newPosition;
         
-        itemObject.transform.localRotation = Quaternion.Slerp(itemObject.transform.localRotation, _itemStartRotation, Time.deltaTime * rotationSpeed);
-        
+        // Rotate around the specified axis
+        itemObject.transform.Rotate(rotationDirection * (rotationSpeed * Time.deltaTime));
     }
-
 
     [Button]
     public void PickUp()
     {
-        
         _pickedUp = true;
+        
         if (_effectSequence.isAlive) 
         {
             _effectSequence.Stop();
         }
         
+        itemObject.transform.localScale = _itemStartScale;
+        itemObject.transform.localPosition = _itemStartPosition;
+        itemObject.transform.rotation = _itemStartRotation;
+        _animationComplete = false;
 
         _effectSequence = Sequence.Create();
         _effectSequence = _effectSequence
                 .Group(Tween.LocalPosition(itemObject.transform, _itemStartPosition, animationMovePosition, duration: animationDuration, ease: Ease.InOutSine))
                 .Group(Tween.Scale(itemObject.transform, _itemStartScale, animationScale, duration: animationDuration, ease: Ease.InOutSine))
-
-            ;
+                .OnComplete(() => {
+                    _animationComplete = true;
+                });
     }
 }

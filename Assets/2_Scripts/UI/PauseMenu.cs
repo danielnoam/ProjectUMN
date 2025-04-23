@@ -48,7 +48,11 @@ public class PauseMenu : MonoBehaviour
             });
             
             
-            quitSimulationButton.onClick.AddListener(TestManager.Instance.QuitApplication);
+            quitSimulationButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.ExitMenu();
+                TestManager.Instance.QuitApplication();
+            });
         }
     }
     

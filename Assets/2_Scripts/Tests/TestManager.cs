@@ -78,7 +78,7 @@ public class TestManager : MonoBehaviour
     public float CreditsSequenceDuration => creditsSequenceDuration;
     public float CreditsSequenceState => _creditsSequenceTime / creditsSequenceDuration;
     public bool IsCreditsSequenceActive => _creditsSequenceTime > 0;
-    
+    public float PlayerVersion => _gameCompleted + _playerDeaths;
     
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
@@ -88,6 +88,8 @@ public class TestManager : MonoBehaviour
     private TestEffectsHandler _testEffectsHandler;
     private float _introSequenceTime;
     private float _creditsSequenceTime;
+    private float _playerDeaths;
+    private int _gameCompleted;
     
     private void Awake()
     {
@@ -105,12 +107,24 @@ public class TestManager : MonoBehaviour
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _testEffectsHandler = GetComponent<TestEffectsHandler>();
         _audioSource = GetComponent<AudioSource>();
-        audioManager.LoadAllVolumes();
+        audioManager?.LoadAllVolumes();
+        
+
+        if (SaveManager.HasKey("playerDeaths"))
+        {
+            _playerDeaths = SaveManager.LoadFloat("playerDeaths", 0.0001f);
+        }
+        
+        if (SaveManager.HasKey("gameCompleted"))
+        {
+            _gameCompleted = SaveManager.LoadInt("gameCompleted", 0);
+        }
     }
     
     private void Start()
     {
         currentPlayer = PlayerStateMachine.Instance;
+        SubscribeToPlayerEvents();
         currentRobot = FindFirstObjectByType<RobotCompanion>();
         
 
@@ -153,7 +167,17 @@ public class TestManager : MonoBehaviour
             ToggleDebugMode();
         }
     }
+
+
+    private void OnEnable()
+    {
+        SubscribeToPlayerEvents();
+    }
     
+    private void OnDisable()
+    {
+        UnsubscribeFromPlayerEvents();
+    }
 
     #region Test control ----------------------------------------------------------------------------
 
@@ -235,6 +259,13 @@ public class TestManager : MonoBehaviour
     
     public void QuitApplication()
     {
+        _testEffectsHandler.FadeScreen(true, 0.5f);
+        StartCoroutine(QuitAppEnumerator());
+    }
+    
+    private IEnumerator QuitAppEnumerator() 
+    {
+        yield return new WaitForSeconds(0.5f);
         Application.Quit();
         #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
@@ -280,7 +311,9 @@ public class TestManager : MonoBehaviour
     
     
     #endregion Test control ----------------------------------------------------------------------------
-
+    
+    
+    
     
     #region Intro Sequence ----------------------------------------------------------------------------
 
@@ -315,7 +348,6 @@ public class TestManager : MonoBehaviour
     }
 
     #endregion Intro Sequence ----------------------------------------------------------------------------
-    
     
     
     #region Credits Sequence ----------------------------------------------------------------------------
@@ -443,10 +475,15 @@ public class TestManager : MonoBehaviour
 
         if (currentTest.NeedsPlayer)
         {
-            if (!currentPlayer) currentPlayer = Instantiate(playerPrefab, currentTest.GetPlayerSpawnPoint(), quaternion.identity);
+            if (!currentPlayer) 
+            {
+                currentPlayer = Instantiate(playerPrefab, currentTest.GetPlayerSpawnPoint(), quaternion.identity);
+                SubscribeToPlayerEvents();
+            }
         }
         else
         {
+            UnsubscribeFromPlayerEvents();
             if (currentPlayer) Destroy(currentPlayer.gameObject);
             currentPlayer = null;
         }
@@ -547,4 +584,31 @@ public class TestManager : MonoBehaviour
     }
     
     #endregion Private methods ----------------------------------------------------------------------------
+
+
+    #region Version ----------------------------------------------------------------------------
+
+    private void OnPlayerDeath()
+    {
+        _playerDeaths += 0.0001f;
+        SaveManager.SaveFloat("playerDeaths", _playerDeaths);
+    }
+    
+    public void OnGameCompleted()
+    {
+        _gameCompleted += 1;
+        SaveManager.SaveInt("gameCompleted", _gameCompleted);
+    }
+    
+    private void SubscribeToPlayerEvents()
+    {
+        currentPlayer?.onPlayerDeath.AddListener(OnPlayerDeath);
+    }
+
+    private void UnsubscribeFromPlayerEvents()
+    {
+        currentPlayer?.onPlayerDeath.RemoveListener(OnPlayerDeath);
+    }
+
+    #endregion Version ----------------------------------------------------------------------------
 }

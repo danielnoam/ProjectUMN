@@ -1147,8 +1147,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  $"\nMovementInput: {InputHandler.MovementInput}\n" +
                                  $"AimInput: {InputHandler.AimInput}\n" +
                                  $"CommandRobotInput: {InputHandler.CommandRobotInput}\n" +
-                                 $"InteractInput: {InputHandler.InteractInput}\n"
+                                 $"InteractInput: {InputHandler.InteractInput}\n" +
                                  
+                                 $"\nPlayerVersion: {TestManager.PlayerVersion:F4}\n"
                                  
                                  
                                  
