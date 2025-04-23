@@ -1162,7 +1162,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
         else
         {
-            _lineRenderer.startWidth = _lineRendererDefaultWidth;
+            _lineRenderer.startWidth = 0;
             _lineRenderer.endWidth = _lineRendererDefaultWidth;
         
         }

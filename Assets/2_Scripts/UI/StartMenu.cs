@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,10 +18,23 @@ public class StartMenu : MonoBehaviour
             startButton.onClick.AddListener(() =>
             {
                 player.InMenuState.ExitMenu();
-                TestManager.Instance.StartTest(0);
+                StartCoroutine(StartGameRoutine());
+            });
+            
+            optionsButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.SelectPage(player.InMenuState.OptionsPage);
             });
             
             quitButton.onClick.AddListener(TestManager.Instance.QuitApplication);
         }
+    }
+    
+    
+    
+    private IEnumerator StartGameRoutine()
+    {
+        yield return new WaitForSeconds(2f);
+        TestManager.Instance.StartTest(0);
     }
 }

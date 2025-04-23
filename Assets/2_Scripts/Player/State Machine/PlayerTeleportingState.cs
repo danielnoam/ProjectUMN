@@ -46,10 +46,8 @@ public class PlayerTeleportingState : PlayerBaseState
             case TeleportationType.SpawnPoint:
                 StateMachine.SetCharacterColliderState(false);
                 StateMachine.SetCharacterPosition(_teleportationDestination, _teleportationRotation);
-                Debug.Log($"Entered PlayerTeleportingStateSpawn");
                 break;
             case TeleportationType.EndPoint:
-                Debug.Log($"Entered PlayerTeleportingStateEnd");
                 break;
         }
         

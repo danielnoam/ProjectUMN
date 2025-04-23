@@ -21,6 +21,7 @@ public class TestManager : MonoBehaviour
     [SerializeField] private PlayerStateMachine playerPrefab;
     [SerializeField] private RobotCompanion robotPrefab;
     [SerializeField] private SOTest defaultTest;
+    [SerializeField] private SOAudioManager audioManager;
 
     [Header("Intro Sequence")] 
     [SerializeField, Min(0)] private float introSequenceDuration = 10f;
@@ -84,6 +85,7 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeSequenceCoroutine;
     private AudioSource _audioSource;
     private TestEnvironmentAnimator _testEnvironmentAnimator;
+    private TestEffectsHandler _testEffectsHandler;
     private float _introSequenceTime;
     private float _creditsSequenceTime;
     
@@ -101,7 +103,9 @@ public class TestManager : MonoBehaviour
 
         PrimeTweenConfig.SetTweensCapacity(800);
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
+        _testEffectsHandler = GetComponent<TestEffectsHandler>();
         _audioSource = GetComponent<AudioSource>();
+        audioManager.LoadAllVolumes();
     }
     
     private void Start()
@@ -289,6 +293,8 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator IntroSequenceCoroutine()
     {
+        _testEffectsHandler.FadeScreen(true, 0f);
+        
         if (currentTest) 
         {
             yield return UnLoadTest();
@@ -297,8 +303,6 @@ public class TestManager : MonoBehaviour
         yield return LoadTest(introTest);
         
         _introSequenceTime = introSequenceDuration;
-        currentTheme = introTest.GetTheme();
-        currentTheme?.Play(_audioSource);
         onIntroSequenceStart?.Invoke();
         
         while (_introSequenceTime > 0 )
@@ -317,7 +321,7 @@ public class TestManager : MonoBehaviour
     #region Credits Sequence ----------------------------------------------------------------------------
     
     [Button]
-    private void StartCreditsSequence()
+    public void StartCreditsSequence()
     {
         StartCoroutine(CreditsSequenceCoroutine());
     }
@@ -333,8 +337,6 @@ public class TestManager : MonoBehaviour
         
         StartCoroutine(LoadTest(creditsTest));
         _creditsSequenceTime = creditsSequenceDuration;
-        currentTheme = creditsTest.GetTheme();
-        currentTheme?.Play(_audioSource);
         onCreditsSequenceStart?.Invoke();
         
         

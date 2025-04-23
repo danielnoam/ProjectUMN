@@ -44,6 +44,7 @@ public class CameraManager : MonoBehaviour
 
     private CinemachineCamera _currentCamera;
     private CinemachineThirdPersonFollow _menuCameraFollow;
+    private CinemachineThirdPersonFollow _startMenuCameraFollow;
     private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
     private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
     private CinemachineSplineDolly _introCameraDolly;
@@ -96,6 +97,7 @@ public class CameraManager : MonoBehaviour
         _aimCameraNoise = aimCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _freeLookCameraNoise = freeLookCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
+        _startMenuCameraFollow = startMenuCamera.GetComponent<CinemachineThirdPersonFollow>();
         _introCameraDolly = introCamera.GetComponent<CinemachineSplineDolly>();
     }
 
@@ -353,10 +355,11 @@ public class CameraManager : MonoBehaviour
         
         if (IsMenuActive)
         {
-            if (!IsMenuCameraActive() && _player.InMenuState.CurrentPage != _player.InMenuState.StartPage)
+            if (!IsMenuCameraActive() && (_player.InMenuState.CurrentPage == _player.InMenuState.DebugPage || _player.InMenuState.CurrentPage == _player.InMenuState.PausePage))
             {
                 SwitchToCamera(menuCamera, true);
-            } else if (!IsStartMenuCameraActive() && _player.InMenuState.CurrentPage == _player.InMenuState.StartPage)
+                
+            } else if (!IsStartMenuCameraActive() && (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage || _player.InMenuState.CurrentPage == _player.InMenuState.OptionsPage))
             {
                 SwitchToCamera(startMenuCamera, true);
             }
@@ -369,10 +372,13 @@ public class CameraManager : MonoBehaviour
             {
                 _menuCameraFollow.CameraSide = Mathf.Lerp(_menuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
             }
-            else if (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage)
+            
+            else if (_player.InMenuState.CurrentPage == (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage || _player.InMenuState.CurrentPage == _player.InMenuState.OptionsPage) && _startMenuCameraFollow.CameraSide != 0)
             {
-                
+                _startMenuCameraFollow.CameraSide = Mathf.Lerp(_startMenuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
             }
+
+            
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())
         {

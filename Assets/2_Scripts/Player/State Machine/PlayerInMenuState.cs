@@ -6,9 +6,11 @@ public class PlayerInMenuState : PlayerBaseState
     
     public MenuController MenuController { get; private set; }
     public MenuPage CurrentPage { get; private set; }
+    public MenuPage PreviousPage { get; private set; }
     public MenuPage StartPage { get; private set; }
     public MenuPage PausePage { get; private set; }
     public MenuPage DebugPage { get; private set; }
+    public MenuPage OptionsPage { get; private set; }
     
     public override void EnterState()
     {
@@ -25,6 +27,7 @@ public class PlayerInMenuState : PlayerBaseState
         if (CurrentPage)
         {
             MenuController.DeselectAllPages(true);
+            PreviousPage = null;
             CurrentPage = null;
         }
     }
@@ -65,16 +68,18 @@ public class PlayerInMenuState : PlayerBaseState
     {
         if (CurrentPage == page || !page) return;
         
+        PreviousPage = CurrentPage;
         CurrentPage = page;
         MenuController.SelectPage(page, true);
     }
 
-    public void SetupPages(MenuController menuController ,MenuPage startPage, MenuPage pausePage, MenuPage debugPage)
+    public void SetupPages(MenuController menuController ,MenuPage startPage, MenuPage pausePage, MenuPage debugPage, MenuPage optionsPage)
     {
         MenuController = menuController;
         StartPage = startPage;
         PausePage = pausePage;
         DebugPage = debugPage;
+        OptionsPage = optionsPage;
     }
 
     public void ExitMenu()

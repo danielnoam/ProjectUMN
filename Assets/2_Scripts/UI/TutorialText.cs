@@ -59,25 +59,7 @@ public class TutorialText : MonoBehaviour
     private bool ShouldRotate => rotateX || rotateY || rotateZ;
 
 
-    private void OnValidate()
-    {
-        if (Application.isPlaying) return;
-        
-        distanceToPositionerTarget = 0f;
-        distanceToFadeTarget = 0f;
-        distanceToDistanceTarget = 0f;
-        distanceToRotationTarget = 0f;
-    }
 
-    private void OnDrawGizmos()
-    {
-        if (positionWithDistance)
-        {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, transform.position + farthestPosition);
-            Gizmos.DrawSphere(transform.position + farthestPosition, 0.2f);
-        }
-    }
 
     private void Awake()
     {
@@ -95,8 +77,20 @@ public class TutorialText : MonoBehaviour
         _originalYRotation = currentRotation.y;
         _originalScale = transform.localScale;
         _originalPosition = transform.localPosition;
+        
+        // Set position to the farthest position
+        if (positionWithDistance)
+        {
+            transform.localPosition = _originalPosition + farthestPosition;
+        }
+        
+        // Set the initial alpha to 0
+        if (_canvasGroup && fadeWithDistance)
+        {
+            _canvasGroup.alpha = 0f;
+        }
     }
-
+    
     private void Start()
     {
         
@@ -216,5 +210,25 @@ public class TutorialText : MonoBehaviour
         
         // Apply positioning with smoothing
         transform.localPosition = Vector3.Lerp(transform.localPosition, targetPosition, positioningSpeed * Time.deltaTime);
+    }
+    
+    private void OnValidate()
+    {
+        if (Application.isPlaying) return;
+        
+        distanceToPositionerTarget = 0f;
+        distanceToFadeTarget = 0f;
+        distanceToDistanceTarget = 0f;
+        distanceToRotationTarget = 0f;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (positionWithDistance)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(transform.position, transform.position + farthestPosition);
+            Gizmos.DrawSphere(transform.position + farthestPosition, 0.2f);
+        }
     }
 }

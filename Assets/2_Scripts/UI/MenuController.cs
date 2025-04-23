@@ -16,6 +16,7 @@ public class MenuController : MonoBehaviour
     [SerializeField] private MenuPage startPage;
     [SerializeField] private MenuPage pausePage;
     [SerializeField] private MenuPage debugPage;
+    [SerializeField] private MenuPage optionsPage;
     
     [Space(10)]
     [ReadOnly] public MenuPage currentPage;
@@ -26,7 +27,7 @@ public class MenuController : MonoBehaviour
     {
         if (player != null && player.InMenuState != null)
         {
-            player.InMenuState.SetupPages(this,startPage, pausePage, debugPage);
+            player.InMenuState.SetupPages(this,startPage, pausePage, debugPage, optionsPage);
         }
     }
 
@@ -86,6 +87,8 @@ public class MenuController : MonoBehaviour
     }
 
 #endregion Page Management //-------------------------------------------------------------
+
+
 
 #if UNITY_EDITOR
 private void OnValidate()

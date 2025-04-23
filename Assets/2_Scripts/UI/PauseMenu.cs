@@ -7,6 +7,7 @@ public class PauseMenu : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button startMenuButton;
+    [SerializeField] private Button optionsButton;
     [SerializeField] private Button debugMenuButton;
     [SerializeField] private Button restartTestButton; 
     [SerializeField] private Button quitSimulationButton;
@@ -29,6 +30,11 @@ public class PauseMenu : MonoBehaviour
                 player.InMenuState.SelectPage(player.InMenuState.StartPage);
             });
             
+            optionsButton.onClick.AddListener(() =>
+            {
+                player.InMenuState.SelectPage(player.InMenuState.OptionsPage);
+                Debug.Log(player.InMenuState.CurrentPage);
+            });
             
             debugMenuButton.onClick.AddListener(() =>
             {

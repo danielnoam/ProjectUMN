@@ -15,17 +15,8 @@ public class SOAudioManager : ScriptableObject
 {
     [SerializeField] private AudioMixer audioMixer;
     
-
-    private void OnEnable()
-    {
-        if (audioMixer == null)
-        {
-            Debug.LogError("AudioMixer is not assigned!");
-            return;
-        }
-    }
     
-
+    
     public void SetVolume(VolumeType type, float volume)
     {
         if (audioMixer == null) return;

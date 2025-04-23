@@ -8,6 +8,9 @@ public class EndPlatform : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private bool isActive;
+    [SerializeField] private bool startCreditsSequence;
+    
+    [Header("References")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private Light pointLight;
     [SerializeField] private Transform endPoint;
@@ -53,7 +56,15 @@ public class EndPlatform : MonoBehaviour
         
         if (other.TryGetComponent(out PlayerStateMachine player))
         {
-            _testManager.LoadNextTest();
+            if (startCreditsSequence)
+            {
+                _testManager.StartCreditsSequence();
+            }
+            else
+            {
+                _testManager.LoadNextTest();
+            }
+            
         }
     }
 
