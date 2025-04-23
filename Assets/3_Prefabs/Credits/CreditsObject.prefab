@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8548140340917605251}
   - component: {fileID: 8752189424163672298}
   m_Layer: 6
-  m_Name: PrefabCreditsText
+  m_Name: CreditsObject
   m_TagString: Untagged
   m_Icon: {fileID: 7250588514170254948, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -134,6 +134,8 @@ MonoBehaviour:
   categorySpacing: 1
   scrollDirection: {x: 0, y: 1, z: 0}
   startingOffset: {x: 0, y: -3, z: 0}
+  useDurationMode: 0
+  creditsDuration: 60
   loopCredits: 1
   loopDelay: 0
   resetDistance: 30
@@ -166,5 +168,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cb579a96d918ac14e88817fba204e16f, type: 2}
   - {fileID: 11400000, guid: 571683e1e5adda143b38d0dafba5542e, type: 2}
   - {fileID: 11400000, guid: 8a4bad75160d52c428974b797bb9430e, type: 2}
+  - {fileID: 11400000, guid: 5352ca6962fecaa40b0f7ecf23c8c853, type: 2}
+  - {fileID: 11400000, guid: d2b6beb264dca7c4c96f6d2b77232fbe, type: 2}
   creditsTextPrefab: {fileID: 1036076733637116073, guid: 19ad47ff3ca4bd448a00d7871bb70e7e, type: 3}
   creditsHeaderPrefab: {fileID: 7305000563526641236, guid: 50ee7fb1c4b001e4ab015f80ab57763d, type: 3}
