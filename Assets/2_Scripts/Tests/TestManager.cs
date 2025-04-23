@@ -286,7 +286,7 @@ public class TestManager : MonoBehaviour
 
     
     [Button]
-    private void StartIntroSequence()
+    public void StartIntroSequence()
     {
         StartCoroutine(IntroSequenceCoroutine());
     }

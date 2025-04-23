@@ -8,9 +8,12 @@ public class DebugMenu : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button pauseMenuButton;
     [SerializeField] private Button toggleDebugMode;
-    [SerializeField] private Button nextTestButton;
     [SerializeField] private Button removeCurrentTestButton;
-    [SerializeField] private Button restartSimulationButton; 
+    [SerializeField] private Button restartSimulationButton;
+    [SerializeField] private Button loadTest0;
+    [SerializeField] private Button loadTest1;
+    [SerializeField] private Button loadTest2;
+    [SerializeField] private Button loadTest3;
 
     [Header("References")]
     [SerializeField] private PlayerStateMachine player;
@@ -34,13 +37,6 @@ public class DebugMenu : MonoBehaviour
                 TestManager.Instance.ToggleDebugMode();
             });
             
-            
-            nextTestButton.onClick.AddListener(() =>
-            {
-                TestManager.Instance.LoadNextTest();
-                player.InMenuState.ExitMenu();
-            });
-            
             removeCurrentTestButton.onClick.AddListener(() =>
             {
                 TestManager.Instance.StartClearTestSequence();
@@ -50,7 +46,27 @@ public class DebugMenu : MonoBehaviour
             
             restartSimulationButton.onClick.AddListener(() =>
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                TestManager.Instance.StartIntroSequence();
+            });
+            
+            loadTest0.onClick.AddListener(() =>
+            {
+                TestManager.Instance.StartTest(0);
+            });
+            
+            loadTest1.onClick.AddListener(() =>
+            {
+                TestManager.Instance.StartTest(1);
+            });
+            
+            loadTest2.onClick.AddListener(() =>
+            {
+                TestManager.Instance.StartTest(2);
+            });
+            
+            loadTest3.onClick.AddListener(() =>
+            {
+                TestManager.Instance.StartTest(3);
             });
         }
     }
