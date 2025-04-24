@@ -132,7 +132,7 @@ public class TestManager : MonoBehaviour
         {
             StartIntroSequence();
         }
-        else
+        else if (SceneManager.GetActiveScene().buildIndex == 1 && !debugMode)
         {
             StartClearTestSequence();
         }

@@ -759,7 +759,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         if (!_playerFollowPosition || !_playerAimingFollowPosition) return;
         
         // Calculate the direction to the target in the horizontal plane only
-        bool isPlayerAiming = _player.IsAiming;
+        bool isPlayerAiming = _player.IsAiming || _player.CurrentState == _player.InMenuState;
         
         Vector3 targetPosition = isPlayerAiming ? new Vector3(_playerAimingFollowPosition.position.x, transform.position.y, _playerAimingFollowPosition.position.z) 
             : new Vector3(_playerFollowPosition.position.x, transform.position.y, _playerFollowPosition.position.z);
