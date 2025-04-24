@@ -20,8 +20,7 @@ public class CollectableItem : MonoBehaviour
     [SerializeField] private float rotationSpeed = 1f;
     [SerializeField] private Vector3 rotationDirection = Vector3.up;
     
-    private bool _animationComplete = false;
-    private bool _pickedUp = false;
+    private bool _animationComplete;
     private Vector3 _itemStartPosition;
     private Quaternion _itemStartRotation;
     private Vector3 _itemStartScale;
@@ -55,7 +54,6 @@ public class CollectableItem : MonoBehaviour
     [Button]
     public void PickUp()
     {
-        _pickedUp = true;
         
         if (_effectSequence.isAlive) 
         {
