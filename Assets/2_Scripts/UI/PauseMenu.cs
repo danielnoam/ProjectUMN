@@ -33,7 +33,6 @@ public class PauseMenu : MonoBehaviour
             optionsButton.onClick.AddListener(() =>
             {
                 player.InMenuState.SelectPage(player.InMenuState.OptionsPage);
-                Debug.Log(player.InMenuState.CurrentPage);
             });
             
             debugMenuButton.onClick.AddListener(() =>
@@ -43,8 +42,8 @@ public class PauseMenu : MonoBehaviour
             
             restartTestButton.onClick.AddListener(() =>
             {
-                TestManager.Instance.RestartCurrentTest(); 
                 player.SwitchState(player.GroundedState);
+                TestManager.Instance.RestartCurrentTest(); 
             });
             
             

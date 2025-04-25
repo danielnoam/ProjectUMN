@@ -2,6 +2,7 @@ using UnityEngine;
 using VInspector;
 using System.Collections.Generic;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 [SelectionBase]
@@ -17,11 +18,14 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, Tooltip("If enabled, the power point will remain active after first activation, even if power sources are removed")]
     private bool stayActiveAfterFirstActivation = false;
-
-    [Header("Sfx")] 
+    
+    [Header("Feedback")] 
+    [SerializeField] private CableState cableStateOnActivate = CableState.Toggle;
+    [SerializeField] private CableState cableStateOnDeactivate = CableState.Toggle;
+    [SerializeField] private Cable[] connectedCables;
     [SerializeField] private SOAudioEvent sfxLoop;
     
-    [Header("Rotation")]
+    [Foldout("Rotation")]
     [SerializeField, Tooltip("The transform that will rotate when power is applied")]
     private Transform rotationPivot;
     
@@ -36,8 +40,9 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, Tooltip("Direction of rotation (normalized in code)")]
     private Vector3 rotationDirection = Vector3.up;
+    [EndFoldout]
     
-    [Header("Light")]
+    [Foldout("Light")]
     [SerializeField, Tooltip("Reference to the light component that will change intensity with power")]
     private Light pointLight;
     
@@ -52,8 +57,9 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, Tooltip("How quickly the light intensity decreases when power is reduced")]
     private float lightDeceleration = 1.5f;
+    [EndFoldout]
     
-    [Header("Material")]
+    [Foldout("Material")]
     [SerializeField, Tooltip("Reference to the renderer component whose material will have emission")]
     private Renderer materialRenderer;
     
@@ -68,6 +74,7 @@ public class PowerPoint : MonoBehaviour
     
     [SerializeField, Tooltip("How quickly the emission intensity decreases when power is reduced")]
     private float emissionDeceleration = 1.5f;
+    [EndFoldout]
     
     [Header("Events")]
     [SerializeField, Tooltip("Event triggered when the power point becomes fully activated")]
@@ -137,7 +144,7 @@ public class PowerPoint : MonoBehaviour
         float rawRatio;
         if (stayActiveAfterFirstActivation && hasBeenActivated)
         {
-            rawRatio = 1.0f; // Full power
+            rawRatio = 1.0f;
         }
         else
         {
@@ -150,11 +157,13 @@ public class PowerPoint : MonoBehaviour
         {
             isOn = true;
             hasBeenActivated = true; // Mark as having been activated at least once
+            ToggleConnectedCables(true);
             onActivated?.Invoke();
         } 
         else if (!shouldBeOn && isOn && _currentRotationSpeed <= rotationSpeed/2)
         {
             isOn = false;
+            ToggleConnectedCables(false);
             onDeactivated?.Invoke();
         }
     }
@@ -242,6 +251,7 @@ public class PowerPoint : MonoBehaviour
             // Apply rotation using the smoothed speed
             rotationPivot.Rotate(rotationDirection * (_currentRotationSpeed * Time.deltaTime));
         }
+        
     }
     
     public void AddPowerSource(Object source)
@@ -258,5 +268,47 @@ public class PowerPoint : MonoBehaviour
     {
         // Method to manually reset the "has been activated" state
         hasBeenActivated = false;
+    }
+    
+    private void ToggleConnectedCables(bool OnActivate)
+    {
+        if (connectedCables == null || connectedCables.Length == 0) return;
+
+        foreach (var cable in connectedCables)
+        {
+            if (cable == null) continue;
+
+            if (OnActivate)
+            {
+                switch (cableStateOnActivate)
+                {
+                    case CableState.On:
+                        cable.SetState(true);
+                        break;
+                    case CableState.Off:
+                        cable.SetState(false);
+                        break;
+                    case CableState.Toggle:
+                        cable.Toggle();
+                        break;
+                }
+            }
+            else
+            {
+                switch (cableStateOnDeactivate)
+                {
+                    case CableState.On:
+                        cable.SetState(true);
+                        break;
+                    case CableState.Off:
+                        cable.SetState(false);
+                        break;
+                    case CableState.Toggle:
+                        cable.Toggle();
+                        break;
+                }
+            }
+
+        }
     }
 }

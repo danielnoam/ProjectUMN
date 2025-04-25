@@ -94,6 +94,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [SerializeField] private float lineVisibilityLerpSpeed = 10f;
     [Tooltip("The start position of the aim ray")]
     public Transform aimRayStartPosition;
+    [Tooltip("Layer mask defining what objects block the aim ray")]
+    [SerializeField] private LayerMask aimRayBlockLayer = 1;
     
 
     [Foldout("Events")] 
@@ -550,7 +552,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
         // Create a layer mask that includes both interactable objects AND environment/walls
         // This ensures we hit walls first if they're in the way
-        LayerMask raycastMask = interactableLayer | environmentLayer;
+        LayerMask raycastMask = interactableLayer | aimRayBlockLayer;
 
         // Create the actual ray for Physics ray-casting
         Ray aimRay = new Ray(rayOrigin, rayDirection);
@@ -632,7 +634,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             Ray aimRay = new Ray(rayOrigin, rayDirection);
 
             // Perform raycast to see if we hit anything
-            if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, interactableLayer | environmentLayer))
+            if (Physics.Raycast(aimRay, out RaycastHit hitInfo, aimRayMaxDistance, interactableLayer | aimRayBlockLayer))
             {
                 // Set target to hit position
                 _targetLineEndPosition = hitInfo.point;

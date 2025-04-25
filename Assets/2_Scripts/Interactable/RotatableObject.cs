@@ -32,7 +32,7 @@ public class RotatableObject : MonoBehaviour
     private void Awake()
     {
         _audioSource = GetComponent<AudioSource>();
-        _defaultRotation = transform.rotation.eulerAngles;
+        _defaultRotation = transform.localRotation.eulerAngles;
     }
 
     private void OnValidate()
@@ -63,7 +63,7 @@ public class RotatableObject : MonoBehaviour
     {
         if (!CanRotate()) return;
         
-        _rotateTween = Tween.Rotation(transform, targetRotation, rotationTime, rotationEase);
+        _rotateTween = Tween.LocalRotation(transform, targetRotation, rotationTime, rotationEase);
         
         if (_audioSource) 
         {
@@ -95,7 +95,7 @@ public class RotatableObject : MonoBehaviour
     public void SetRotationOnX(float degrees)
     {
         if (rotationMode != RotationMode.Direct) return;
-        Vector3 currentEuler = transform.rotation.eulerAngles;
+        Vector3 currentEuler = transform.localRotation.eulerAngles;
         RotateTo(Quaternion.Euler(degrees, currentEuler.y, currentEuler.z));
     }
     
@@ -103,33 +103,33 @@ public class RotatableObject : MonoBehaviour
     {
         if (rotationMode != RotationMode.Direct) return;
         
-        Vector3 currentEuler = transform.rotation.eulerAngles;
+        Vector3 currentEuler = transform.localRotation.eulerAngles;
         RotateTo(Quaternion.Euler(currentEuler.x, degrees, currentEuler.z));
     }
     
     public void SetRotationOnZ(float degrees)
     {
         if (rotationMode != RotationMode.Direct) return;
-        Vector3 currentEuler = transform.rotation.eulerAngles;
+        Vector3 currentEuler = transform.localRotation.eulerAngles;
         RotateTo(Quaternion.Euler(currentEuler.x, currentEuler.y, degrees));
     }
     
     public void RotateOnXBy(float degrees)
     {
         if (rotationMode != RotationMode.Direct) return;
-        RotateTo(transform.rotation * Quaternion.AngleAxis(degrees, Vector3.right));
+        RotateTo(transform.localRotation * Quaternion.AngleAxis(degrees, Vector3.right));
     }
     
     public void RotateOnYBy(float degrees)
     {
         if (rotationMode != RotationMode.Direct) return;
-        RotateTo(transform.rotation * Quaternion.AngleAxis(degrees, Vector3.up));
+        RotateTo(transform.localRotation * Quaternion.AngleAxis(degrees, Vector3.up));
     }
     
     public void RotateOnZBy(float degrees)
     {
         if (rotationMode != RotationMode.Direct) return;
-        RotateTo(transform.rotation * Quaternion.AngleAxis(degrees, Vector3.forward));
+        RotateTo(transform.localRotation * Quaternion.AngleAxis(degrees, Vector3.forward));
     }
     
     #endregion Direct Rotation Methods -------------------------------------

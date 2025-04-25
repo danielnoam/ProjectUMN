@@ -936,6 +936,9 @@ MonoBehaviour:
   aimRayMaxDistance: 45
   lineVisibilityLerpSpeed: 10
   aimRayStartPosition: {fileID: 9001959687672841214}
+  aimRayBlockLayer:
+    serializedVersion: 2
+    m_Bits: 1
   onPlayerDeath:
     m_PersistentCalls:
       m_Calls: []
@@ -3890,7 +3893,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3421081890254558559, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -33.2
+      value: -21.4
       objectReference: {fileID: 0}
     - target: {fileID: 3421081890254558559, guid: a908b2e9ec5639445bbe30f234be472e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

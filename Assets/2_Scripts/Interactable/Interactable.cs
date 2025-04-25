@@ -6,13 +6,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using VInspector;
 
-public enum CommandToSend
-{
-    Nothing,
-    Follow,
-    Sit,
-    Idle,
-}
+
 
 [RequireComponent(typeof(AudioSource))]
 public class Interactable : MonoBehaviour
@@ -53,6 +47,7 @@ public class Interactable : MonoBehaviour
     public bool OnlyRobotCanInteract => allowedInteractors == InteractorType.Robot;
     public bool BothCanInteract => allowedInteractors == InteractorType.Both;
     public bool MarkedForInteraction => _markedForInteraction;
+    public Transform RobotInteractPosition => robotInteractPosition;
     public CommandToSend Command => commandToSend;
     private bool _interacted = false;
     private bool _isInteracting = false;

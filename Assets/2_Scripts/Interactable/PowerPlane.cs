@@ -236,6 +236,15 @@ public class PowerPlane : MonoBehaviour
         UpdateActivationState();
     }
     
+    public void DisconnectAllPowerSources()
+    {
+        // Clear all power sources
+        _powerSources.Clear();
+        
+        // Update the activation state
+        UpdateActivationState();
+    }
+    
     #endregion Control Methods -----------------------------------------------------------------------------------
     
     

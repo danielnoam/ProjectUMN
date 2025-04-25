@@ -16,6 +16,14 @@ public enum RobotState
     Dead = 6,
 }
 
+public enum CommandToSend
+{
+    Nothing,
+    Follow,
+    Sit,
+    Idle,
+}
+
 [SelectionBase]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(AudioSource))]
@@ -349,6 +357,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
                    break;
                case RobotState.Idle:
                    AdjustHeight();
+                   if (_target) {MoveToPosition(_target); }
                    break;
                case RobotState.Sitting:
                    HandleSitting();
@@ -411,6 +420,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        CurrentInteractable = interactable;
        _target = interactable.GetInteractPosition(this);
        currentState = RobotState.GoingToTarget;
+       _rigidBody.isKinematic = false;
+       _rigidBody.useGravity = false;
    }
    
    
@@ -429,12 +440,12 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    }
    
    [Button]
-   public void CommandIdle()
+   public void CommandIdle(Transform target = null)
    {
        if (!CanCommend() || currentState == RobotState.Idle) return;
        
        sfxReceiveCommand?.Play(_audioSource);
-       _target = null;
+       _target = target;
        currentState = RobotState.Idle;
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = false;
@@ -483,7 +494,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        switch (CurrentInteractable.Command)
        {
            case CommandToSend.Idle:
-               CommandIdle();
+               CommandIdle(CurrentInteractable.RobotInteractPosition);
                break;
            case CommandToSend.Sit:
                CommandSitDown();
@@ -916,6 +927,35 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            _rigidBody.linearVelocity = newVelocity;
        }
    }
+   
+   private void MoveToPosition(Transform target)
+   {
+       // Calculate distance to target
+       Vector3 targetPosition = new Vector3(target.position.x, target.position.y, target.position.z);
+       float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+    
+
+       // If we're close enough to the target
+       if (distanceToTarget >= interactDistance/2)
+       {
+           // If we're not close enough, move towards the target
+           Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+           Vector3 moveDirection = new Vector3(directionToTarget.x, 0f, directionToTarget.z);
+           
+           Vector3 newVelocity = new Vector3(
+               moveDirection.x * (horizontalMoveSpeed * Time.fixedDeltaTime),
+               _rigidBody.linearVelocity.y,
+               moveDirection.z * (horizontalMoveSpeed * Time.fixedDeltaTime)
+           );
+           
+           // Apply the movement
+           _rigidBody.linearVelocity = newVelocity;
+       }
+       else
+       {
+            _rigidBody.linearVelocity = new Vector3(0, _rigidBody.linearVelocity.y, 0);
+       }
+   }
 
    #endregion Horizontal movement -------------------------------------------------------------------------------
    
@@ -1229,7 +1269,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
             
                 _debugText.text = $"State: {CurrentState}\n" +
                                   $"Battery: {currentBattery}\n" +
-                                  $"Velocity: {_rigidBody.linearVelocity}"
+                                  $"Velocity: {_rigidBody.linearVelocity}\n" +
+                                  $"Target: {_target}\n"
                           ;
             }
         }
@@ -1238,8 +1279,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
 
    #endregion Utility ------------------------------------------------------------------------
-   
-   
    
    
    #region Gizmos ------------------------------------------------------------------------
