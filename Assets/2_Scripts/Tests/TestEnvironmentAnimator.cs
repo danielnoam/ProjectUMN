@@ -28,11 +28,8 @@ public class TestEnvironmentAnimator : MonoBehaviour
     
     
     [Header("Object Filtering")]
-    [SerializeField] private bool findAllMeshesInScene = true;
+    [SerializeField] private bool findAllAnimatedObjectsInScene = true;
     [SerializeField] private List<GameObject> additionalObjectsToAnimate = new List<GameObject>();
-    [SerializeField] private List<GameObject> excludedObjects = new List<GameObject>();
-    [SerializeField] private bool excludePlayer = true;
-    [SerializeField] private bool excludeFloor = true;
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -87,16 +84,17 @@ public class TestEnvironmentAnimator : MonoBehaviour
 
         
         
-        // Find all mesh renderers in the scene if option is enabled
-        if (findAllMeshesInScene)
+        // Find all TestAnimatedObject components in the scene if option is enabled
+        if (findAllAnimatedObjectsInScene)
         {
-            MeshRenderer[] allMeshes = FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None);
-            foreach (MeshRenderer mesh in allMeshes)
+            TestAnimatedObject[] allAnimatedObjects = FindObjectsByType<TestAnimatedObject>(FindObjectsSortMode.None);
+            foreach (TestAnimatedObject animObj in allAnimatedObjects)
             {
-                if (!ShouldExclude(mesh.gameObject))
+                // Only include objects that have AffectedByTestAnimations set to true
+                if (animObj.AffectedByTestAnimations && !ShouldExclude(animObj.gameObject))
                 {
-                    objectsToAnimate.Add(mesh.gameObject);
-                    _originalScales[mesh.gameObject] = mesh.transform.localScale;
+                    objectsToAnimate.Add(animObj.gameObject);
+                    _originalScales[animObj.gameObject] = animObj.transform.localScale;
                 }
             }
         }
@@ -121,55 +119,31 @@ public class TestEnvironmentAnimator : MonoBehaviour
     
     private bool ShouldExclude(GameObject obj)
     {
-        // Direct match in excluded objects list
-        if (excludedObjects.Contains(obj))
-            return true;
-                
-        // Always check if object is a child of any excluded object (recursively)
-        foreach (GameObject excludedObj in excludedObjects)
-        {
-            if (!excludedObj) continue;
-            
-            // Check if obj is a child of excludedObj (recursive check)
-            if (IsChildOf(obj.transform, excludedObj.transform))
-                return true;
-        }
         
         // Check for Robot exclusion
-        if (_testManager)
+        if (_testManager&& _testManager.Robot)
         {
-            bool shouldExcludeRobot = false;
+            // get the robot TestAnimatedObject
+            TestAnimatedObject robotTestAnimatedObject = _testManager.Robot.GetComponent<TestAnimatedObject>();
+            if (robotTestAnimatedObject && !robotTestAnimatedObject.AffectedByTestAnimations) return true;
             
-            // Check conditions for robot exclusion
-            if (_testManager.CurrentTest && !_testManager.CurrentTest.HasRobot())
-                shouldExcludeRobot = true;
-            else if (_testManager.Robot && _testManager.Robot.CurrentState == RobotState.Dead)
-                shouldExcludeRobot = true;
-                
-            if (shouldExcludeRobot && _testManager.Robot)
-            {
-                // Check if the object is the robot or a child of the robot
-                GameObject robotObject = _testManager.Robot.gameObject;
-                if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
-                    return true;
-            }
+            // Check if the object is the robot or a child of the robot
+            GameObject robotObject = _testManager.Robot.gameObject;
+            if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
+                return true;
         }
         
         // Check for Player exclusion
-        if (_testManager && _testManager.Player && excludePlayer)
+        if (_testManager && _testManager.Player)
         {
+            // get the player TestAnimatedObject
+            TestAnimatedObject playerTestAnimatedObject = _testManager.Player.GetComponent<TestAnimatedObject>();
+            
+            if (playerTestAnimatedObject && !playerTestAnimatedObject.AffectedByTestAnimations) return true;
+            
             // Check if the object is the player or a child of the player
             GameObject playerObject = _testManager.Player.gameObject;
             if (obj == playerObject || IsChildOf(obj.transform, playerObject.transform))
-                return true;
-        }
-        
-        // Check for Floor exclusion
-        _floorGameObject = GameObject.Find("Floor");
-        if (_testManager && _floorGameObject && excludeFloor)
-        {
-            // Check if the object is the floor or a child of the floor
-            if (obj == _floorGameObject || IsChildOf(obj.transform, _floorGameObject.transform))
                 return true;
         }
         
@@ -282,8 +256,11 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 // Append any remaining objects that weren't in the custom list
                 sortedList.AddRange(objectsToAnimate);
                 
+                // Check for Floor
+                _floorGameObject = GameObject.Find("Floor");
+                
                 // Make sure the floor object is always at the end
-                if (_floorGameObject  && !excludeFloor && sortedList.Contains(_floorGameObject))
+                if (_floorGameObject && sortedList.Contains(_floorGameObject))
                 {
                     sortedList.Remove(_floorGameObject);
                     sortedList.Add(_floorGameObject);

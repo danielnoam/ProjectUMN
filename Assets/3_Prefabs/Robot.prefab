@@ -656,6 +656,7 @@ GameObject:
   - component: {fileID: 3648063352551605096}
   - component: {fileID: 7554109476326350533}
   - component: {fileID: 4432918703769448186}
+  - component: {fileID: -2488924380178844731}
   m_Layer: 7
   m_Name: Robot
   m_TagString: Untagged
@@ -983,6 +984,19 @@ MonoBehaviour:
   onRobotRespawn:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-2488924380178844731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5879472811423644759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  affectedByTestAnimations: 1
 --- !u!1 &7300311048934344313
 GameObject:
   m_ObjectHideFlags: 0

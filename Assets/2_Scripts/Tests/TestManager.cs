@@ -572,7 +572,7 @@ public class TestManager : MonoBehaviour
         
         
         Destroy(currentEnvironment);
-        if (currentRobot && currentRobot.CurrentState == RobotState.Dead) Destroy(currentRobot.gameObject);
+        if (currentRobot) Destroy(currentRobot.gameObject);
         currentTest = null;
         currentEnvironment = null;
         currentCheckpoint = null;

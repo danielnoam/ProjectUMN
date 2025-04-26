@@ -268,8 +268,16 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!IsOn()) return;
        
-       Teleport(_player.transform.position, Quaternion.identity);
        CommandFollowPlayer();
+       
+        float distanceToPlayer = Vector3.Distance(_player.transform.position, transform.position);
+        if (distanceToPlayer > maxFollowTeleportDistance)
+        {
+            // Teleport to player position
+            Teleport(_player.transform.position, Quaternion.identity);
+        }
+        
+       
    }
 
    private void OnCollisionEnter(Collision other)
