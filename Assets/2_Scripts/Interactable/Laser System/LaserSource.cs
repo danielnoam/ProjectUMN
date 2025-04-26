@@ -66,6 +66,8 @@ public class LaserSource : MonoBehaviour
 
     private void OnDisable()
     {
+        _activationTween.Stop();
+        _delayTween.Stop();
         _wasActive = isActive;
         SetLaserActive(false);
     }

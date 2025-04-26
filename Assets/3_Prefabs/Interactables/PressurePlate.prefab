@@ -197,6 +197,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fadeDuration: 7
+  respondToWorldLightLevel: 1
+  trackTarget: 0
+  target: {fileID: 0}
+  trackingDistance: 5
+  rotationSpeed: 5
 --- !u!1 &5621466081931174891
 GameObject:
   m_ObjectHideFlags: 0
@@ -252,7 +257,7 @@ MonoBehaviour:
   - Assets/4_Resources/Materials/URP-Custom-InteractableObjectThird.mat
   currentMaterialIndex: -1
   renderableMesh:
-    name: UM_OperatedMesh_0aca907b-0fa5-4544-8248-86be0b08dc46
+    name: UM_OperatedMesh_267800d5-6599-49dd-9d15-8ca13179af42
     skinnedMesh: 0
     sharedMesh: {fileID: 2150488866728400622}
     buidVersion:
@@ -265,7 +270,7 @@ MonoBehaviour:
       OptimizedTopology: 0
       TransformVersion: 0
   sourceMesh: {fileID: 0}
-  sourceMeshRendererGUID: 0aca907b-0fa5-4544-8248-86be0b08dc46
+  sourceMeshRendererGUID: 267800d5-6599-49dd-9d15-8ca13179af42
   guid: bd564a28-c7ef-4561-bd77-cbe3133cef69
   localOptions:
     RecalculateTangents: 0
@@ -396,8 +401,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.3
-  m_Center: {x: 0, y: 0.4, z: 0}
+  m_Radius: 1.1
+  m_Center: {x: 0, y: -0.3, z: 0}
 --- !u!82 &4225073155664388118
 AudioSource:
   m_ObjectHideFlags: 0
@@ -616,7 +621,7 @@ MonoBehaviour:
   - Assets/4_Resources/Materials/Button.mat
   currentMaterialIndex: 0
   renderableMesh:
-    name: UM_OperatedMesh_b4bfe666-6e16-4aed-9d8c-1c693fb80933
+    name: UM_OperatedMesh_46b26d46-3745-4911-a2cd-1bfc76449975
     skinnedMesh: 0
     sharedMesh: {fileID: 6142770484647763663}
     buidVersion:
@@ -629,7 +634,7 @@ MonoBehaviour:
       OptimizedTopology: 0
       TransformVersion: 0
   sourceMesh: {fileID: 0}
-  sourceMeshRendererGUID: b4bfe666-6e16-4aed-9d8c-1c693fb80933
+  sourceMeshRendererGUID: 46b26d46-3745-4911-a2cd-1bfc76449975
   guid: 0bc55d2b-9810-4e88-ae74-1fdee73383db
   localOptions:
     RecalculateTangents: 0
@@ -796,7 +801,7 @@ MonoBehaviour:
   - Assets/4_Resources/Materials/URP-Custom-InteractableObjectMain.mat
   currentMaterialIndex: 0
   renderableMesh:
-    name: UM_OperatedMesh_b5c82dd7-f14b-4104-b55e-0965686912ce
+    name: UM_OperatedMesh_e7b2831c-62d1-4d0d-ad57-b4e6da8553f9
     skinnedMesh: 0
     sharedMesh: {fileID: -316921432021833807}
     buidVersion:
@@ -809,7 +814,7 @@ MonoBehaviour:
       OptimizedTopology: 0
       TransformVersion: 0
   sourceMesh: {fileID: 0}
-  sourceMeshRendererGUID: b5c82dd7-f14b-4104-b55e-0965686912ce
+  sourceMeshRendererGUID: e7b2831c-62d1-4d0d-ad57-b4e6da8553f9
   guid: 0bc55d2b-9810-4e88-ae74-1fdee73383db
   localOptions:
     RecalculateTangents: 0
