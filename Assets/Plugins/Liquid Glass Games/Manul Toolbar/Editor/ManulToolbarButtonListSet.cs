@@ -13,6 +13,9 @@ namespace Manul.Toolbar
 		public string intPrefName;
 		public float popupWidth = 100f;
 		public List<ManulToolbarButtonListSetEntry> listEntries;
+
+		public bool useOnChangeValueActions;
+		public List<ManulToolbarAction> onChangeValueActions;
 	}
 }
 

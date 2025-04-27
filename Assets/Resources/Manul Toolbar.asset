@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Manul Toolbar
   m_EditorClassIdentifier: 
   settingsExpanded: 1
-  currentVersion: 1.3.3
+  currentVersion: 1.4.0
   settings:
     leftBeginOffset: 10
     rightBeginOffset: -5
@@ -22,6 +22,8 @@ MonoBehaviour:
     defaultToggleStyle: 37
     defaultLabelStyle: 13
     defaultPopupStyle: 29
+    defaultNumberStyle: 0
+    defaultTextStyle: 0
     showConsoleMessages: 1
     disableToolbar: 0
     mutedColor: {r: 1, g: 1, b: 1, a: 0.6}
@@ -38,6 +40,8 @@ MonoBehaviour:
     labelType: 0
     labelText: '||'
     labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
     useStyle: 0
     editorStyle: 30
     styleName: 
@@ -57,11 +61,28 @@ MonoBehaviour:
       keyboardButton: 0
       buttonType: 5
       buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: ExampleStaticClass
       methodName: CheckExampleEditorPref
+      listActionName: 
+      isPartOfList: 0
     showNameField: 0
     intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
   rightSide:
   - isActive: 1
     isExpanded: 0
@@ -69,6 +90,8 @@ MonoBehaviour:
     labelType: 0
     labelText: '||'
     labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
     useStyle: 0
     editorStyle: 30
     styleName: 
@@ -88,17 +111,36 @@ MonoBehaviour:
       keyboardButton: 0
       buttonType: 5
       buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: ExampleStaticClass
       methodName: CheckExampleEditorPref
+      listActionName: 
+      isPartOfList: 0
     showNameField: 0
     intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
   - isActive: 1
     isExpanded: 0
     type: 1
     labelType: 0
     labelText: Main Scene
     labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
     useStyle: 1
     editorStyle: 0
     styleName: 
@@ -118,17 +160,36 @@ MonoBehaviour:
       keyboardButton: 0
       buttonType: 1
       buttonObject: {fileID: 102900000, guid: fc454137dab98c74ab8ec26789975ef0, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: 
       methodName: 
+      listActionName: 
+      isPartOfList: 0
     showNameField: 0
     intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
   - isActive: 1
     isExpanded: 0
     type: 1
     labelType: 0
     labelText: Test Scene
     labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
     useStyle: 1
     editorStyle: 0
     styleName: 
@@ -148,17 +209,36 @@ MonoBehaviour:
       keyboardButton: 0
       buttonType: 1
       buttonObject: {fileID: 102900000, guid: f989c36ebac9aea4fac0e9753708a3a8, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: 
       methodName: 
+      listActionName: 
+      isPartOfList: 0
     showNameField: 0
     intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
   - isActive: 1
     isExpanded: 0
     type: 1
     labelType: 0
     labelText: Toolbar
     labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
     useStyle: 0
     editorStyle: 0
     styleName: Style Name
@@ -179,15 +259,37 @@ MonoBehaviour:
       keyboardButton: 0
       buttonType: 5
       buttonObject: {fileID: 11400000, guid: 2fac116c5edda2d4c951022af02505a7, type: 2}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: Manul.Toolbar.ManulToolbar
       methodName: FindManulToolbar
+      listActionName: 
+      isPartOfList: 0
     - mouseButton: 0
       keyboardButton: 0
       buttonType: 4
       buttonObject: {fileID: 11400000}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
       objectName: 
       className: 
       methodName: 
+      listActionName: 
+      isPartOfList: 0
     showNameField: 0
     intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0

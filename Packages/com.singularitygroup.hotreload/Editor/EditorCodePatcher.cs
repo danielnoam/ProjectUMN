@@ -156,7 +156,6 @@ namespace SingularityGroup.HotReload.Editor {
             };
             DetectEditorStart();
             DetectVersionUpdate();
-            RecordActiveDaysForRateApp();
             CodePatcher.I.fieldHandler = new FieldHandler(FieldDrawerUtil.StoreField, UnityFieldHelper.HideField, UnityFieldHelper.RegisterInspectorFieldAttributes);
             if (EditorApplication.isPlayingOrWillChangePlaymode) {
                 CodePatcher.I.InitPatchesBlocked(patchesFilePath);
@@ -987,6 +986,7 @@ namespace SingularityGroup.HotReload.Editor {
             var isReleaseMode = RequestHelper.IsReleaseMode();
             var detailedErrorReporting = !HotReloadPrefs.DisableDetailedErrorReporting;
             CodePatcher.I.ClearPatchedMethods();
+            RecordActiveDaysForRateApp();
             try {
                 requestingStart = true;
                 startupProgress = Tuple.Create(0f, "Starting Hot Reload");

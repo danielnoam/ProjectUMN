@@ -10,8 +10,14 @@ namespace Manul.Toolbar.Examples
 	{
 		void MethodFromComponent()
 		{
-			Debug.Log("This is method ivoked using the 'Component Method' action type.");
+			Debug.Log("This is a method invoked using the 'Component Method' action type.");
 		}
+
+		public void InvokeMethodByEvent(int parameter)
+		{
+			Debug.Log("This is a method invoked using an event by the 'Invoke Event' action type. The parameter is: " + parameter);
+		}
+
 	}
 }
 

@@ -82,7 +82,17 @@ namespace Manul.Toolbar.Examples
 		static void CheckOptionBPref()
 		{
 			Debug.Log("Example Editor Int Pref named 'PopupExampleB' is: " + EditorPrefs.GetInt("PopupExampleB"));
-		} 
+		}
+
+		static void TestSliderFloat()
+		{
+			Debug.Log("Value of Float Slider was changed. New value: " + EditorPrefs.GetFloat("float slider example pref"));
+		}
+
+		static void TestSliderInt()
+		{
+			Debug.Log("Value of Int Slider was changed. New value: " + EditorPrefs.GetInt("int slider example pref"));
+		}
 	}
 }
 

@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 using UnityEngine.Experimental.UIElements;
 #endif
 
-namespace UnityToolbarExtender
+namespace U_ToolbarExtender
 {
 	public static class ToolbarCallback
 	{ 

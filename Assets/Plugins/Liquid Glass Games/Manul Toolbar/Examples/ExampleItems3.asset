@@ -1,0 +1,577 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a9576f1f8edd540a51ec85dcba69d5, type: 3}
+  m_Name: ExampleItems3
+  m_EditorClassIdentifier: 
+  buttons:
+  - isActive: 1
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: Number (float)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 1
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 89
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: Scene Selection Pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 1de8017ea08a0eb4db4cffe2992acdb9, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene1
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: c2b2d4c56b322614f8eaccc22ca9ae6c, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 12
+      buttonObject: {fileID: 102900000, guid: 4aaaf395b1f67c54bbe2a7ec2fdfac97, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 9e37d5ff364e2904a86e686c3c49c027, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene3
+      isPartOfList: 1
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 6
+    labelType: 0
+    labelText: Example Number (float)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 40
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: float number example pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: 9a8b525c74af78e419cf31c65074e1b2, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.Examples.ExampleScriptableObject,
+              Assembly-CSharp
+            m_MethodName: TestNumberFloat
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 2
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 1
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: Number (int)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 1
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 76
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: Scene Selection Pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 1de8017ea08a0eb4db4cffe2992acdb9, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene1
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: c2b2d4c56b322614f8eaccc22ca9ae6c, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 12
+      buttonObject: {fileID: 102900000, guid: 4aaaf395b1f67c54bbe2a7ec2fdfac97, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 9e37d5ff364e2904a86e686c3c49c027, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene3
+      isPartOfList: 1
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 6
+    labelType: 0
+    labelText: Example Number (int)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 40
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: int number example pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: 9a8b525c74af78e419cf31c65074e1b2, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.Examples.ExampleScriptableObject,
+              Assembly-CSharp
+            m_MethodName: TestNumberInt
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 2
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 1
+    numberType: 1
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: Slider (float)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 1
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 76
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: Scene Selection Pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 1de8017ea08a0eb4db4cffe2992acdb9, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene1
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: c2b2d4c56b322614f8eaccc22ca9ae6c, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 12
+      buttonObject: {fileID: 102900000, guid: 4aaaf395b1f67c54bbe2a7ec2fdfac97, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 9e37d5ff364e2904a86e686c3c49c027, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene3
+      isPartOfList: 1
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 5
+    labelType: 0
+    labelText: Example Slider (float)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 150
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: float slider example pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 5
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: Manul.Toolbar.Examples.ExampleStaticClass
+      methodName: TestSliderFloat
+      listActionName: Scene1
+      isPartOfList: 2
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 1
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 1
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 3
+    labelType: 0
+    labelText: Slider (int)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 1
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 63
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: Scene Selection Pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 1de8017ea08a0eb4db4cffe2992acdb9, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene1
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: c2b2d4c56b322614f8eaccc22ca9ae6c, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 12
+      buttonObject: {fileID: 102900000, guid: 4aaaf395b1f67c54bbe2a7ec2fdfac97, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene2
+      isPartOfList: 1
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 1
+      buttonObject: {fileID: 102900000, guid: 9e37d5ff364e2904a86e686c3c49c027, type: 3}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: Scene3
+      isPartOfList: 1
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 5
+    labelType: 0
+    labelText: Example Slider (int)
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 2
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 1
+    width: 150
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: int slider example pref
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 5
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls: []
+      objectName: 
+      className: Manul.Toolbar.Examples.ExampleStaticClass
+      methodName: TestSliderInt
+      listActionName: Scene1
+      isPartOfList: 2
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 1
+    numberType: 1
+    sliderIntMin: 0
+    sliderIntMax: 24
+    sliderFloatMin: 0
+    sliderFloatMax: 50
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0

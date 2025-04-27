@@ -1,0 +1,259 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a9576f1f8edd540a51ec85dcba69d5, type: 3}
+  m_Name: ExampleEventsButtons
+  m_EditorClassIdentifier: 
+  buttons:
+  - isActive: 1
+    isExpanded: 1
+    type: 1
+    labelType: 0
+    labelText: Clear Prefs
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: f29d4a170ae7cc44f8ce13610fcc9618, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.ManulToolbarMethods, Assembly-CSharp-Editor
+            m_MethodName: ClearPrefs
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 0
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 1
+    type: 1
+    labelType: 0
+    labelText: Recompile Scripts
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: f29d4a170ae7cc44f8ce13610fcc9618, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.ManulToolbarMethods, Assembly-CSharp-Editor
+            m_MethodName: RecompileScripts
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 0
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 1
+    labelType: 0
+    labelText: Reserialize Selected Assets
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: f29d4a170ae7cc44f8ce13610fcc9618, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.ManulToolbarMethods, Assembly-CSharp-Editor
+            m_MethodName: ReserializeAssets
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 0
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
+  - isActive: 1
+    isExpanded: 0
+    type: 1
+    labelType: 0
+    labelText: Reserialize All Assets
+    labelIcon: {fileID: 0}
+    labelIconUsePath: 0
+    labelIconPath: 
+    useStyle: 0
+    editorStyle: 0
+    styleName: 
+    skin: {fileID: 0}
+    useWidth: 0
+    width: 0
+    useColors: 0
+    globalColor: {r: 0, g: 0, b: 0, a: 0}
+    contentColor: {r: 0, g: 0, b: 0, a: 0}
+    backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+    useTooltip: 0
+    linesCount: 0
+    labelTooltip: 
+    togglePrefName: 
+    actions:
+    - mouseButton: 0
+      keyboardButton: 0
+      buttonType: 11
+      buttonObject: {fileID: 0}
+      buttonEvent:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000, guid: f29d4a170ae7cc44f8ce13610fcc9618, type: 2}
+            m_TargetAssemblyTypeName: Manul.Toolbar.ManulToolbarMethods, Assembly-CSharp-Editor
+            m_MethodName: ReserializeAllAssets
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      objectName: 
+      className: 
+      methodName: 
+      listActionName: 
+      isPartOfList: 0
+    showNameField: 0
+    intNamesList: []
+    useOnChangeActions: 0
+    numberType: 0
+    sliderIntMin: 0
+    sliderIntMax: 0
+    sliderFloatMin: 0
+    sliderFloatMax: 0
+    otherType: 0
+    defaultSliderValue: 0
+    defaultSliderValueInt: 0
+    useOtherLabel: 0
+    useResetButton: 0
+    currentFrameRate: 0
