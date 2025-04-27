@@ -42,6 +42,9 @@ public class LaserSource : MonoBehaviour
     [SerializeField, Tooltip("Sound effect to play when the laser is deactivated")]
     private SOAudioEvent deactivateSfx;
     
+    [SerializeField] private Light spotLight;
+    [SerializeField] private ParticleSystem particleEffect;
+    
     [Header("Debug")]
     [SerializeField, ReadOnly] private bool isActive = false;
     
@@ -50,10 +53,15 @@ public class LaserSource : MonoBehaviour
     private Tween _delayTween;
     private float _currentBeamLength = 0f;
     private bool _wasActive;
+    private float _spotLightFullIntensity;
     
     
     private void Awake() {
         _audioSource = GetComponent<AudioSource>();
+        if (spotLight) {
+            _spotLightFullIntensity = spotLight.intensity;
+            spotLight.intensity = 0f;
+        }
         
         // Initialize the beam with the specified properties
         laserBeam.SetBeamProperties(beamWidth, beamColor, beamMaterial);
@@ -95,6 +103,12 @@ public class LaserSource : MonoBehaviour
                 laserBeam.LaserOpticalElementBaseThatTheBeamHit.UpdateMaxDistance(laserBeam, _currentBeamLength);
             }
         }
+        
+        // Lerp the light intensity based on the laser state
+        if (spotLight) {
+            spotLight.intensity = Mathf.Lerp(0f, _spotLightFullIntensity, _currentBeamLength / beamLength);
+        }
+        
     }
     [Button]
     public void ToggleLaser() {
