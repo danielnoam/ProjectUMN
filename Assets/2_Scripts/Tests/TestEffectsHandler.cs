@@ -93,6 +93,8 @@ public class TestEffectsHandler : MonoBehaviour
         _fadeSequence = Sequence.Create();
         _fadeSequence = _fadeSequence
                 .Group(Tween.Custom(0, 0.3f,  duration: time, onValueChange: val => _vignette.intensity.value = val))
+                .Group(Tween.Custom(_chromaticAberration.intensity.value, 0,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
+                .Group(Tween.Custom(_paniProjection.distance.value, 0,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
             ;
     }
     

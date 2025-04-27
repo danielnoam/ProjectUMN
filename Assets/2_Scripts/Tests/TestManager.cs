@@ -516,7 +516,7 @@ public class TestManager : MonoBehaviour
             
             // Give a small delay before playing the animation
             _testEnvironmentAnimator.RefreshForNewEnvironment();
-            _testEnvironmentAnimator.SetAllObjectsToZeroScale();
+            _testEnvironmentAnimator.SetAllObjectsToZeroScale(true);
             yield return new WaitForSeconds(0.5f);
             _testEnvironmentAnimator.PlayLoadSequence(currentTest.GetTimeToLoad());
             

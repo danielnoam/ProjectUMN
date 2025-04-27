@@ -14,6 +14,7 @@ public enum RobotState
     Interacting = 4,
     Off = 5,
     Dead = 6,
+    LoadingIn = 7,
 }
 
 public enum CommandToSend
@@ -219,9 +220,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    private void Start()
    {
-
-       
-       _player = GameObject.Find("Player").GetComponent<PlayerStateMachine>();
+       _player = PlayerStateMachine.Instance;
        _playerFollowPosition = _player.transform.GetChild(1);
        _playerAimingFollowPosition = _player.transform.GetChild(2);
        if (_player)
@@ -229,10 +228,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            _player.onPlayerSpawned.AddListener(OnPlayerSpawned);
            _player.onPlayerSpawnedFromCheckpoint.AddListener(OnPlayerSpawned);
        }
-
        
        if (TestManager.Instance)
        {
+           TestManager.Instance.onTestStartLoading.AddListener(OnTestStartLoading);
            TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
            _debugText = TestManager.Instance.DebugTextRight;
        }
@@ -251,17 +250,32 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        
        if (TestManager.Instance)
        {
+           TestManager.Instance.onTestStartLoading.RemoveListener(OnTestStartLoading);
            TestManager.Instance.onTestLoaded.RemoveListener(OnTestLoaded);
            _debugText = null;
        }
        
    }
    
+    private void OnTestStartLoading(SOTest test)
+    {
+        Debug.Log("Robot is loading in");
+        if (IsOn())
+        {
+            currentState = RobotState.LoadingIn;
+        }
+    }
+   
    private void OnTestLoaded(SOTest test)
    {
        _player = TestManager.Instance.Player;
        _playerFollowPosition = _player.transform.GetChild(1);
        _playerAimingFollowPosition = _player.transform.GetChild(2);
+
+       if (IsOn() && _player)
+       {
+           CommandFollowPlayer();
+       }
    }
    
    private void OnPlayerSpawned()
@@ -271,13 +285,11 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        CommandFollowPlayer();
        
         float distanceToPlayer = Vector3.Distance(_player.transform.position, transform.position);
-        if (distanceToPlayer > maxFollowTeleportDistance)
+        if (Mathf.Abs(distanceToPlayer) > Mathf.Abs(maxFollowTeleportDistance))
         {
             // Teleport to player position
             Teleport(_player.transform.position, Quaternion.identity);
         }
-        
-       
    }
 
    private void OnCollisionEnter(Collision other)
@@ -373,6 +385,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
                case RobotState.Interacting:
 
                    break;
+               
            }
        }
    }
@@ -1198,8 +1211,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         }
 
         // Get current distance to player follow position
-        Vector3 targetPosition = _player.IsAiming ? _playerAimingFollowPosition.position : _playerFollowPosition.position;
-        float distanceToPlayer = Vector3.Distance(transform.position, targetPosition);
+        float distanceToPlayer = Vector3.Distance(transform.position, _player.transform.position);
         
         // Get current movement speed
         float currentSpeed = _rigidBody.linearVelocity.magnitude;
@@ -1211,6 +1223,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         // Start checking for stuck condition if both conditions are true
         if (isTooFar && isMovingTooSlow)
         {
+            Debug.Log("Robot is stuck, checking for teleport...");
             if (!_isCheckingStuck)
             {
                 _isCheckingStuck = true;
@@ -1247,7 +1260,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     }
    
    
-   
+   public void SetStuckTeleportState(bool state)
+   {
+       enableTeleportWhenStuck = state;
+   }
 
    public bool IsOn()
    {
@@ -1278,7 +1294,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
                 _debugText.text = $"State: {CurrentState}\n" +
                                   $"Battery: {currentBattery}\n" +
                                   $"Velocity: {_rigidBody.linearVelocity}\n" +
-                                  $"Target: {_target}\n"
+                                  $"Target: {_target}\n" +
+                                  $"Stuck Timer: {_stuckTimer:F2} / {teleportAfterStuckTime}\n" +
+                                  $"Distance to Player: {Vector3.Distance(transform.position, _player.transform.position):F2} / {maxFollowTeleportDistance}\n"
                           ;
             }
         }

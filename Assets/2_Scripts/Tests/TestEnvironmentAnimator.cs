@@ -35,15 +35,17 @@ public class TestEnvironmentAnimator : MonoBehaviour
     [SerializeField, ReadOnly] private float totalAnimationTime; 
     [SerializeField, ReadOnly] private int numberOfObjectsToAnimate;
     [SerializeField, ReadOnly] private  List<GameObject> objectsToAnimate = new List<GameObject>();
-    
-    
-    
+
+
+    private readonly Vector3 _defaultPlayerSize = new Vector3(1,1,1);
     private readonly Dictionary<GameObject, Vector3> _originalScales = new Dictionary<GameObject, Vector3>();
     private bool IsDistanceSort => sortMode == AnimationSortMode.ByDistance || sortMode == AnimationSortMode.DistanceFromPlayer;
     private bool _hasInitialized = false;
     private Sequence _animationSequence;
     private TestManager _testManager;
     private GameObject _floorGameObject;
+    private GameObject _playerGameObject;
+    private GameObject _robotGameObject;
     private enum AnimationSortMode
     {
         None,           // Use order objects are found in scene
@@ -64,10 +66,16 @@ public class TestEnvironmentAnimator : MonoBehaviour
         
         Initialize();
     }
-    
+
+    private void OnEnable()
+    {
+        _testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+    }
 
     private void OnDisable()
     {
+        _testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        
         if (resetOnDisable)
         {
             ResetAllScales();
@@ -75,6 +83,13 @@ public class TestEnvironmentAnimator : MonoBehaviour
     }
     
 
+    private void OnIntroSequenceStart()
+    {
+        if (!_testManager) return;
+        
+        PlayIntroSequence(_testManager.IntroSequenceDuration*1.5f);
+    }
+    
     private void Initialize()
     {
         if (_hasInitialized) return;
@@ -82,6 +97,14 @@ public class TestEnvironmentAnimator : MonoBehaviour
         objectsToAnimate.Clear();
         _originalScales.Clear();
 
+        
+        // Check for separate objects
+        _floorGameObject = GameObject.Find("Floor");
+        _playerGameObject = GameObject.Find("Player");
+        _robotGameObject = GameObject.Find("Robot");
+        StoreSpecialObjectScale(_floorGameObject);
+        StoreSpecialObjectScale(_playerGameObject);
+        StoreSpecialObjectScale(_robotGameObject);
         
         
         // Find all TestAnimatedObject components in the scene if option is enabled
@@ -91,7 +114,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
             foreach (TestAnimatedObject animObj in allAnimatedObjects)
             {
                 // Only include objects that have AffectedByTestAnimations set to true
-                if (animObj.AffectedByTestAnimations && !ShouldExclude(animObj.gameObject))
+                if (animObj.AffectedByTestAnimations)
                 {
                     objectsToAnimate.Add(animObj.gameObject);
                     _originalScales[animObj.gameObject] = animObj.transform.localScale;
@@ -102,7 +125,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         // Add any additional objects
         foreach (GameObject obj in additionalObjectsToAnimate)
         {
-            if (obj && !ShouldExclude(obj) && !objectsToAnimate.Contains(obj))
+            if (obj && !objectsToAnimate.Contains(obj))
             {
                 objectsToAnimate.Add(obj);
                 _originalScales[obj] = obj.transform.localScale;
@@ -117,45 +140,27 @@ public class TestEnvironmentAnimator : MonoBehaviour
         _hasInitialized = true;
     }
     
-    private bool ShouldExclude(GameObject obj)
+
+    private void StoreSpecialObjectScale(GameObject specialObject)
     {
-        
-        // Check for Robot exclusion
-        if (_testManager&& _testManager.Robot)
+        if (specialObject)
         {
-            // get the robot TestAnimatedObject
-            TestAnimatedObject robotTestAnimatedObject = _testManager.Robot.GetComponent<TestAnimatedObject>();
-            if (robotTestAnimatedObject && !robotTestAnimatedObject.AffectedByTestAnimations) return true;
-            
-            // Check if the object is the robot or a child of the robot
-            GameObject robotObject = _testManager.Robot.gameObject;
-            if (obj == robotObject || IsChildOf(obj.transform, robotObject.transform))
-                return true;
-        }
+            // Check if it has a TestAnimatedObject component
+            TestAnimatedObject animObj = specialObject.GetComponent<TestAnimatedObject>();
         
-        // Check for Player exclusion
-        if (_testManager && _testManager.Player)
-        {
-            // get the player TestAnimatedObject
-            TestAnimatedObject playerTestAnimatedObject = _testManager.Player.GetComponent<TestAnimatedObject>();
-            
-            if (playerTestAnimatedObject && !playerTestAnimatedObject.AffectedByTestAnimations) return true;
-            
-            // Check if the object is the player or a child of the player
-            GameObject playerObject = _testManager.Player.gameObject;
-            if (obj == playerObject || IsChildOf(obj.transform, playerObject.transform))
-                return true;
+            // Only store the scale if either it has the component and AffectedByTestAnimations is true,
+            // or we want to animate it regardless of the component
+            if ((animObj && animObj.AffectedByTestAnimations) || !animObj)
+            {
+                _originalScales[specialObject] = specialObject.transform.localScale;
+            }
         }
-        
-        return false;
     }
-
-
     
     private void SortObjectsBasedOnSortMode()
     {
         // First, remove any null or destroyed objects from the list
-        objectsToAnimate.RemoveAll(obj => obj == null);
+        objectsToAnimate.RemoveAll(obj => !obj);
         
         switch (sortMode)
         {
@@ -190,12 +195,12 @@ public class TestEnvironmentAnimator : MonoBehaviour
                     Transform playerTransform = _testManager.Player.transform;
                     
                     // Sort by distance from player
-                    objectsToAnimate.Sort((a, b) => {
-                        if (a == null || b == null) return 0;
+                    objectsToAnimate.Sort((objectA, objectB) => {
+                        if (!objectA || !objectB) return 0;
                         
                         try {
-                            float distA = Vector3.Distance(a.transform.position, playerTransform.position);
-                            float distB = Vector3.Distance(b.transform.position, playerTransform.position);
+                            float distA = Vector3.Distance(objectA.transform.position, playerTransform.position);
+                            float distB = Vector3.Distance(objectB.transform.position, playerTransform.position);
                             
                             return sortFromFarthest 
                                 ? distB.CompareTo(distA) // Farthest first
@@ -211,13 +216,13 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 
             case AnimationSortMode.ByHierarchy:
                 // Sort by sibling index in the hierarchy
-                objectsToAnimate.Sort((a, b) => {
-                    if (a == null || b == null) return 0;
+                objectsToAnimate.Sort((objectA, objectB) => {
+                    if (!objectA || !objectB) return 0;
                     
                     try {
                         // Get hierarchy paths and compare
-                        string pathA = GetHierarchyPath(a.transform);
-                        string pathB = GetHierarchyPath(b.transform);
+                        string pathA = objectA.transform.GetHierarchyPath();
+                        string pathB = objectB.transform.GetHierarchyPath();
                         return String.Compare(pathA, pathB, StringComparison.Ordinal);
                     }
                     catch (Exception) {
@@ -256,23 +261,50 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 // Append any remaining objects that weren't in the custom list
                 sortedList.AddRange(objectsToAnimate);
                 
-                // Check for Floor
-                _floorGameObject = GameObject.Find("Floor");
-                
-                // Make sure the floor object is always at the end
-                if (_floorGameObject && sortedList.Contains(_floorGameObject))
-                {
-                    sortedList.Remove(_floorGameObject);
-                    sortedList.Add(_floorGameObject);
-                }
                 
                 // Replace the original list with our sorted one
                 objectsToAnimate.Clear();
                 objectsToAnimate.AddRange(sortedList);
                 break;
         }
+        
+        // Remove special objects from the animation list
+        RemoveSpecialObjectsFromAnimationList(objectsToAnimate);
     }
     
+    private void RemoveSpecialObjectsFromAnimationList(List<GameObject> list)
+    {
+        // Remove floor, player and robot from the list if they exist
+        if (_floorGameObject && list.Contains(_floorGameObject))
+        {
+            list.Remove(_floorGameObject);
+        }
+    
+        if (_playerGameObject && list.Contains(_playerGameObject))
+        {
+            list.Remove(_playerGameObject);
+        }
+    
+        if (_robotGameObject && list.Contains(_robotGameObject))
+        {
+            list.Remove(_robotGameObject);
+        }
+    }
+    
+    private bool ShouldAnimateSpecialObject(GameObject obj)
+    {
+        if (!obj) return false;
+    
+        // Check if we've stored its original scale (means it passed our earlier checks)
+        if (!_originalScales.ContainsKey(obj)) return false;
+    
+        // Get TestAnimatedObject component if it exists
+        TestAnimatedObject animObj = obj.GetComponent<TestAnimatedObject>();
+    
+        // If it has the component, respect its AffectedByTestAnimations setting
+        // If it doesn't have the component, animate it anyway
+        return !animObj || animObj.AffectedByTestAnimations;
+    }
 
     [Button]
     public void PlayLoadSequence(float animationTime)
@@ -284,7 +316,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         else
         {
             // Clean up object list before sorting
-            objectsToAnimate.RemoveAll(obj => obj == null);
+            objectsToAnimate.RemoveAll(obj => !obj);
             
             // Refresh original scales in case objects have changed
             foreach (GameObject obj in objectsToAnimate)
@@ -308,7 +340,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         _animationSequence = Sequence.Create();
 
         // Set all objects to zero scale
-        SetAllObjectsToZeroScale();
+        SetAllObjectsToZeroScale(true);
     
         // Calculate individual animation durations and delays
         float totalDelayTime = objectsToAnimate.Count > 1 
@@ -320,6 +352,48 @@ public class TestEnvironmentAnimator : MonoBehaviour
             : animationTime;
         
         
+        // Create an animation only for the floor object
+        if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _floorGameObject.transform,
+                    startValue: Vector3.zero,
+                    endValue: _originalScales[_floorGameObject],
+                    animationTime,
+                    ease: scaleUpEase
+                )
+            );
+        }
+        
+        // Create an animation only for the player object
+        if (_playerGameObject && ShouldAnimateSpecialObject(_playerGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _playerGameObject.transform,
+                    startValue: Vector3.zero,
+                    endValue: _defaultPlayerSize,
+                    animationTime,
+                    ease: scaleUpEase
+                )
+            );
+        }
+
+        
+        // Create an animation only for the robot object
+        if (_robotGameObject && ShouldAnimateSpecialObject(_robotGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _robotGameObject.transform,
+                    startValue: Vector3.zero,
+                    endValue: _originalScales[_robotGameObject],
+                    animationTime,
+                    ease: scaleUpEase
+                )
+            );
+        }
         
         // Create the animation sequence
         for (int i = 0; i < objectsToAnimate.Count; i++)
@@ -343,9 +417,6 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 )
             );
         }
-        
-        
-        
     }
     
     
@@ -359,7 +430,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         else
         {
             // Clean up object list before sorting
-            objectsToAnimate.RemoveAll(obj => obj == null);
+            objectsToAnimate.RemoveAll(obj => !obj);
             
             // Re-sort objects if already initialized
             SortObjectsBasedOnSortMode();
@@ -386,6 +457,47 @@ public class TestEnvironmentAnimator : MonoBehaviour
             : animationTime;
 
         
+        // Create an animation only for the floor object
+        if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _floorGameObject.transform,
+                    startValue: _originalScales[_floorGameObject],
+                    endValue: Vector3.zero,
+                    animationTime,
+                    ease: scaleDownEase
+                )
+            );
+        }
+        
+        // Create an animation only for the player object
+        if (_playerGameObject && ShouldAnimateSpecialObject(_playerGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _playerGameObject.transform,
+                    startValue: _originalScales[_playerGameObject],
+                    endValue: Vector3.zero,
+                    animationTime,
+                    ease: scaleDownEase
+                )
+            );
+        }
+        
+        // Create an animation only for the robot object
+        if (_robotGameObject && ShouldAnimateSpecialObject(_robotGameObject))
+        {
+            _animationSequence.Group(
+                Tween.Scale(
+                    _robotGameObject.transform,
+                    startValue: _originalScales[_robotGameObject],
+                    endValue: Vector3.zero,
+                    animationTime,
+                    ease: scaleDownEase
+                )
+            );
+        }
         
         // Create the animation sequence - from original scale to zero
         for (int i = 0; i < reversedObjects.Count; i++)
@@ -416,15 +528,121 @@ public class TestEnvironmentAnimator : MonoBehaviour
         totalAnimationTime = animationTime; 
     }
     
+    private void PlayIntroSequence(float animationTime)
+    {
+        // Clean up object list before sorting
+        objectsToAnimate.RemoveAll(obj => !obj);
+            
+        // Refresh original scales in case objects have changed
+        foreach (GameObject obj in objectsToAnimate)
+        {
+            if (obj && !_originalScales.ContainsKey(obj))
+            {
+                _originalScales[obj] = obj.transform.localScale;
+            }
+        }
+        
+        // sort objects to animate farthest from the player first
+        if (_testManager && _testManager.Player)
+        {
+            Transform playerTransform = _testManager.Player.transform;
+            
+            // Sort by distance from player
+            objectsToAnimate.Sort((objectA, objectB) => {
+                if (!objectA || !objectB) return 0;
+                
+                try {
+                    float distA = Vector3.Distance(objectA.transform.position, playerTransform.position);
+                    float distB = Vector3.Distance(objectB.transform.position, playerTransform.position);
+                    
+                    return distB.CompareTo(distA); // Farthest first
+                }
+                catch (Exception) {
+                    // If any exception occurs, consider the objects equal
+                    return 0;
+                }
+            });
+        }
+        else
+        {
+            SortObjectsBasedOnSortMode();
+        }
+        
+        
+    
+        // Update debug values
+        numberOfObjectsToAnimate = objectsToAnimate.Count;
+        totalAnimationTime = animationTime; // Total time is exactly animationTime
+
+        // Stop any running sequence
+        _animationSequence.Stop();
+        _animationSequence = Sequence.Create();
+
+        // Set all objects to zero scale
+        SetAllObjectsToZeroScale(false);
+    
+        // Calculate individual animation durations and delays
+        float totalDelayTime = objectsToAnimate.Count > 1 
+            ? animationTime * delayTimeFactor // portion of time used for delays
+            : 0f;
+    
+        float individualDuration = objectsToAnimate.Count > 1 
+            ? animationTime * (1f - delayTimeFactor) // remaining portion for actual animation
+            : animationTime;
+        
+        
+        // Create the animation sequence
+        for (int i = 0; i < objectsToAnimate.Count; i++)
+        {
+            GameObject obj = objectsToAnimate[i];
+            if (!obj || !_originalScales.ContainsKey(obj)) continue;
+    
+            // Calculate delay for each object (spread evenly across totalDelayTime)
+            float delay = objectsToAnimate.Count > 1 
+                ? i * (totalDelayTime / (objectsToAnimate.Count - 1)) 
+                : 0f;
+    
+            _animationSequence.Group(
+                Tween.Scale(
+                    obj.transform,
+                    startValue: Vector3.zero,
+                    endValue: _originalScales[obj],
+                    individualDuration,
+                    ease: scaleUpEase,
+                    startDelay: delay
+                )
+            );
+        }
+    }
+    
 
 
-    public void SetAllObjectsToZeroScale()
+    public void SetAllObjectsToZeroScale(bool scaleSpecialObjects)
     {
         foreach (var obj in objectsToAnimate)
         {
             if (obj)
             {
                 obj.transform.localScale = Vector3.zero;
+            }
+        }
+        
+
+        if (scaleSpecialObjects)
+        {
+            if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
+            {
+                _floorGameObject.transform.localScale = Vector3.zero;
+            }
+            
+            if (_playerGameObject && ShouldAnimateSpecialObject(_playerGameObject))
+            {
+                _playerGameObject.transform.localScale = Vector3.zero;
+            }
+            
+            if (_robotGameObject && ShouldAnimateSpecialObject(_robotGameObject))
+            {
+                _robotGameObject.transform.localScale = Vector3.zero;
             }
         }
     }
@@ -438,8 +656,32 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 obj.transform.localScale = scale;
             }
         }
+        
+        // Restore the special objects to their original scales
+        if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
+        {
+            _floorGameObject.transform.localScale = _originalScales[_floorGameObject];
+        }
+        
+        if (_playerGameObject && ShouldAnimateSpecialObject(_playerGameObject))
+        {
+            _playerGameObject.transform.localScale = _defaultPlayerSize;
+        }
+        
+        if (_robotGameObject && ShouldAnimateSpecialObject(_robotGameObject))
+        {
+            _robotGameObject.transform.localScale = _originalScales[_robotGameObject];
+        }
     }
 
+
+    public void RefreshForNewEnvironment()
+    {
+        _hasInitialized = false;
+        Initialize();
+    }
+    
+    
     [Button]
     private void ResetAllScales()
     {
@@ -451,57 +693,13 @@ public class TestEnvironmentAnimator : MonoBehaviour
         // Reset all objects to their original scale
         RestoreAllOriginalScales();
     }
-
-    // Method to refresh meshes from a newly loaded environment
-    public void RefreshForNewEnvironment()
-    {
-        _hasInitialized = false;
-        Initialize();
-    }
-
-    
-    
-    private bool IsChildOf(Transform child, Transform parent)
-    {
-        if (child == null || parent == null)
-            return false;
-            
-        Transform currentParent = child.parent;
-        
-        while (currentParent != null)
-        {
-            if (currentParent == parent)
-                return true;
-                
-            currentParent = currentParent.parent;
-        }
-        
-        return false;
-    }
-    
-    private string GetHierarchyPath(Transform transform)
-    {
-        if (transform == null) return "";
-        
-        // Build the full path from root to this transform
-        string path = transform.name;
-        Transform parent = transform.parent;
-        
-        while (parent)
-        {
-            path = parent.name + "/" + path;
-            parent = parent.parent;
-        }
-        
-        return path;
-    }
-
     
     
     #region Editor Functions
 
 #if UNITY_EDITOR
-    [Button]
+    
+    [ContextMenu("Refresh Object List")]
     private void RefreshObjectList()
     {
         // Reset initialization to force refreshing the object lists
@@ -510,7 +708,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         Debug.Log($"Found {objectsToAnimate.Count} objects to animate");
     }
     
-    [Button]
+    [ContextMenu("Fill Custom Order From Current")]
     private void FillCustomOrderFromCurrent()
     {
         if (!_hasInitialized)
@@ -531,7 +729,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         Debug.Log($"Added {customOrderedObjects.Count} objects to custom order list");
     }
     
-    [Button]
+    [ContextMenu("Reverse Animation Order")]
     private void ReverseCurrentOrder()
     {
         if (!_hasInitialized)
