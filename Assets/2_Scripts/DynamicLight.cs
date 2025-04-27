@@ -7,15 +7,21 @@ using PrimeTween;
 [RequireComponent(typeof(Light))]
 public class DynamicLight : MonoBehaviour
 {
-    [Header("Settings")] 
-    [SerializeField, Min(0)] private float fadeDuration = 10f;
+    [Header("World Light")]
     [SerializeField] private bool respondToWorldLightLevel = true;
+    [SerializeField, Min(0)] private float fadeDuration = 10f;
     
     [Header("Target Tracking")]
     [SerializeField] private bool trackTarget = false;
-    [SerializeField] private Transform target;
-    [SerializeField, Min(0)] private float trackingDistance = 5f;
+    [SerializeField] private bool returnToStartRotation = true;
+    [SerializeField] private float returnToStartRotationDuration = 2f;
+    [SerializeField, Min(0)] private float initialRotationSpeed = 10f; 
+    [SerializeField, Range(0, 1)] private float initialSpeedDuration = 0.5f; 
     [SerializeField, Min(0)] private float rotationSpeed = 5f;
+    [SerializeField, Min(0)] private float trackingDistance = 5f;
+    [SerializeField] private Vector3 trackingOffset = Vector3.zero;
+    [SerializeField] private Transform target;
+    [SerializeField] private bool usePlayerAsTarget = false;
     
     private Light _light;
     private Tween _tween;
@@ -23,14 +29,19 @@ public class DynamicLight : MonoBehaviour
     private float _defaultIntensity;
     private Quaternion _startRotation;
     private bool _isTracking = false;
+    private float _trackingTimer = 0f; 
 
     private void Awake()
     {
         _light = GetComponent<Light>();
         _defaultIntensity = _light.intensity;
-        _light.enabled = false;
-        _light.intensity = 0;
         _startRotation = transform.rotation;
+
+        if (respondToWorldLightLevel)
+        {
+            _light.enabled = false;
+            _light.intensity = 0;
+        }
     }
 
     private void Start()
@@ -42,6 +53,11 @@ public class DynamicLight : MonoBehaviour
         else
         {
             TestManager.Instance.onTestLoaded.AddListener(OnTestLoaded);
+        }
+        
+        if (trackTarget && usePlayerAsTarget)
+        {
+            target = PlayerStateMachine.Instance.transform;
         }
     }
     
@@ -71,30 +87,52 @@ public class DynamicLight : MonoBehaviour
         }
     }
     
-    private void Update()
+    private void FixedUpdate()
     {
         if (!trackTarget || !target) return;
-        
-        float distanceToTarget = Vector3.Distance(transform.position, target.position);
+    
+        float distanceToTarget = Vector3.Distance(transform.position + trackingOffset, target.position);
         bool shouldTrack = distanceToTarget <= trackingDistance;
-        
+    
         if (shouldTrack && _light.enabled)
         {
-            _isTracking = true;
+            if (!_isTracking)
+            {
+                // Just started tracking
+                _isTracking = true;
+                _trackingTimer = 0f; // Reset timer when we start tracking
+            }
+        
             // Calculate direction to look at
             Vector3 direction = target.position - transform.position;
             // Only rotate if we have a valid direction
             if (direction.sqrMagnitude > 0.001f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(direction);
+            
+                // Choose speed based on how long we've been tracking
+                float currentSpeed;
+                if (_trackingTimer < initialSpeedDuration)
+                {
+                    currentSpeed = initialRotationSpeed;
+                }
+                else
+                {
+                    currentSpeed = rotationSpeed;
+                }
+            
                 // Smoothly rotate towards target
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, currentSpeed * Time.fixedDeltaTime);
+            
+                // Update tracking timer
+                _trackingTimer += Time.fixedDeltaTime;
             }
         }
-        else if (_isTracking)
+        else if (_isTracking && returnToStartRotation)
         {
             // Return to original rotation when target moves out of range
             _isTracking = false;
+            _trackingTimer = 0f; // Reset timer when we stop tracking
             StartCoroutine(ReturnToStartRotation());
         }
     }
@@ -103,11 +141,10 @@ public class DynamicLight : MonoBehaviour
     {
         Quaternion currentRotation = transform.rotation;
         float elapsedTime = 0f;
-        float returnDuration = 1f;
         
-        while (elapsedTime < returnDuration)
+        while (elapsedTime < returnToStartRotationDuration)
         {
-            transform.rotation = Quaternion.Slerp(currentRotation, _startRotation, elapsedTime / returnDuration);
+            transform.rotation = Quaternion.Slerp(currentRotation, _startRotation, elapsedTime / returnToStartRotationDuration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
@@ -129,4 +166,25 @@ public class DynamicLight : MonoBehaviour
             if (!_light.enabled) _isTracking = false;
         });
     }
+
+
+    #region Editor
+
+    private void OnDrawGizmosSelected()
+    {
+        if (trackTarget)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position + trackingOffset, trackingDistance);
+        }
+            
+            
+        if (trackTarget && target)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position + trackingOffset, target.position);
+        }
+    }
+
+    #endregion Editor
 }
