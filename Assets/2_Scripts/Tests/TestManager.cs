@@ -313,8 +313,6 @@ public class TestManager : MonoBehaviour
     #endregion Test control ----------------------------------------------------------------------------
     
     
-    
-    
     #region Intro Sequence ----------------------------------------------------------------------------
 
     
@@ -360,7 +358,8 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator CreditsSequenceCoroutine()
     {
-        bool playedSfx = false;
+        bool twentyReached = false;
+        
         
         if (currentTest) 
         {
@@ -376,13 +375,19 @@ public class TestManager : MonoBehaviour
         while (_creditsSequenceTime > 0)
         {
             // Check if we've reached 80% of the sequence
-            if (_creditsSequenceTime <= creditsSequenceDuration * 0.2f && !playedSfx)
+            if (_creditsSequenceTime <= creditsSequenceDuration * 0.2f && !twentyReached)
             {
-                playedSfx = true;
+                twentyReached = true;
+                // fade out the screen with the left time
+                float fadeOutTime = creditsSequenceDuration * 0.5f;
+                _testEffectsHandler.FadeScreen(true, fadeOutTime);
                 robotSfx?.PlayAtPoint();
             }
+            
         
-            _creditsSequenceTime -= Time.deltaTime;
+            float timeMultiplier = Input.GetKeyDown(KeyCode.Space) ? 3f : 1f;
+            _creditsSequenceTime -= Time.deltaTime * timeMultiplier;
+            Debug.Log(timeMultiplier);
             yield return null; 
         }
         

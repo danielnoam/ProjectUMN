@@ -14,81 +14,72 @@ public class LaserBeam : MonoBehaviour
     public Vector3 hitNormal;
     public LaserBeam prefab;
     public Vector3 Direction => (endPosition - startPosition).normalized;
-    [ShowInInspector] private LaserOpticalElementBase _laserOpticalElementBaseThatTheBeamHit;
-    [ShowInInspector] private PowerPoint _powerPointThatTheBeamHit;
-    [HideInInspector] public LineRenderer _lineRenderer;
+    private LaserOpticalElementBase _hitOpticalElement;
+    private PowerPoint _hitPowerPoint;
+    [HideInInspector] public LineRenderer lineRenderer;
 
-    public LaserOpticalElementBase LaserOpticalElementBaseThatTheBeamHit { 
-        get => _laserOpticalElementBaseThatTheBeamHit; 
+    public LaserOpticalElementBase HitOpticalElement { 
+        get => _hitOpticalElement; 
         set {
-            if (_laserOpticalElementBaseThatTheBeamHit == value) {
-                return;
+            if (_hitOpticalElement == value) return;
+            
+            if (_hitOpticalElement) {
+                _hitOpticalElement.UnregisterLaserBeam(this);
             }
-            else {
-                if (_laserOpticalElementBaseThatTheBeamHit) {
-                    _laserOpticalElementBaseThatTheBeamHit.UnregisterLaserBeam(this);
-                }
 
-                _laserOpticalElementBaseThatTheBeamHit = value;
+            _hitOpticalElement = value;
 
-                if (_laserOpticalElementBaseThatTheBeamHit) {
-                    _laserOpticalElementBaseThatTheBeamHit.RegisterLaserBeam(this);
-                }
+            if (_hitOpticalElement) {
+                _hitOpticalElement.RegisterLaserBeam(this);
             }
         }
     }
     
-    public PowerPoint PowerPointThatTheBeamHit {
-        get => _powerPointThatTheBeamHit;
+    public PowerPoint HitPowerPoint {
+        get => _hitPowerPoint;
         set {
-            if (_powerPointThatTheBeamHit == value) {
-                return;
+            if (_hitPowerPoint == value) return;
+            
+            if (_hitPowerPoint) {
+                _hitPowerPoint.RemovePowerSource(this);
             }
-            else {
-                if (_powerPointThatTheBeamHit) {
-                    _powerPointThatTheBeamHit.RemovePowerSource(this);
-                }
-                
-                _powerPointThatTheBeamHit = value;
-                
-                if (_powerPointThatTheBeamHit) {
-                    _powerPointThatTheBeamHit.AddPowerSource(this);
-                }
+            
+            _hitPowerPoint = value;
+            
+            if (_hitPowerPoint) {
+                _hitPowerPoint.AddPowerSource(this);
             }
         }
     }
 
     private void Awake() {                                                                                                               
-        _lineRenderer = GetComponent<LineRenderer>();
-        _lineRenderer.positionCount = 2;
+        lineRenderer = GetComponent<LineRenderer>();
+        if (!lineRenderer) return;
+        
+        lineRenderer.positionCount = 2;
     }
-
 
     private void OnDestroy()
     {
-        if (_laserOpticalElementBaseThatTheBeamHit) {
-            _laserOpticalElementBaseThatTheBeamHit.UnregisterLaserBeam(this);
+        if (_hitOpticalElement) {
+            _hitOpticalElement.UnregisterLaserBeam(this);
         }
 
-        if (_powerPointThatTheBeamHit) {
-            _powerPointThatTheBeamHit.RemovePowerSource(this);
+        if (_hitPowerPoint) {
+            _hitPowerPoint.RemovePowerSource(this);
         }
     }
 
     public void SetBeamProperties(float width, Color color, Material material) {
-        _lineRenderer.startWidth = width;
-        _lineRenderer.endWidth = width;
-        _lineRenderer.material = material;
-        _lineRenderer.startColor = color;
-        _lineRenderer.endColor = color;
+        if (!lineRenderer) return;
+        
+        lineRenderer.startWidth = width;
+        lineRenderer.endWidth = width;
+        if (material) lineRenderer.material = material;
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
     }
 
-    // Original method kept for backward compatibility
-    public void Propagate(Vector3 startPosition, Vector3 direction) {
-        Propagate(startPosition, direction, -1); // -1 is the default layer mask (everything)
-    }
-
-    // New method with layer mask parameter
     public void Propagate(Vector3 startPosition, Vector3 direction, LayerMask layerMask) {
         // Remember the original totalDistance before we add this segment
         float originalDistance = totalDistance;
@@ -113,29 +104,28 @@ public class LaserBeam : MonoBehaviour
             hitNormal = hit.normal;
 
             // Check for optical element
-            LaserOpticalElementBaseThatTheBeamHit = hit.collider.TryGetComponent(out LaserOpticalElementBase opticalElement) ? opticalElement : null;
+            HitOpticalElement = hit.collider.TryGetComponent(out LaserOpticalElementBase opticalElement) ? opticalElement : null;
             
             // Check for PowerPoint
-            PowerPointThatTheBeamHit = hit.collider.TryGetComponent(out PowerPoint powerPoint) ? powerPoint : null;
+            HitPowerPoint = hit.collider.TryGetComponent(out PowerPoint powerPoint) ? powerPoint : null;
         }
         else {
-            LaserOpticalElementBaseThatTheBeamHit = null;
-            PowerPointThatTheBeamHit = null;
+            HitOpticalElement = null;
+            HitPowerPoint = null;
         }
 
         this.startPosition = startPosition;
         this.endPosition = endPosition;
         this.hitNormal = hitNormal;
         
-        // Update total distance
         float segmentLength = Vector3.Distance(startPosition, endPosition);
         totalDistance += segmentLength;
         
         UpdateVisuals();
 
-        if (LaserOpticalElementBaseThatTheBeamHit) {
+        if (HitOpticalElement) {
             // Pass this beam to the optical element
-            LaserOpticalElementBaseThatTheBeamHit.Propagate(this);
+            HitOpticalElement.Propagate(this);
             
             // After propagation through optical elements, 
             // we need to ensure the next segment in the chain 
@@ -147,9 +137,11 @@ public class LaserBeam : MonoBehaviour
             }
         }
     }
-
+    
     private void UpdateVisuals() {
-        _lineRenderer.SetPosition(0, startPosition);
-        _lineRenderer.SetPosition(1, endPosition);
+        if (!lineRenderer) return;
+        
+        lineRenderer.SetPosition(0, startPosition);
+        lineRenderer.SetPosition(1, endPosition);
     }
 }

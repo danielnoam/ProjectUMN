@@ -608,7 +608,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
                     startValue: Vector3.zero,
                     endValue: _originalScales[obj],
                     individualDuration,
-                    ease: scaleUpEase,
+                    ease: Ease.InSine,
                     startDelay: delay
                 )
             );

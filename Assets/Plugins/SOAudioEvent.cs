@@ -24,7 +24,6 @@ public class SOAudioEvent : ScriptableObject
     public bool bypassListenerEffects;
     public bool bypassReverbZones;
     public bool loop;
-    
 
     
     [Header("3D Sound")]
@@ -49,7 +48,7 @@ public class SOAudioEvent : ScriptableObject
 
     public void Play(AudioSource source)
     {
-        if (clips.Length == 0) 
+        if (clips.Length == 0 || !source) 
         {
             #if UNITY_EDITOR
             Debug.Log("No clips found");
@@ -64,7 +63,7 @@ public class SOAudioEvent : ScriptableObject
 
     public void Play(AudioSource source, float delay)
     {
-        if (clips.Length == 0) 
+        if (clips.Length == 0 || !source) 
         {
             #if UNITY_EDITOR
             Debug.Log("No clips found");
@@ -145,17 +144,21 @@ public class SOAudioEvent : ScriptableObject
     
     public void Stop(AudioSource source)
     {
+        if (!source) return;
+        
         source.Stop();
     }
 
     public void Pause(AudioSource source)
     {
+        if (!source) return;
+        
         source.Pause();
     }
 
     public void Continue(AudioSource source)
     {
-        
+        if (!source) return;
         source.UnPause();
     }
 

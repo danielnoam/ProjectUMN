@@ -13,10 +13,10 @@ public class TubeRenderer : MonoBehaviour
     [SerializeField] private int sides = 8;
     
     [Tooltip("Close the start cap of the tube")]
-    [SerializeField] private bool closeStartCap = false;
+    [SerializeField] private bool closeStartCap;
     
     [Tooltip("Close the end cap of the tube")]
-    [SerializeField] private bool closeEndCap = false;
+    [SerializeField] private bool closeEndCap;
     
     [Tooltip("How the tube's radius is determined along its length")]
     [SerializeField] private RadiusMode radiusMode = RadiusMode.Single;
@@ -46,9 +46,10 @@ public class TubeRenderer : MonoBehaviour
     [Range(0.1f, 0.5f)]
     [SerializeField, ShowIf("enableCornerSmoothing")] private float cornerSmoothingExtent = 0.3f;[EndIf]
     
+#if UNITY_EDITOR
     [Tooltip("Whether to visualize the processed path points for debugging")]
     [SerializeField, ShowIf("enableCornerSmoothing")] private bool showProcessedPath = true;[EndIf]
-    
+#endif
     [Header("Orientation Control")]
     [Tooltip("Force a specific up direction for the tube (prevents twisting)")]
     [SerializeField] private bool useStableUpVector = true;
@@ -78,13 +79,13 @@ public class TubeRenderer : MonoBehaviour
     // Represents a frame (position, tangent, normal, binormal) at a point along the path
     private struct Frame
     {
-        public Vector3 position;
-        public Vector3 tangent;
-        public Vector3 normal;
-        public Vector3 binormal;
+        public Vector3 Position;
+        public Vector3 Tangent;
+        public Vector3 Normal;
+        public Vector3 Binormal;
     }
 
-    public Material material
+    public Material Material
     {
         get => _meshRenderer.material;
         set => _meshRenderer.material = value;
@@ -209,19 +210,21 @@ public class TubeRenderer : MonoBehaviour
 
         if (!_mesh)
         {
-            _mesh = new Mesh();
-            _mesh.name = "TubeMesh";
+            _mesh = new Mesh
+            {
+                name = "TubeMesh"
+            };
             _meshFilter.mesh = _mesh;
         }
     }
 
     private void ProcessPath()
     {
-        // If smoothing is disabled or we don't have enough points, use original path
+        // If smoothing is disabled, or we don't have enough points, use original path
         if (!enableCornerSmoothing || positions == null || positions.Length < 3)
         {
             _processedPath = positions;
-            if (_processedPath != null && _processedPath.Length > 0)
+            if (_processedPath is { Length: > 0 })
             {
                 _pathT = new float[_processedPath.Length];
                 for (int i = 0; i < _processedPath.Length; i++)
@@ -349,17 +352,17 @@ public class TubeRenderer : MonoBehaviour
         // First pass: Calculate tangents
         for (int i = 0; i < pathLength; i++)
         {
-            _frames[i].position = _processedPath[i];
+            _frames[i].Position = _processedPath[i];
             
             if (i == 0)
             {
                 // First point - use direction to next point
-                _frames[i].tangent = (_processedPath[i + 1] - _processedPath[i]).normalized;
+                _frames[i].Tangent = (_processedPath[i + 1] - _processedPath[i]).normalized;
             }
             else if (i == pathLength - 1)
             {
                 // Last point - use direction from previous point
-                _frames[i].tangent = (_processedPath[i] - _processedPath[i - 1]).normalized;
+                _frames[i].Tangent = (_processedPath[i] - _processedPath[i - 1]).normalized;
             }
             else
             {
@@ -368,7 +371,7 @@ public class TubeRenderer : MonoBehaviour
                 Vector3 nextDir = (_processedPath[i + 1] - _processedPath[i]).normalized;
                 
                 // Average the directions
-                _frames[i].tangent = (prevDir + nextDir).normalized;
+                _frames[i].Tangent = (prevDir + nextDir).normalized;
             }
         }
         
@@ -383,62 +386,62 @@ public class TubeRenderer : MonoBehaviour
             Vector3 upVectorNormalized = upVector.normalized;
             
             // Generate a normal perpendicular to both the tangent and up vector
-            Vector3 bitangent = Vector3.Cross(_frames[0].tangent, upVectorNormalized).normalized;
+            Vector3 bitangent = Vector3.Cross(_frames[0].Tangent, upVectorNormalized).normalized;
             
             // If they're nearly parallel, use a fallback vector
             if (bitangent.magnitude < 0.01f)
             {
                 // Find a non-parallel vector to use
-                Vector3 fallbackDir = Mathf.Abs(Vector3.Dot(_frames[0].tangent, Vector3.right)) > 0.9f ? 
+                Vector3 fallbackDir = Mathf.Abs(Vector3.Dot(_frames[0].Tangent, Vector3.right)) > 0.9f ? 
                                       Vector3.up : Vector3.right;
                                       
-                bitangent = Vector3.Cross(_frames[0].tangent, fallbackDir).normalized;
+                bitangent = Vector3.Cross(_frames[0].Tangent, fallbackDir).normalized;
             }
             
             // Now compute the normal that's perpendicular to the tangent and aligns with the up vector
-            initialNormal = Vector3.Cross(bitangent, _frames[0].tangent).normalized;
+            initialNormal = Vector3.Cross(bitangent, _frames[0].Tangent).normalized;
         }
         else
         {
             // Without stable up vector, use a reasonable initial normal that's perpendicular to the tangent
             Vector3 referenceVector = Vector3.up;
-            if (Mathf.Abs(Vector3.Dot(_frames[0].tangent, referenceVector)) > 0.9f)
+            if (Mathf.Abs(Vector3.Dot(_frames[0].Tangent, referenceVector)) > 0.9f)
             {
                 referenceVector = Vector3.right;
             }
             
-            initialNormal = Vector3.Cross(Vector3.Cross(_frames[0].tangent, referenceVector).normalized, _frames[0].tangent).normalized;
+            initialNormal = Vector3.Cross(Vector3.Cross(_frames[0].Tangent, referenceVector).normalized, _frames[0].Tangent).normalized;
         }
         
         // Apply the initial frame
-        _frames[0].normal = initialNormal;
-        _frames[0].binormal = Vector3.Cross(_frames[0].tangent, _frames[0].normal).normalized;
+        _frames[0].Normal = initialNormal;
+        _frames[0].Binormal = Vector3.Cross(_frames[0].Tangent, _frames[0].Normal).normalized;
         
         // Second pass: Propagate the frames using parallel transport
         for (int i = 1; i < pathLength; i++)
         {
             // Implementing parallel transport - keep the normal as perpendicular as possible between segments
-            Vector3 prevTangent = _frames[i - 1].tangent;
-            Vector3 currTangent = _frames[i].tangent;
+            Vector3 prevTangent = _frames[i - 1].Tangent;
+            Vector3 currTangent = _frames[i].Tangent;
             
             // If tangents are nearly the same, just copy the previous frame
             if (Vector3.Dot(prevTangent, currTangent) > 0.99999f)
             {
-                _frames[i].normal = _frames[i - 1].normal;
-                _frames[i].binormal = _frames[i - 1].binormal;
+                _frames[i].Normal = _frames[i - 1].Normal;
+                _frames[i].Binormal = _frames[i - 1].Binormal;
                 continue;
             }
             
             // Rotate the previous normal to be perpendicular to the current tangent
             // This method minimizes the twist between segments
             Quaternion rotation = Quaternion.FromToRotation(prevTangent, currTangent);
-            _frames[i].normal = rotation * _frames[i - 1].normal;
+            _frames[i].Normal = rotation * _frames[i - 1].Normal;
             
             // Ensure the normal is exactly perpendicular to the tangent
-            _frames[i].normal = Vector3.Cross(Vector3.Cross(currTangent, _frames[i].normal).normalized, currTangent).normalized;
+            _frames[i].Normal = Vector3.Cross(Vector3.Cross(currTangent, _frames[i].Normal).normalized, currTangent).normalized;
             
             // Calculate binormal to complete the orthonormal frame
-            _frames[i].binormal = Vector3.Cross(currTangent, _frames[i].normal).normalized;
+            _frames[i].Binormal = Vector3.Cross(currTangent, _frames[i].Normal).normalized;
             
             // Additional stabilization for sharp turns - if using stable up vector
             if (useStableUpVector)
@@ -458,11 +461,11 @@ public class TubeRenderer : MonoBehaviour
                         
                         // Blend between parallel transport normal and aligned normal based on angle sharpness
                         float blendFactor = Mathf.Clamp01((angle - 45f) / 45f); // 0 at 45°, 1 at 90°
-                        _frames[i].normal = Vector3.Slerp(_frames[i].normal, alignedNormal, blendFactor);
-                        _frames[i].normal = _frames[i].normal.normalized;
+                        _frames[i].Normal = Vector3.Slerp(_frames[i].Normal, alignedNormal, blendFactor);
+                        _frames[i].Normal = _frames[i].Normal.normalized;
                         
                         // Recalculate binormal
-                        _frames[i].binormal = Vector3.Cross(currTangent, _frames[i].normal).normalized;
+                        _frames[i].Binormal = Vector3.Cross(currTangent, _frames[i].Normal).normalized;
                     }
                 }
             }
@@ -540,7 +543,7 @@ public class TubeRenderer : MonoBehaviour
         
         if (closeEndCap)
         {
-            _vertices[currentVertIndex++] = _processedPath[_processedPath.Length - 1];
+            _vertices[currentVertIndex++] = _processedPath[^1];
         }
 
         _mesh.vertices = _vertices;
@@ -694,9 +697,9 @@ public class TubeRenderer : MonoBehaviour
         }
 
         // Use the precalculated frame for this point
-        Vector3 position = _frames[index].position;
-        Vector3 normal = _frames[index].normal;
-        Vector3 binormal = _frames[index].binormal;
+        Vector3 position = _frames[index].Position;
+        Vector3 normal = _frames[index].Normal;
+        Vector3 binormal = _frames[index].Binormal;
 
         // Create the circle points
         for (int i = 0; i < sides; i++)
@@ -744,7 +747,7 @@ public class TubeRenderer : MonoBehaviour
         }
         
         // Draw processed path points if smoothing is enabled
-        if (enableCornerSmoothing && showProcessedPath && _processedPath != null && _processedPath.Length > 1)
+        if (enableCornerSmoothing && showProcessedPath && _processedPath is { Length: > 1 })
         {
             Gizmos.color = Color.green;
             float smallSphereSize = 0.05f;
@@ -758,13 +761,13 @@ public class TubeRenderer : MonoBehaviour
             }
             
             // Draw added points (ones that aren't in the original path)
-            for (int i = 0; i < _processedPath.Length; i++)
+            foreach (var position in _processedPath)
             {
                 // Check if this is an original point or an added one
                 bool isOriginal = false;
                 foreach (var originalPos in positions)
                 {
-                    if (Vector3.Distance(_processedPath[i], originalPos) < 0.001f)
+                    if (Vector3.Distance(position, originalPos) < 0.001f)
                     {
                         isOriginal = true;
                         break;
@@ -773,14 +776,14 @@ public class TubeRenderer : MonoBehaviour
                 
                 if (!isOriginal)
                 {
-                    Vector3 worldPos = transform.TransformPoint(_processedPath[i]);
+                    Vector3 worldPos = transform.TransformPoint(position);
                     Gizmos.DrawSphere(worldPos, smallSphereSize);
                 }
             }
         }
         
         // Draw the frame vectors if frames are calculated
-        if (_frames != null && _frames.Length > 0)
+        if (_frames is { Length: > 0 })
         {
             float arrowLength = 0.2f;
             
@@ -788,19 +791,19 @@ public class TubeRenderer : MonoBehaviour
             int step = Mathf.Max(1, _frames.Length / 10);
             for (int i = 0; i < _frames.Length; i += step)
             {
-                Vector3 worldPos = transform.TransformPoint(_frames[i].position);
+                Vector3 worldPos = transform.TransformPoint(_frames[i].Position);
                 
                 // Draw tangent vector (forward) in blue
                 Gizmos.color = Color.blue;
-                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].tangent) * arrowLength);
+                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].Tangent) * arrowLength);
                 
                 // Draw normal vector in red
                 Gizmos.color = Color.red;
-                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].normal) * arrowLength);
+                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].Normal) * arrowLength);
                 
                 // Draw binormal vector in green
                 Gizmos.color = Color.green;
-                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].binormal) * arrowLength);
+                Gizmos.DrawRay(worldPos, transform.TransformDirection(_frames[i].Binormal) * arrowLength);
             }
         }
     }
