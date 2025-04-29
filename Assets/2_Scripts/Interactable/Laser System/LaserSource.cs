@@ -1,6 +1,5 @@
 using UnityEngine;
 using PrimeTween;
-using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -15,7 +14,6 @@ public class LaserSource : MonoBehaviour
     [SerializeField, Min(0)] private float beamEndWidth = 0.05f;
     [SerializeField] private Transform originTransform;
     [SerializeField] private LaserBeam laserBeam;
-    [SerializeField] private Material beamMaterial;
 
     
     [Header("Animation")]
@@ -70,7 +68,7 @@ public class LaserSource : MonoBehaviour
     
         // Initialize the beam with the start width
         // We'll update the end width during propagation
-        laserBeam.SetBeamProperties(beamStartWidth, beamStartWidth, beamMaterial);
+        laserBeam.SetBeamProperties(beamStartWidth, beamStartWidth);
     
         // Set initial length
         _currentBeamLength = isActive ? maxBeamLength : 0f;
@@ -324,11 +322,11 @@ public class LaserSource : MonoBehaviour
             
             // Play hit sound effect
             if (_hitAudioSource && !_hitAudioSource.isPlaying) {
-                hitSfx?.Play(_hitAudioSource, Random.value);
+                hitSfx?.Play(_hitAudioSource, Random.Range(0,0.5f));
             }
             
             // Set the hit light intensity
-            if (hitLight) {
+            if (hitLight && !Mathf.Approximately(hitLight.intensity, _hitLightFullIntensity)) {
                 hitLight.intensity = _hitLightFullIntensity;
             }
             
@@ -345,7 +343,7 @@ public class LaserSource : MonoBehaviour
             }
             
             // Reset the hit light intensity
-            if (hitLight) {
+            if (hitLight && !Mathf.Approximately(hitLight.intensity, 0f)) {
                 hitLight.intensity = 0f;
             }
         }

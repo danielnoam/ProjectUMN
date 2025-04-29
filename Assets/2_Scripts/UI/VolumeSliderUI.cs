@@ -31,7 +31,7 @@ public class VolumeSliderUI : MonoBehaviour
     
     private void SetUpSlider()
     {
-        if (_slider == null) return;
+        if (!_slider) return;
         
         _slider.value = audioManager.LoadVolume(volumeType);
         _slider.onValueChanged.AddListener(SetVolume);
@@ -44,14 +44,14 @@ public class VolumeSliderUI : MonoBehaviour
     
     private void SetSliderValue(float value)
     {
-        if (sliderValue == null) return;
+        if (!sliderValue) return;
         
         sliderValue.text = Mathf.Round(value * 100) + "%";
     }
     
     private void SetVolume(float volume)
     {
-        if (audioManager == null) return;
+        if (!audioManager) return;
         
         audioManager.SetVolume(volumeType, volume);
         audioManager.SaveVolume(volumeType, volume);
@@ -60,7 +60,7 @@ public class VolumeSliderUI : MonoBehaviour
     
     private void PlayPreviewSound()
     {
-        if (previewSound == null || _audioSource == null) return;
+        if (!previewSound || !_audioSource) return;
 
         previewSound.Play(_audioSource);
     }

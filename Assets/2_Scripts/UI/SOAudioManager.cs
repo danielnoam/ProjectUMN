@@ -19,7 +19,7 @@ public class SOAudioManager : ScriptableObject
     
     public void SetVolume(VolumeType type, float volume)
     {
-        if (audioMixer == null) return;
+        if (!audioMixer) return;
         
         // Convert slider value (usually 0 to 1) to decibels
         float dB = Mathf.Log10(volume) * 20;
@@ -57,12 +57,27 @@ public class SOAudioManager : ScriptableObject
     {
         return PlayerPrefs.GetFloat(type.ToString(), 1f);
     }
+    
+    private float LoadMasterVolume()
+    {
+        return PlayerPrefs.GetFloat(nameof(VolumeType.MasterVolume), 0.75f);
+    }
+    
+    private float LoadMusicVolume()
+    {
+        return PlayerPrefs.GetFloat(nameof(VolumeType.MusicVolume), 0.4f);
+    }
+    
+    private float LoadSoundFXVolume()
+    {
+        return PlayerPrefs.GetFloat(nameof(VolumeType.SoundFXVolume), 1f);
+    }
 
     // Use in a settings manager or gameplay manager because you cannot set it on enable in a scriptable object
     public void LoadAllVolumes()
     {
-        SetVolume(VolumeType.MasterVolume, LoadVolume(VolumeType.MasterVolume));
-        SetVolume(VolumeType.MusicVolume, LoadVolume(VolumeType.MusicVolume));
-        SetVolume(VolumeType.SoundFXVolume, LoadVolume(VolumeType.SoundFXVolume));
+        SetVolume(VolumeType.MasterVolume, LoadMasterVolume());
+        SetVolume(VolumeType.MusicVolume, LoadMusicVolume());
+        SetVolume(VolumeType.SoundFXVolume, LoadSoundFXVolume());
     }
 }

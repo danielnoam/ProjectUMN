@@ -68,8 +68,14 @@ public class TestManager : MonoBehaviour
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
     public SOAudioEvent CurrentTheme => currentTheme;
-    public Vector3 CurrentCheckpoint => currentCheckpoint ? currentCheckpoint.position : currentTest.GetPlayerSpawnPoint();
-    public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.zero;
+    public Vector3 CurrentCheckpoint {
+        get
+        {
+            if (currentCheckpoint) return currentCheckpoint.position;
+            return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.up;
+        }
+    }
+    public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.up;
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
     public float IntroSequenceDuration => introSequenceDuration;
@@ -107,7 +113,7 @@ public class TestManager : MonoBehaviour
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _testEffectsHandler = GetComponent<TestEffectsHandler>();
         _audioSource = GetComponent<AudioSource>();
-        audioManager?.LoadAllVolumes();
+
         
 
         if (SaveManager.HasKey("playerDeaths"))
@@ -123,6 +129,8 @@ public class TestManager : MonoBehaviour
     
     private void Start()
     {
+        audioManager.LoadAllVolumes();
+        
         currentPlayer = PlayerStateMachine.Instance;
         SubscribeToPlayerEvents();
         currentRobot = FindFirstObjectByType<RobotCompanion>();

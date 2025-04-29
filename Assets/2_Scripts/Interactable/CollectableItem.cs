@@ -3,6 +3,7 @@ using UnityEngine;
 using PrimeTween;
 using VInspector;
 
+[RequireComponent(typeof(AudioSource))]
 public class CollectableItem : MonoBehaviour
 {
     [Header("Settings")]
@@ -12,6 +13,7 @@ public class CollectableItem : MonoBehaviour
     [SerializeField] private float animationDuration = 2f;
     [SerializeField] private Vector3 animationScale;
     [SerializeField] private Vector3 animationMovePosition = Vector3.up;
+    [SerializeField] private SOAudioEvent pickedUpSfx;
     
     [Header("Post Pick Up Effect")]
     [SerializeField] private float hoverSpeed = 0.3f;
@@ -20,15 +22,18 @@ public class CollectableItem : MonoBehaviour
     [SerializeField] private float rotationSpeed = 1f;
     [SerializeField] private Vector3 rotationDirection = Vector3.up;
     
+    
     private bool _animationComplete;
     private Vector3 _itemStartPosition;
     private Quaternion _itemStartRotation;
     private Vector3 _itemStartScale;
     private Sequence _effectSequence;
     private float _timeOffset;
+    private AudioSource _audioSource;
 
     private void Awake()
     {
+        _audioSource = GetComponent<AudioSource>();
         _itemStartPosition = itemObject.transform.localPosition;
         _itemStartRotation = itemObject.transform.rotation;
         _itemStartScale = itemObject.transform.localScale;
@@ -42,7 +47,7 @@ public class CollectableItem : MonoBehaviour
         
         // Hover in place using animation curve
         float time = Mathf.PingPong(Time.time * hoverSpeed + _timeOffset, 1f);
-        Vector3 newPosition = _itemStartPosition;
+        Vector3 newPosition = _itemStartPosition + animationMovePosition;
         newPosition.y += hoverCurve.Evaluate(time) * hoverHeight;
         
         itemObject.transform.localPosition = newPosition;
@@ -71,6 +76,7 @@ public class CollectableItem : MonoBehaviour
                 .Group(Tween.Scale(itemObject.transform, _itemStartScale, animationScale, duration: animationDuration, ease: Ease.InOutSine))
                 .OnComplete(() => {
                     _animationComplete = true;
+                    pickedUpSfx?.Play(_audioSource);
                 });
     }
 }

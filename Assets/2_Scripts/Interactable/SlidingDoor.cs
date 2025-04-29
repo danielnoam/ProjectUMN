@@ -145,9 +145,10 @@ public class SlidingDoor : MonoBehaviour
             _animationSequence.Stop();
         }
         
-        var tweenSettings = new TweenSettings(animationTime, animationEase, startDelay: animationStartDelay);
+        var tweenSettings = new TweenSettings(animationTime, animationEase);
 
         _animationSequence = Sequence.Create()
+            .ChainDelay(animationStartDelay)
             .ChainCallback(() => { sfxDoorMoving?.Play(_audioSource); })
             .Group(Tween.LocalPosition(rightAnchor, closed ? closedPosR : openedPosR, tweenSettings))
             .Group(Tween.LocalPosition(leftAnchor, closed ? closedPosL : openedPosL, tweenSettings))

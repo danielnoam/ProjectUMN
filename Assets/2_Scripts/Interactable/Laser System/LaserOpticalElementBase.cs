@@ -20,8 +20,7 @@ public abstract class LaserOpticalElementBase : MonoBehaviour
             if (laserBeam.lineRenderer && existingPair.outgoing.lineRenderer) {
                 existingPair.outgoing.SetBeamProperties(
                     laserBeam.lineRenderer.startWidth, 
-                    laserBeam.lineRenderer.endWidth,
-                    laserBeam.lineRenderer.material
+                    laserBeam.lineRenderer.endWidth
                 );
             }
             return;
@@ -35,8 +34,7 @@ public abstract class LaserOpticalElementBase : MonoBehaviour
         if (laserBeam.lineRenderer && outgoingLaserBeam.lineRenderer) {
             outgoingLaserBeam.SetBeamProperties(
                 laserBeam.lineRenderer.startWidth, 
-                laserBeam.lineRenderer.endWidth,
-                laserBeam.lineRenderer.material
+                laserBeam.lineRenderer.endWidth
             );
         }
     

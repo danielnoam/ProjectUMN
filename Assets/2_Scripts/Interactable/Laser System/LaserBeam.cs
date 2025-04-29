@@ -71,12 +71,11 @@ public class LaserBeam : MonoBehaviour
         }
     }
 
-    public void SetBeamProperties(float startWidth, float endWidth, Material material) {
+    public void SetBeamProperties(float startWidth, float endWidth) {
         if (!lineRenderer) return;
     
         lineRenderer.startWidth = startWidth;
         lineRenderer.endWidth = endWidth;
-        if (material) lineRenderer.material = material;
     }
 
 
