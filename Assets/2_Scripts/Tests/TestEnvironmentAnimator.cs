@@ -87,7 +87,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
     {
         if (!_testManager) return;
         
-        PlayIntroSequence(_testManager.IntroSequenceDuration*1.5f);
+        PlayIntroSequence(_testManager.IntroSequenceDuration*1.1f);
     }
     
     private void Initialize()
