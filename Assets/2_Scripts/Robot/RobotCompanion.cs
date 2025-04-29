@@ -259,7 +259,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
     private void OnTestStartLoading(SOTest test)
     {
-        Debug.Log("Robot is loading in");
         if (IsOn())
         {
             currentState = RobotState.LoadingIn;
@@ -1223,7 +1222,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         // Start checking for stuck condition if both conditions are true
         if (isTooFar && isMovingTooSlow)
         {
-            Debug.Log("Robot is stuck, checking for teleport...");
             if (!_isCheckingStuck)
             {
                 _isCheckingStuck = true;

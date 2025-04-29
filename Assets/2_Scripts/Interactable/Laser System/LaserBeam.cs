@@ -8,15 +8,16 @@ public class LaserBeam : MonoBehaviour
 {
     [HideInInspector] public float totalDistance = 0f;
     [HideInInspector] public float maxTotalDistance = 100f;
+    [HideInInspector] public LineRenderer lineRenderer;
     
     public Vector3 startPosition;
     public Vector3 endPosition;
     public Vector3 hitNormal;
-    public LaserBeam prefab;
+    public LaserBeam  Prefab => this;
     public Vector3 Direction => (endPosition - startPosition).normalized;
     private LaserOpticalElementBase _hitOpticalElement;
     private PowerPoint _hitPowerPoint;
-    [HideInInspector] public LineRenderer lineRenderer;
+    
 
     public LaserOpticalElementBase HitOpticalElement { 
         get => _hitOpticalElement; 
@@ -70,15 +71,15 @@ public class LaserBeam : MonoBehaviour
         }
     }
 
-    public void SetBeamProperties(float width, Color color, Material material) {
+    public void SetBeamProperties(float startWidth, float endWidth, Material material) {
         if (!lineRenderer) return;
-        
-        lineRenderer.startWidth = width;
-        lineRenderer.endWidth = width;
+    
+        lineRenderer.startWidth = startWidth;
+        lineRenderer.endWidth = endWidth;
         if (material) lineRenderer.material = material;
-        lineRenderer.startColor = color;
-        lineRenderer.endColor = color;
     }
+
+
 
     public void Propagate(Vector3 startPosition, Vector3 direction, LayerMask layerMask) {
         // Remember the original totalDistance before we add this segment
@@ -144,4 +145,12 @@ public class LaserBeam : MonoBehaviour
         lineRenderer.SetPosition(0, startPosition);
         lineRenderer.SetPosition(1, endPosition);
     }
+    
+    public void SetBeamWidth(float startWidth, float endWidth) {
+        if (!lineRenderer) return;
+    
+        lineRenderer.startWidth = startWidth;
+        lineRenderer.endWidth = endWidth;
+    }
+
 }

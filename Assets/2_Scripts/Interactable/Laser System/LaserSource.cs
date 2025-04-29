@@ -9,12 +9,12 @@ public class LaserSource : MonoBehaviour
 {
 
     [Header("Beam Configuration")]
+    [SerializeField] private LayerMask collisionMask = -1;
+    [SerializeField, Min(0)] private float maxBeamLength = 100f;
+    [SerializeField, Min(0)] private float beamStartWidth = 0.1f;
+    [SerializeField, Min(0)] private float beamEndWidth = 0.05f;
     [SerializeField] private Transform originTransform;
     [SerializeField] private LaserBeam laserBeam;
-    [SerializeField] private LayerMask collisionMask = -1;
-    [SerializeField] private float maxBeamLength = 100f;
-    [SerializeField] private float beamWidth = 0.1f;
-    [SerializeField] private Color beamColor = Color.red;
     [SerializeField] private Material beamMaterial;
 
     
@@ -60,20 +60,21 @@ public class LaserSource : MonoBehaviour
             _spotLightFullIntensity = spotLight.intensity;
             spotLight.intensity = 0f;
         }
-        
+    
         if (hitLight) {
             _hitLightFullIntensity = hitLight.intensity;
             hitLight.intensity = 0f;
         }
-        
+    
         if (!laserBeam) return;
-        
-        // Initialize the beam with the specified properties
-        laserBeam.SetBeamProperties(beamWidth, beamColor, beamMaterial);
-        
+    
+        // Initialize the beam with the start width
+        // We'll update the end width during propagation
+        laserBeam.SetBeamProperties(beamStartWidth, beamStartWidth, beamMaterial);
+    
         // Set initial length
         _currentBeamLength = isActive ? maxBeamLength : 0f;
-        
+    
         SetLaserState(isActive);
     }
 
@@ -112,21 +113,29 @@ public class LaserSource : MonoBehaviour
             // Reset accumulated distance and set max distance to current animated length
             laserBeam.totalDistance = 0f;
             laserBeam.maxTotalDistance = _currentBeamLength;
-    
+
             // Store the original line renderer enabled state
             bool wasRendererEnabled = laserBeam.lineRenderer && laserBeam.lineRenderer.enabled;
-    
+
             // Temporarily enable the line renderer if it's disabled, but we're still animating
             if (_currentBeamLength > 0 && !wasRendererEnabled && laserBeam.lineRenderer) {
                 laserBeam.lineRenderer.enabled = true;
             }
-    
+
             // Propagate the beam
             laserBeam.Propagate(startPosition, direction, collisionMask);
+            
+            // Calculate the total chain length (sum of all segments)
+            float totalChainLength = CalculateTotalBeamChainLength(laserBeam);
+            
+            // If we have a valid chain length, update all beam widths
+            if (totalChainLength > 0) {
+                UpdateBeamWidths(laserBeam, totalChainLength);
+            }
         
             // Handle hit effects after beam propagation
             HandleHitEffects(laserBeam);
-    
+
             // Force the beam to visually match the animated length
             EnsureBeamMatchesAnimatedLength(laserBeam, _currentBeamLength);
 
@@ -134,7 +143,7 @@ public class LaserSource : MonoBehaviour
             if (laserBeam.HitOpticalElement) {
                 laserBeam.HitOpticalElement.UpdateMaxDistance(laserBeam, _currentBeamLength);
             }
-    
+
             // Restore original renderer state if we temporarily enabled it
             if (_currentBeamLength > 0 && !wasRendererEnabled && laserBeam.lineRenderer) {
                 laserBeam.lineRenderer.enabled = wasRendererEnabled;
@@ -355,6 +364,46 @@ public class LaserSource : MonoBehaviour
             }
         }
         return beam;
+    }
+    
+    private void UpdateBeamWidths(LaserBeam beam, float totalLength, float processedLength = 0f) {
+        if (!beam || !beam.lineRenderer) return;
+    
+        float segmentLength = Vector3.Distance(beam.startPosition, beam.endPosition);
+        float startRatio = processedLength / totalLength;
+        float endRatio = (processedLength + segmentLength) / totalLength;
+    
+        // Linearly interpolate between start and end width based on position in the chain
+        float startWidth = Mathf.Lerp(beamStartWidth, beamEndWidth, startRatio);
+        float endWidth = Mathf.Lerp(beamStartWidth, beamEndWidth, endRatio);
+    
+        // Update this segment's widths
+        beam.SetBeamWidth(startWidth, endWidth);
+    
+        // If this segment hits an optical element, continue updating downstream
+        if (beam.HitOpticalElement) {
+            LaserBeam nextBeam = GetNextBeamInChain(beam);
+            if (nextBeam) {
+                UpdateBeamWidths(nextBeam, totalLength, processedLength + segmentLength);
+            }
+        }
+    }
+    
+    private float CalculateTotalBeamChainLength(LaserBeam beam, float accumulatedLength = 0f) {
+        if (!beam) return accumulatedLength;
+    
+        float segmentLength = Vector3.Distance(beam.startPosition, beam.endPosition);
+        float newAccumulatedLength = accumulatedLength + segmentLength;
+    
+        // If this beam hits an optical element, continue the calculation
+        if (beam.HitOpticalElement) {
+            LaserBeam nextBeam = GetNextBeamInChain(beam);
+            if (nextBeam) {
+                return CalculateTotalBeamChainLength(nextBeam, newAccumulatedLength);
+            }
+        }
+    
+        return newAccumulatedLength;
     }
     
     

@@ -9,39 +9,43 @@ public abstract class LaserOpticalElementBase : MonoBehaviour
     public virtual void RegisterLaserBeam(LaserBeam laserBeam) {
         // Check if we already have a pair for this incoming beam
         LaserBeamPair existingPair = GetPairFromIncomingBeam(laserBeam);
-        
+    
         if (existingPair != null) {
             // We already have this beam registered, so update properties
             // but don't create a new outgoing beam
             existingPair.outgoing.maxTotalDistance = laserBeam.maxTotalDistance;
             existingPair.outgoing.totalDistance = laserBeam.totalDistance;
-            
+        
             // Update visual properties in case they've changed
-            existingPair.outgoing.SetBeamProperties(
-                laserBeam.lineRenderer.startWidth, 
-                laserBeam.lineRenderer.startColor, 
-                laserBeam.lineRenderer.material
-            );
+            if (laserBeam.lineRenderer && existingPair.outgoing.lineRenderer) {
+                existingPair.outgoing.SetBeamProperties(
+                    laserBeam.lineRenderer.startWidth, 
+                    laserBeam.lineRenderer.endWidth,
+                    laserBeam.lineRenderer.material
+                );
+            }
             return;
         }
-        
+    
         // Create new outgoing beam since this is a new registration
-        LaserBeam outgoingLaserBeam = Instantiate(laserBeam.prefab, transform);
+        LaserBeam outgoingLaserBeam = Instantiate(laserBeam.Prefab, transform);
         if (!outgoingLaserBeam) return;
-        
+    
         // Copy beam properties (color, width, material)
-        outgoingLaserBeam.SetBeamProperties(
-            laserBeam.lineRenderer.startWidth, 
-            laserBeam.lineRenderer.startColor, 
-            laserBeam.lineRenderer.material
-        );
-        
+        if (laserBeam.lineRenderer && outgoingLaserBeam.lineRenderer) {
+            outgoingLaserBeam.SetBeamProperties(
+                laserBeam.lineRenderer.startWidth, 
+                laserBeam.lineRenderer.endWidth,
+                laserBeam.lineRenderer.material
+            );
+        }
+    
         // Share the same maximum total distance
         outgoingLaserBeam.maxTotalDistance = laserBeam.maxTotalDistance;
-        
+    
         // Inherit the accumulated distance from the incoming beam
         outgoingLaserBeam.totalDistance = laserBeam.totalDistance;
-        
+    
         _laserBeamPairs.Add(new LaserBeamPair(laserBeam, outgoingLaserBeam));
     }
     

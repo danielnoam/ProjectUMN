@@ -1722,25 +1722,25 @@ namespace VHierarchy
                 catch { }
 
             }
-            void removeDeletedBookmarks()
-            {
-                if (!data) return;
+            // void removeDeletedBookmarks()
+            // {
+            //     if (!data) return;
 
 
-                var toRemove = data.bookmarks.Where(r => r.isDeleted);
+            //     var toRemove = data.bookmarks.Where(r => r.isDeleted);
 
-                if (!toRemove.Any()) return;
-
-
-                foreach (var r in toRemove.ToList())
-                    data.bookmarks.Remove(r);
-
-                data.Dirty();
+            //     if (!toRemove.Any()) return;
 
 
-                // delayed to give bookmarks a chance to load in update
+            //     foreach (var r in toRemove.ToList())
+            //         data.bookmarks.Remove(r);
 
-            }
+            //     data.Dirty();
+
+
+            //     // delayed to give bookmarks a chance to load in update
+
+            // }
 
 
             subscribe();
@@ -1749,7 +1749,7 @@ namespace VHierarchy
             loadDataAndPaletteDelayed();
             migrateDataFromV1();
 
-            EditorApplication.delayCall += () => removeDeletedBookmarks();
+            // EditorApplication.delayCall += () => removeDeletedBookmarks();
 
             OnDomainReloaded();
 
@@ -1779,7 +1779,7 @@ namespace VHierarchy
 
 
 
-        public const string version = "2.1.1";
+        public const string version = "2.1.2";
 
     }
 
