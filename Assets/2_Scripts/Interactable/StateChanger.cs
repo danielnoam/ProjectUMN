@@ -31,10 +31,19 @@ public class StateChanger : MonoBehaviour
     private void OnValidate()
     {
         if (startingStateIndex >= states.Length) startingStateIndex = states.Length - 1;
+
+        if (!Application.isPlaying)
+        {
+            currentStateName = null;
+            previousStateName = null;
+        }
     }
 
     private void Start()
     {
+        _currentState = null;
+        _previousState = null;
+        
         if (states.Length == 0) return;
 
         ChangeState(states[startingStateIndex].name);
@@ -44,8 +53,7 @@ public class StateChanger : MonoBehaviour
     {
         _currentState?.stateUpdateEvent?.Invoke();
         
-        currentStateName = _currentState?.name;
-        previousStateName = _previousState?.name;
+
     }
     
     public void ChangeState(string stateName)
@@ -57,9 +65,11 @@ public class StateChanger : MonoBehaviour
                 if (_currentState != null)
                 {
                     _previousState = _currentState;
+                    previousStateName = _previousState.name;
                     _currentState.stateExitEvent?.Invoke();
                 }
                 _currentState = state;
+                currentStateName = _currentState.name;
                 _currentState.stateEnterEvent?.Invoke();
                 return;
             }

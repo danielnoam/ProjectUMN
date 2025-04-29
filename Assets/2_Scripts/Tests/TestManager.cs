@@ -392,10 +392,8 @@ public class TestManager : MonoBehaviour
                 robotSfx?.PlayAtPoint();
             }
             
-        
-            float timeMultiplier = Input.GetKeyDown(KeyCode.Space) ? 3f : 1f;
-            _creditsSequenceTime -= Time.deltaTime * timeMultiplier;
-            Debug.Log(timeMultiplier);
+            
+            _creditsSequenceTime -= Time.deltaTime;
             yield return null; 
         }
         

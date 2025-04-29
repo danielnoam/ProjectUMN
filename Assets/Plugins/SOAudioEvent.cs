@@ -24,7 +24,7 @@ public class SOAudioEvent : ScriptableObject
     public bool bypassListenerEffects;
     public bool bypassReverbZones;
     public bool loop;
-
+    public bool debug;
     
     [Header("3D Sound")]
     public bool set3DSettings = false;
@@ -94,6 +94,25 @@ public class SOAudioEvent : ScriptableObject
         Destroy(source.gameObject, source.clip.length);
     }
     
+    public void PlayAtPoint(float delay, Vector3 position = new())
+    {
+        if (clips.Length == 0)
+        {
+            #if UNITY_EDITOR
+            Debug.Log("No clips found");
+            #endif
+            return;
+        }
+        
+        AudioSource source = new GameObject("OneShotAudioEvent").AddComponent<AudioSource>();
+        source.transform.position = position;
+        
+        SetAudioSourceSettings(source);
+        source.PlayDelayed(delay);
+        Destroy(source.gameObject, source.clip.length + delay);
+    }
+
+    
     
     public IEnumerator FadeOutRoutine(AudioSource source, float fadeTime)
     {
@@ -131,7 +150,7 @@ public class SOAudioEvent : ScriptableObject
         source.bypassListenerEffects = bypassListenerEffects;
         source.bypassReverbZones = bypassReverbZones;
         source.loop = loop;
-
+        if (debug) Debug.Log(source.clip.name);
         if (set3DSettings)
         {
             source.dopplerLevel = dopplerLevel;

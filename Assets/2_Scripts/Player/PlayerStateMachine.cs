@@ -40,6 +40,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public float strafeSpeedMultiplier = 0.7f;
     [Tooltip("Speed multiplier when moving backward")]
     public float backwardSpeedMultiplier = 0.6f;
+    [Tooltip("Speed multiplier when crouching")]
+    public float crouchSpeedMultiplier = 0.5f;
     [Tooltip("How quickly the character reaches target speed")]
     public float acceleration = 10f;
     [Tooltip("Drag force applied to movement on ground")]
@@ -352,23 +354,29 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         // Determine base speed based on input and state
         float startSpeed;
         float targetSpeed;
-        
+    
         if (!lockSprintGait)
         {
             startSpeed = InputHandler.SprintInput ? runSpeed : 0;
             targetSpeed = InputHandler.SprintInput ? sprintSpeed : runSpeed;
-                
+            
         }
         else
         {
             startSpeed = InputHandler.SprintInput ? walkSpeed : 0;
             targetSpeed = InputHandler.SprintInput ? runSpeed : walkSpeed;
         }
-        
+    
         var baseSpeed = Mathf.Lerp(startSpeed, targetSpeed, movementIntensity);
 
         // Apply direction multipliers based on movement input
         float directionMultiplier = 1.0f;
+
+        // Apply crouch multiplier if in crouching state
+        if (CurrentState == CrouchingState)
+        {
+            directionMultiplier *= crouchSpeedMultiplier;
+        }
 
         if (IsAiming)
         {
@@ -379,7 +387,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                 float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
                 directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
             }
-    
+
             // Check for strafing movement (X input)
             if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
             {
@@ -389,7 +397,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             }
         }
 
-    
         // Return the modified speed
         return baseSpeed * directionMultiplier;
     }

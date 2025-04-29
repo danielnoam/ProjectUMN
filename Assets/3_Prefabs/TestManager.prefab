@@ -606,8 +606,43 @@ MonoBehaviour:
   customOrderedObjects: []
   distanceReferencePoint: {fileID: 0}
   sortFromFarthest: 0
+  worldLoadSfx: {fileID: 11400000, guid: 6251bcff2d4365346b5763849659ff44, type: 2}
+  worldUnLoadSfx: {fileID: 11400000, guid: 514b94bdcb22ab24395c589583dc6b69, type: 2}
   findAllAnimatedObjectsInScene: 1
   additionalObjectsToAnimate: []
+  introEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5767584
+      value: 0.84384066
+      inSlope: 1.1281753
+      outSlope: 1.1281753
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   totalAnimationTime: 0
   numberOfObjectsToAnimate: 0
   objectsToAnimate: []

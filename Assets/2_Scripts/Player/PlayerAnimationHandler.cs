@@ -138,48 +138,55 @@ private void UpdateMovementDirectionAnimation()
     _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
 }
 
-private void UpdateGaitTypeAnimation()
-{
-    bool isAiming = _stateMachine.IsAiming;
-    
-    // Get input for gait calculation - Using direct input from PlayerStateMachine
-    // rather than the modified speed
-    float inputIntensity = Mathf.Clamp01(
-        Mathf.Abs(_stateMachine.InputHandler.MovementInput.x) + 
-        Mathf.Abs(_stateMachine.InputHandler.MovementInput.y)
-    );
-    
-    // Determine base speed based on input and flags
-    float speedForAnimation = 0f;
-    bool lockSprintGait = _stateMachine.InputHandler.MoveSpeedInput || 
-                          !_stateMachine.allowSprint || 
-                          isAiming || 
-                          _stateMachine.CurrentState is PlayerCrouchingState;
-    
-    if (inputIntensity > _stateMachine.InputHandler.MovementInputThreshold)
+    private void UpdateGaitTypeAnimation()
     {
-        if (!lockSprintGait)
+        bool isAiming = _stateMachine.IsAiming;
+        bool isCrouching = _stateMachine.CurrentState is PlayerCrouchingState;
+        
+        // Get input for gait calculation - Using direct input from PlayerStateMachine
+        // rather than the modified speed
+        float inputIntensity = Mathf.Clamp01(
+            Mathf.Abs(_stateMachine.InputHandler.MovementInput.x) + 
+            Mathf.Abs(_stateMachine.InputHandler.MovementInput.y)
+        );
+        
+        // Determine base speed based on input and flags
+        float speedForAnimation = 0f;
+        bool lockSprintGait = _stateMachine.InputHandler.MoveSpeedInput || 
+                              !_stateMachine.allowSprint || 
+                              isAiming || 
+                              isCrouching;
+        
+        if (inputIntensity > _stateMachine.InputHandler.MovementInputThreshold)
         {
-            // Can sprint, determine speed based on sprint input
-            float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : 0;
-            float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.sprintSpeed : _stateMachine.runSpeed;
-            speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+            if (!lockSprintGait)
+            {
+                // Can sprint, determine speed based on sprint input
+                float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : 0;
+                float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.sprintSpeed : _stateMachine.runSpeed;
+                speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+            }
+            else
+            {
+                // Cannot sprint, use walk/run only
+                float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.walkSpeed : 0;
+                float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : _stateMachine.walkSpeed;
+                speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+            }
         }
-        else
+        
+        // If crouching, apply the crouch speed multiplier to animation speed
+        if (isCrouching)
         {
-            // Cannot sprint, use walk/run only
-            float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.walkSpeed : 0;
-            float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : _stateMachine.walkSpeed;
-            speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
+            speedForAnimation *= _stateMachine.crouchSpeedMultiplier;
         }
+        
+        // Calculate gait type value based on this determined speed, IGNORING direction multipliers
+        float moveType = CalculateMoveTypeValue(speedForAnimation);
+        
+        // Apply gait value to animator with smoothing
+        _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime * 5, Time.deltaTime);
     }
-    
-    // Calculate gait type value based on this determined speed, IGNORING direction multipliers
-    float moveType = CalculateMoveTypeValue(speedForAnimation);
-    
-    // Apply gait value to animator with smoothing
-    _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime * 5, Time.deltaTime);
-}
     
     #endregion Animator -------------------------------------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using PrimeTween;
+using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -24,12 +25,16 @@ public class TestEnvironmentAnimator : MonoBehaviour
     [SerializeField, ShowIf("sortMode", AnimationSortMode.ByDistance)] 
     private Transform distanceReferencePoint;[EndIf]
     [SerializeField, ShowIf("IsDistanceSort")] 
-    private bool sortFromFarthest = false;[EndIf]
-    
+    private bool sortFromFarthest; [EndIf] 
+    [SerializeField] private SOAudioEvent worldLoadSfx;
+    [SerializeField] private SOAudioEvent worldUnLoadSfx;
     
     [Header("Object Filtering")]
     [SerializeField] private bool findAllAnimatedObjectsInScene = true;
     [SerializeField] private List<GameObject> additionalObjectsToAnimate = new List<GameObject>();
+    
+    [Header("Intro Sequence")]
+    [SerializeField] private AnimationCurve introEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
     
     [Header("Debug")] 
     [SerializeField, ReadOnly] private float totalAnimationTime; 
@@ -39,7 +44,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
 
     private readonly Vector3 _defaultPlayerSize = new Vector3(1,1,1);
     private readonly Dictionary<GameObject, Vector3> _originalScales = new Dictionary<GameObject, Vector3>();
-    private bool IsDistanceSort => sortMode == AnimationSortMode.ByDistance || sortMode == AnimationSortMode.DistanceFromPlayer;
+    private bool IsDistanceSort => sortMode is AnimationSortMode.ByDistance or AnimationSortMode.DistanceFromPlayer;
     private bool _hasInitialized = false;
     private Sequence _animationSequence;
     private TestManager _testManager;
@@ -351,6 +356,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
             ? animationTime * (1f - delayTimeFactor) // remaining portion for actual animation
             : animationTime;
         
+        if (ShouldPlaySfx()) worldLoadSfx?.PlayAtPoint(_testManager.Player.transform.position);
         
         // Create an animation only for the floor object
         if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
@@ -457,6 +463,9 @@ public class TestEnvironmentAnimator : MonoBehaviour
             : animationTime;
 
         
+        // Play unload sfx at 80% of the animation time
+        if (ShouldPlaySfx()) worldUnLoadSfx.PlayAtPoint( animationTime * 0.8f,_testManager.Player.transform.position);
+        
         // Create an animation only for the floor object
         if (_floorGameObject && ShouldAnimateSpecialObject(_floorGameObject))
         {
@@ -521,8 +530,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
                 )
             );
         }
-
-       
+        
         
         numberOfObjectsToAnimate = objectsToAnimate.Count;
         totalAnimationTime = animationTime; 
@@ -608,7 +616,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
                     startValue: Vector3.zero,
                     endValue: _originalScales[obj],
                     individualDuration,
-                    ease: Ease.InSine,
+                    ease: introEase,
                     startDelay: delay
                 )
             );
@@ -681,6 +689,14 @@ public class TestEnvironmentAnimator : MonoBehaviour
         Initialize();
     }
     
+    private bool ShouldPlaySfx()
+    {
+        return _testManager &&
+               _testManager.Player &&
+               _testManager.CurrentTest &&
+               !_testManager.IsIntroSequenceActive &&
+               !_testManager.IsCreditsSequenceActive;
+    }
     
     [Button]
     private void ResetAllScales()
