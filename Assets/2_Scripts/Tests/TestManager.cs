@@ -366,8 +366,9 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator CreditsSequenceCoroutine()
     {
-        bool twentyReached = false;
-        
+        bool fadeOutTimeReached = false;
+        float fadeOutTime = creditsSequenceDuration * 0.1f;
+        _testEffectsHandler.FadeScreen(true, 2f);
         
         if (currentTest) 
         {
@@ -377,18 +378,18 @@ public class TestManager : MonoBehaviour
         StartCoroutine(LoadTest(creditsTest));
         _creditsSequenceTime = creditsSequenceDuration;
         onCreditsSequenceStart?.Invoke();
+        _testEffectsHandler.FadeScreen(false, 1f);
         
         
         
         while (_creditsSequenceTime > 0)
         {
             // Check if we've reached 80% of the sequence
-            if (_creditsSequenceTime <= creditsSequenceDuration * 0.2f && !twentyReached)
+            if (_creditsSequenceTime <= fadeOutTime && !fadeOutTimeReached)
             {
-                twentyReached = true;
+                fadeOutTimeReached = true;
                 // fade out the screen with the left time
-                float fadeOutTime = creditsSequenceDuration * 0.5f;
-                _testEffectsHandler.FadeScreen(true, fadeOutTime);
+                _testEffectsHandler.FadeScreen(true, fadeOutTime * 1.5f);
                 robotSfx?.PlayAtPoint();
             }
             

@@ -20,11 +20,6 @@ public class CreditsText : MonoBehaviour
     [SerializeField] private bool useDurationMode = false;
     [SerializeField] private float creditsDuration = 60f;
     
-    [Header("Loop")]
-    [SerializeField] private bool loopCredits;
-    [SerializeField] private float loopDelay = 1f;
-    [SerializeField] private float resetDistance = 15f;
-    
     [Header("Fade")]
     [SerializeField] private bool fadeEnabled = true;
     [SerializeField] private float fadeSpeed = 0.2f;
@@ -98,11 +93,6 @@ public class CreditsText : MonoBehaviour
         MoveCredits();
         ApplyFadeEffect();
         
-        // Check if we need to loop
-        if (loopCredits && _creditTexts.Count > 0)
-        {
-            CheckForLooping();
-        }
     }
     
     private void OnCreditsSequenceStart()
@@ -275,34 +265,7 @@ public class CreditsText : MonoBehaviour
     
 
     
-    private void CheckForLooping()
-    {
-        // Use the last text (attribution) as our reference point for when credits have scrolled past
-        TextMeshProUGUI lastText = _creditTexts[^1];
-        
-        if (!lastText) return;
-        
-        // Calculate distance from center for the last text element
-        float distance = Vector3.Distance(lastText.transform.position, transform.position);
-        
-        // If the last text has passed the reset distance, and we're not already restarting
-        if (distance > resetDistance && _loopCoroutine == null)
-        {
-            _loopCoroutine = StartCoroutine(LoopCreditsAfterDelay());
-        }
-    }
     
-    private IEnumerator LoopCreditsAfterDelay()
-    {
-        // Wait for the specified delay
-        yield return new WaitForSeconds(loopDelay);
-        
-        // Restart the credits
-        RestartCredits();
-        
-        // Reset the coroutine reference
-        _loopCoroutine = null;
-    }
     
     private void MoveCredits()
     {
@@ -496,7 +459,6 @@ public class CreditsText : MonoBehaviour
         Color minFadeColor = new Color(0, 1, 0, 0.8f);    // Green - full visibility
         Color maxFadeColor = new Color(1, 0, 0, 0.8f);    // Red - no visibility
         Color startPositionColor = new Color(1, 1, 0, 0.8f); // Yellow - start position
-        Color resetDistanceColor = new Color(0, 0.5f, 1, 0.8f); // Blue - reset distance for looping
         
         // Get the center of this object
         Vector3 center = transform.position;
@@ -509,12 +471,6 @@ public class CreditsText : MonoBehaviour
         Gizmos.color = maxFadeColor;
         DrawCircle(center, maxFadeDistance, 32);
         
-        // Draw reset distance for looping (if enabled)
-        if (loopCredits)
-        {
-            Gizmos.color = resetDistanceColor;
-            DrawCircle(center, resetDistance, 32);
-        }
         
         // Draw start position
         Gizmos.color = startPositionColor;
@@ -523,10 +479,6 @@ public class CreditsText : MonoBehaviour
         // Draw labels
         DrawLabel(center + new Vector3(0, minFadeDistance, 0), "Min Fade (α=1)");
         DrawLabel(center + new Vector3(0, maxFadeDistance, 0), "Max Fade (α=0)");
-        if (loopCredits)
-        {
-            DrawLabel(center + new Vector3(0, resetDistance, 0), "Reset Distance");
-        }
         DrawLabel(center + startingOffset, "Start Position");
         
         // Draw current duration information if using duration mode

@@ -138,6 +138,10 @@ public class TestEffectsHandler : MonoBehaviour
         
         float startValue = fadeIn ? 0 : 1;
         float endValue = fadeIn ? 1 : 0;
+        
+        _vignette.intensity.value = 0;
+        _chromaticAberration.intensity.value = 0;
+        _paniProjection.distance.value = 0;
 
         _fadeSequence = Sequence.Create();
         _fadeSequence = _fadeSequence
@@ -145,5 +149,6 @@ public class TestEffectsHandler : MonoBehaviour
             ;
 
     }
+    
     
 }

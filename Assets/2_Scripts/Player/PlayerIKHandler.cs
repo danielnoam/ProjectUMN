@@ -59,6 +59,11 @@ public class PlayerIKHandler : MonoBehaviour
     {
         TestManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
         TestManager?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+        
+        if (TestManager && TestManager.IsIntroSequenceActive)
+        {
+            SetIKState(false);
+        }
 
     }
 

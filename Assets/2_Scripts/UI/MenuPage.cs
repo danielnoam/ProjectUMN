@@ -7,6 +7,7 @@ using PrimeTween;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using VInspector;
+using Shapes;
 
 
 public class MenuPage : MonoBehaviour
@@ -68,7 +69,6 @@ public class MenuPage : MonoBehaviour
     [SerializeField] private SOAudioEvent sfxButtonMoveOut;
     [EndFoldout]
     
-    
     [Space(10)]
     [CustomAttribute.ReadOnly] public Selectable currentSelectable;
     [CustomAttribute.ReadOnly] public Selectable previousSelectable;
@@ -84,6 +84,8 @@ public class MenuPage : MonoBehaviour
     private readonly Dictionary<Selectable, Vector3> _selectableOriginalPositions = new Dictionary<Selectable, Vector3>();
     private readonly Dictionary<Selectable, bool> _selectableOriginalState = new Dictionary<Selectable, bool>();
     private readonly Dictionary<GameObject, CanvasGroup> _canvasGroups = new Dictionary<GameObject, CanvasGroup>();
+    private readonly Dictionary<ShapeRenderer, Color> _shapesOriginalColors = new Dictionary<ShapeRenderer, Color>();
+    private readonly Dictionary<GameObject, List<ShapeRenderer>> _objectChildShapeRenderers = new Dictionary<GameObject, List<ShapeRenderer>>();
     private readonly List<LayoutGroup> _layoutGroups = new List<LayoutGroup>();
     
     public bool PageIsActive => _pageIsActive;
@@ -123,6 +125,11 @@ public class MenuPage : MonoBehaviour
         // Save layout groups for animation
         AddLayoutGroupsRecursively(transform);
         OnPageDeselected(false);
+    }
+    
+    private void OnDestroy()
+    {
+        _animationSequence.Stop();
     }
     
     // Called when page is selected
@@ -270,16 +277,30 @@ public class MenuPage : MonoBehaviour
     private void SetupCanvasGroups(List<GameObject> objects)
     {
         if (objects.Count == 0) return;
-        
+    
         foreach (GameObject obj in objects)
         {
-            // Get or add a canvas group component
+            // Always check for CanvasGroup first and add it to dictionary
             if (!obj.TryGetComponent(out CanvasGroup canvasGroup))
             {
                 canvasGroup = obj.AddComponent<CanvasGroup>();
             }
-            
             _canvasGroups[obj] = canvasGroup;
+        
+            // Then check for all ShapeRenderers in this object and its children
+            ShapeRenderer[] childRenderers = obj.GetComponentsInChildren<ShapeRenderer>(true);
+        
+            if (childRenderers.Length > 0)
+            {
+                // Store renderers and their original colors
+                List<ShapeRenderer> renderersList = new List<ShapeRenderer>();
+                foreach (ShapeRenderer shape in childRenderers)
+                {
+                    renderersList.Add(shape);
+                    _shapesOriginalColors[shape] = shape.Color;
+                }
+                _objectChildShapeRenderers[obj] = renderersList;
+            }
         }
     }
     
@@ -468,22 +489,49 @@ public class MenuPage : MonoBehaviour
             for (int i = 0; i < fadeInObjects.Count; i++)
             {
                 GameObject currentObject = fadeInObjects[i];
+                float delay = i * selectedAnimationDelay - 0.5f;
+        
+                // Always handle CanvasGroup if it exists
                 if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
                 {
                     canvasGroup.alpha = 0f;
                     _animationSequence.Group(
                         Tween.Alpha(
-                        canvasGroup, 
-                        startValue: 0f, 
-                        endValue: 1f, 
-                        selectedAnimationDuration, 
-                        ease: moveInEase, 
-                        startDelay: i * selectedAnimationDelay + -0.5f
-                    ));
+                            canvasGroup, 
+                            startValue: 0f, 
+                            endValue: 1f, 
+                            selectedAnimationDuration, 
+                            ease: moveInEase, 
+                            startDelay: delay
+                        ));
+                }
+
+                // Also handle ShapeRenderers if they exist
+                if (_objectChildShapeRenderers.TryGetValue(currentObject, out List<ShapeRenderer> renderers))
+                {
+                    // Animate all child ShapeRenderers together
+                    foreach (ShapeRenderer renderer in renderers)
+                    {
+                        Color originalColor = _shapesOriginalColors[renderer];
+                        renderer.Color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f);
+                
+                        _animationSequence.Group(
+                            Tween.Custom(
+                                0f, 
+                                originalColor.a, 
+                                selectedAnimationDuration,
+                                onValueChange: alpha => {
+                                    renderer.Color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+                                },
+                                ease: moveInEase, 
+                                startDelay: delay
+                            )
+                        );
+                    }
                 }
             }
-            
-            // Update total animation time if fade takes longer
+
+            // Update total animation time
             float fadeTotalTime = selectedAnimationDuration + (selectedAnimationDelay * (fadeInObjects.Count - 1));
             totalAnimationTime = Mathf.Max(totalAnimationTime, fadeTotalTime);
         }
@@ -522,9 +570,20 @@ public class MenuPage : MonoBehaviour
             for (int i = 0; i < fadeInObjects.Count; i++)
             {
                 GameObject currentObject = fadeInObjects[i];
+        
+                // Handle CanvasGroup if it exists
                 if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
                 {
                     canvasGroup.alpha = 1f;
+                }
+        
+                // Handle ShapeRenderers if they exist
+                if (_objectChildShapeRenderers.TryGetValue(currentObject, out List<ShapeRenderer> renderers))
+                {
+                    foreach (ShapeRenderer renderer in renderers)
+                    {
+                        renderer.Color = _shapesOriginalColors[renderer]; // Restore original color
+                    }
                 }
             }
         }
@@ -571,21 +630,47 @@ public class MenuPage : MonoBehaviour
             for (int i = 0; i < fadeOutObjects.Count; i++)
             {
                 GameObject currentObject = fadeOutObjects[i];
+                float delay = i * deSelectedAnimationDelay;
+        
+                // Handle CanvasGroup if it exists
                 if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
                 {
                     _animationSequence.Group(
                         Tween.Alpha(
-                        canvasGroup, 
-                        startValue: canvasGroup.alpha, 
-                        endValue: 0f, 
-                        deSelectedAnimationDuration, 
-                        ease: moveOutEase, 
-                        startDelay: i * deSelectedAnimationDelay
-                    ));
+                            canvasGroup, 
+                            startValue: canvasGroup.alpha, 
+                            endValue: 0f, 
+                            deSelectedAnimationDuration, 
+                            ease: moveOutEase, 
+                            startDelay: delay
+                        ));
+                }
+        
+                // Handle ShapeRenderers if they exist
+                if (_objectChildShapeRenderers.TryGetValue(currentObject, out List<ShapeRenderer> renderers))
+                {
+                    // Animate all child ShapeRenderers together
+                    foreach (ShapeRenderer renderer in renderers)
+                    {
+                        Color currentColor = renderer.Color;
+                
+                        _animationSequence.Group(
+                            Tween.Custom(
+                                currentColor.a, 
+                                0f, 
+                                deSelectedAnimationDuration,
+                                onValueChange: alpha => {
+                                    renderer.Color = new Color(currentColor.r, currentColor.g, currentColor.b, alpha);
+                                },
+                                ease: moveOutEase, 
+                                startDelay: delay
+                            )
+                        );
+                    }
                 }
             }
-            
-            // Update total animation time if fade takes longer
+
+            // Update total animation time
             float fadeTotalTime = deSelectedAnimationDuration + (deSelectedAnimationDelay * (fadeOutObjects.Count - 1));
             totalAnimationTime = Mathf.Max(totalAnimationTime, fadeTotalTime);
         }
@@ -610,9 +695,21 @@ public class MenuPage : MonoBehaviour
             for (int i = 0; i < fadeOutObjects.Count; i++)
             {
                 GameObject currentObject = fadeOutObjects[i];
+        
+                // Handle CanvasGroup if it exists
                 if (_canvasGroups.TryGetValue(currentObject, out CanvasGroup canvasGroup))
                 {
                     canvasGroup.alpha = 0f;
+                }
+        
+                // Handle ShapeRenderers if they exist
+                if (_objectChildShapeRenderers.TryGetValue(currentObject, out List<ShapeRenderer> renderers))
+                {
+                    foreach (ShapeRenderer renderer in renderers)
+                    {
+                        Color currentColor = renderer.Color;
+                        renderer.Color = new Color(currentColor.r, currentColor.g, currentColor.b, 0f); 
+                    }
                 }
             }
         }
