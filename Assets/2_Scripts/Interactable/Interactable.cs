@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using PrimeTween;
 using TMPro;
@@ -17,6 +18,7 @@ public class Interactable : MonoBehaviour
     [SerializeField] private bool allowMultipleInteractions = false;
     [SerializeField, Range(0f, 4f)] private float interactionTime = 0.3f;
     [SerializeField] private Transform interactPosition;
+    [SerializeField] private SOInputReader inputReader;
     
     [DisableIf("OnlyPlayerCanInteract")]
     [Header("Robot")]
@@ -84,7 +86,26 @@ public class Interactable : MonoBehaviour
 
         _promptSequence = Sequence.Create();
         _outlineSequence = Sequence.Create();
-    } 
+    }
+
+    private void OnEnable()
+    {
+        if (!inputReader) return;
+        
+        inputReader.ControlSchemeChangedEvent += OnControlSchemeChanged;
+    }
+    
+    private void OnDisable()
+    {
+        if (!inputReader) return;
+        
+        inputReader.ControlSchemeChangedEvent -= OnControlSchemeChanged;
+    }
+
+    private void OnControlSchemeChanged(ControlType type)
+    {
+        UpdateInteractPromptText(true);
+    }
 
     public void MarkForPlayerInteraction(Iinteractor interactor)
     {
@@ -92,7 +113,7 @@ public class Interactable : MonoBehaviour
         {
             ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
-            interactPromptText.text = $"E";
+            UpdateInteractPromptText(true);
             FadePrompt(true);
         }
         // Otherwise use the normal check
@@ -100,7 +121,7 @@ public class Interactable : MonoBehaviour
         {
             ChangeOutlineColor(playerOutlineColor);
             _markedForInteraction = true;
-            interactPromptText.text = $"E"; // <sprite name=E>
+            UpdateInteractPromptText(true);
             FadePrompt(true); 
         }
     }
@@ -111,7 +132,7 @@ public class Interactable : MonoBehaviour
         {
             ChangeOutlineColor(robotOutlineColor);
             _markedForInteraction = true;
-            interactPromptText.text = $"R";
+            UpdateInteractPromptText(false);
             FadePrompt(true); 
         }
     }
@@ -126,8 +147,6 @@ public class Interactable : MonoBehaviour
             ChangeOutlineColor(transparentOutlineColor);
             FadePrompt(false);
             _markedForInteraction = false;
-            
-            
         }
     }
 
@@ -230,6 +249,31 @@ public class Interactable : MonoBehaviour
         UnmarkForInteraction();
         _isInteracting = false;
     }
+
+
+    private void UpdateInteractPromptText(bool isPlayer)
+    {
+        if (!interactPromptText) return;
+
+        if (inputReader)
+        {
+            switch (inputReader.CurrentControlScheme)
+            {
+                case ControlType.KeyboardMouse:
+                    interactPromptText.text = isPlayer ? $"E" : $"R";
+                    break;
+                case ControlType.Gamepad:
+                    interactPromptText.text = isPlayer ? $"<sprite name=xx>" : $"<sprite name=xy>";
+                    SetAlpha(interactPromptBackground, 0f);
+                    break;
+            }
+        }
+        else
+        {
+            interactPromptText.text = isPlayer ? $"E" : $"R";
+        }
+        
+    }
     
     #region Effect --------------------------------------------------------------------------------------------------------
 
@@ -249,7 +293,7 @@ public class Interactable : MonoBehaviour
         _promptSequence = Sequence.Create();
         
      
-        if (interactPromptBackground)
+        if (interactPromptBackground && inputReader.CurrentControlScheme != ControlType.Gamepad)
         {
             float targetAlpha = fadeIn ? _defaultBackgroundAlpha : 0f;
             
@@ -300,8 +344,7 @@ public class Interactable : MonoBehaviour
     }
 
     #endregion Effect --------------------------------------------------------------------------------------------------------
-
-
+    
 
     #region Editor --------------------------------------------------------------------------------------------------------
 

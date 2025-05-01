@@ -26,8 +26,12 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _DISSOLVE_STYLE_APPEAR
+  - _DITHER_FROM_NON
   - _UVPOSITION_OBJECT
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _DISTANCE_FROM_A
+  - _DITHER_DISTANCE_FROM_A
+  - _DITHER_DISTANCE_FROM_CAMERA
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -83,9 +87,15 @@ Material:
     - _Ambient_Occlusion: 1
     - _Blend: 1
     - _DISSOLVE_STYLE: 1
+    - _DISTANCE_FROM: 0
+    - _DITHER_DISTANCE_FROM: 0
+    - _DITHER_FROM: 0
     - _Dissolve_Noise_Move_Speed: 0.3
     - _Dissolve_Noise_Strength: 1
     - _Dither: 0
+    - _Dither_Camera_Fade_Distance: 0
+    - _Dither_Fade_Distance: 0
+    - _Dither_From_Camera: 0
     - _Emission: 1
     - _Metallic: 1
     - _QueueControl: 0
@@ -97,6 +107,7 @@ Material:
     m_Colors:
     - Color_F69F1A11: {r: 0, g: 1, b: 0.8703723, a: 1}
     - _Base_Color: {r: 0.27358475, g: 0.27358475, b: 0.27358475, a: 1}
+    - _Dither_World_Position: {r: 0, g: 0, b: 0, a: 0}
     - _Emission_Color: {r: 6.88318, g: 3.1457925, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

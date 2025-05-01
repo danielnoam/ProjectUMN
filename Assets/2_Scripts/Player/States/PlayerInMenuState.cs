@@ -66,7 +66,7 @@ public class PlayerInMenuState : PlayerBaseState
 
     public void SelectPage(MenuPage page)
     {
-        if (CurrentPage == page || !page) return;
+        if (CurrentPage == page || !page || !page.gameObject.activeSelf) return;
         
         PreviousPage = CurrentPage;
         CurrentPage = page;

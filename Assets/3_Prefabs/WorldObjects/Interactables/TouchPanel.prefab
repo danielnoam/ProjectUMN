@@ -188,9 +188,9 @@ GameObject:
   - component: {fileID: 522112961367781250}
   - component: {fileID: 8699557876330249603}
   - component: {fileID: 842114127942679710}
+  - component: {fileID: -4430910167820819823}
   - component: {fileID: 7848333606188772268}
   - component: {fileID: 6209594124212360739}
-  - component: {fileID: -4430910167820819823}
   m_Layer: 8
   m_Name: TouchPanel
   m_TagString: Untagged
@@ -338,6 +338,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-4430910167820819823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6482537336300713665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  affectedByTestAnimations: 1
 --- !u!114 &7848333606188772268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -354,6 +367,7 @@ MonoBehaviour:
   allowMultipleInteractions: 1
   interactionTime: 0
   interactPosition: {fileID: 7349808501166178063}
+  inputReader: {fileID: 11400000, guid: bc4b1fd8e08cece4899198f6f0f7ad7f, type: 2}
   robotInteractPosition: {fileID: 970625739782558672}
   commandToSend: 1
   interactPromptBackground: {fileID: 3347249118671763275}
@@ -407,19 +421,6 @@ MonoBehaviour:
   onPanelPressed:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &-4430910167820819823
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6482537336300713665}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  affectedByTestAnimations: 1
 --- !u!1 &8469606120745552672
 GameObject:
   m_ObjectHideFlags: 0

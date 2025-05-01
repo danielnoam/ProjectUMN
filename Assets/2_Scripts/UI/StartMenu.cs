@@ -9,6 +9,7 @@ public class StartMenu : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button startButton;
     [SerializeField] private Button optionsButton;
+    [SerializeField] private Button creditsButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private TextMeshProUGUI versionTest;
     
@@ -29,8 +30,11 @@ public class StartMenu : MonoBehaviour
                 player.InMenuState.SelectPage(player.InMenuState.OptionsPage);
             });
             
-            quitButton.onClick.AddListener(TestManager.Instance.QuitApplication);
             
+            creditsButton.onClick.AddListener(() =>
+            {
+                TestManager.Instance.StartCreditsSequence();
+            });
                         
             quitButton.onClick.AddListener(() =>
             {

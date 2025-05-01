@@ -4227,6 +4227,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 176303927715373074, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      propertyPath: ShapeModule.radius.value
+      value: 130.8
+      objectReference: {fileID: 0}
     - target: {fileID: 251563830487628498, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -4234,6 +4238,18 @@ PrefabInstance:
     - target: {fileID: 2131997245004629271, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
       propertyPath: m_LocalPosition.y
       value: 3.84
+      objectReference: {fileID: 0}
+    - target: {fileID: 4355738545352036699, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 8.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4355738545352036699, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4355738545352036699, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 94
       objectReference: {fileID: 0}
     - target: {fileID: 4701224180201935342, guid: b373ba1c48150514c82145f42d06bc63, type: 3}
       propertyPath: m_Name
@@ -7710,6 +7726,10 @@ PrefabInstance:
     - target: {fileID: 8017253461642285485, guid: f67af3f7f20aba44ab3f982744a7110b, type: 3}
       propertyPath: continuesCollision
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8017253461642285485, guid: f67af3f7f20aba44ab3f982744a7110b, type: 3}
+      propertyPath: allowRobotTeleportInTrigger
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8017253461642285485, guid: f67af3f7f20aba44ab3f982744a7110b, type: 3}
       propertyPath: events.m_PersistentCalls.m_Calls.Array.size

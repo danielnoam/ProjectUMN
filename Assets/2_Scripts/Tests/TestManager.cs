@@ -67,6 +67,10 @@ public class TestManager : MonoBehaviour
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
+    public SOTest IntroTest => introTest;
+    public SOTest CreditsTest => creditsTest;
+    public SOTest DefaultTest => defaultTest;
+    
     public SOAudioEvent CurrentTheme => currentTheme;
     public Vector3 CurrentCheckpoint {
         get
@@ -173,6 +177,14 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad9))
         {
             ToggleDebugMode();
+        }
+        
+        if (IsCreditsSequenceActive && Input.GetKeyDown(KeyCode.Escape))
+        {
+            StopCoroutine(CreditsSequenceCoroutine());
+            _creditsSequenceTime = 0;
+            onCreditsSequenceEnd?.Invoke();
+            StartIntroSequence();
         }
     }
 
@@ -368,10 +380,10 @@ public class TestManager : MonoBehaviour
     {
         bool fadeOutTimeReached = false;
         float fadeOutTime = creditsSequenceDuration * 0.1f;
-        _testEffectsHandler.FadeScreen(true, 2f);
         
         if (currentTest) 
         {
+            _testEffectsHandler.FadeScreen(true, 2f);
             yield return UnLoadTest();
         }
         

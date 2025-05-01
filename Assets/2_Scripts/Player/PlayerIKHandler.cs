@@ -38,7 +38,6 @@ public class PlayerIKHandler : MonoBehaviour
     [SerializeField] private float ikSmoothSpeed = 5f;
     
     private PlayerStateMachine _stateMachine;
-    private TestManager TestManager => _stateMachine.TestManager;
     private Camera _camera;
     private readonly float _targetHeadWeight = 1f;
     private readonly float _targetSpineWeight = 1f;
@@ -53,24 +52,24 @@ public class PlayerIKHandler : MonoBehaviour
     private void Start()
     {
         if (!_camera) _camera = Camera.main;
+        
     }
 
     private void OnEnable()
     {
-        TestManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
-        TestManager?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
         
-        if (TestManager && TestManager.IsIntroSequenceActive)
+        if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
         {
             SetIKState(false);
         }
-
     }
 
     private void OnDisable()
     {
-        TestManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
-        TestManager?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
+        TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
     }
     
     private void Update()

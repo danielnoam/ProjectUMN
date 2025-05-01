@@ -11,9 +11,9 @@ public class InputSettings
     public bool toggleSprint = false;
     public bool toggleAimInput = false;
     [Range(0f, 1f)] public float movementInputThreshold = 0.01f;
-    [Range(0.1f, 2f)] public float mouseSensitivity = 1f;
-    [Range(0.1f, 2f)] public float freeCameraSensitivity = 1f;
-    [Range(0.1f, 2f)] public float aimCameraSensitivity = 0.5f;
+    [Range(0.1f, 10f)] public float mouseSensitivity = 1f;
+    [Range(0.1f, 10f)] public float freeCameraSensitivity = 1f;
+    [Range(0.1f, 10f)] public float aimCameraSensitivity = 0.5f;
 }
 
 
@@ -104,8 +104,7 @@ public class PlayerInputHandler : MonoBehaviour
     private void OnControlSchemeChanged(ControlType controlType)
     {
         // Set the active settings based on the control type
-        _activeSettings = controlType == ControlType.KeyboardMouse ? 
-            mouseKeyboardSettings : gamepadSettings;
+        _activeSettings = controlType == ControlType.KeyboardMouse ? mouseKeyboardSettings : gamepadSettings;
     
         // Update the local variables to match the active settings
         _toggleMoveSpeed = _activeSettings.toggleMoveSpeed;

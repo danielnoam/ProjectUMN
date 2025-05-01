@@ -464,12 +464,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f574d4f385aa8dd4b9cec463043c3536, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fadeDuration: 7
   respondToWorldLightLevel: 1
+  fadeDuration: 7
   trackTarget: 0
-  target: {fileID: 0}
-  trackingDistance: 5
+  returnToStartRotation: 1
+  returnToStartRotationDuration: 2
+  initialRotationSpeed: 10
+  initialSpeedDuration: 0.5
   rotationSpeed: 5
+  trackingDistance: 5
+  trackingOffset: {x: 0, y: 0, z: 0}
+  target: {fileID: 0}
+  usePlayerAsTarget: 0
 --- !u!1 &8545668616659421005
 GameObject:
   m_ObjectHideFlags: 0
@@ -644,6 +650,7 @@ MonoBehaviour:
   allowMultipleInteractions: 1
   interactionTime: 0.3
   interactPosition: {fileID: 3249013049459410206}
+  inputReader: {fileID: 11400000, guid: bc4b1fd8e08cece4899198f6f0f7ad7f, type: 2}
   robotInteractPosition: {fileID: 5268342197581029016}
   commandToSend: 3
   interactPromptBackground: {fileID: 2483502512818690095}

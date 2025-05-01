@@ -15,8 +15,10 @@ public class PlayerFootstepSoundController : MonoBehaviour
     [Header("Sound Settings")]
     [SerializeField] private SOAudioEvent footstepLightSfx;
     [SerializeField] private SOAudioEvent footstepHeavySfx;
-    [SerializeField] private float stepFrequency = 0.2f;
-
+    [SerializeField] private float stepFrequency = 0.25f;
+    [SerializeField] private float stepFrequencyRunning = 0.1f;
+    [SerializeField] private float stepFrequencyCrouch = 0.2f;
+    [SerializeField] private float stepFrequencyCrouchRunning = 0.25f;
     
     private PlayerStateMachine _player;
     private bool _leftFootOnGround = false;
@@ -24,6 +26,8 @@ public class PlayerFootstepSoundController : MonoBehaviour
     private float _lastStepTime = 0f;
     private bool CanPlaySound => _player && _player.IsGrounded;
     private bool IsRunning => _player && _player.ActiveHorizontalVelocity > 5f;
+    private bool IsCrouching => _player && _player.CurrentState == _player.CrouchingState;
+    private bool IsCrouchRunning => IsCrouching && IsRunning;
 
     private void Awake()
     {
@@ -39,14 +43,16 @@ public class PlayerFootstepSoundController : MonoBehaviour
     {
         bool wasLeftFootOnGround = _leftFootOnGround;
         bool wasRightFootOnGround = _rightFootOnGround;
-        
+    
         // Cast rays from both feet
         _leftFootOnGround = Physics.Raycast(leftFoot.position, Vector3.down, raycastDistance, groundLayer);
         _rightFootOnGround = Physics.Raycast(rightFoot.position, Vector3.down, raycastDistance, groundLayer);
-        
-        
+    
+        // Get the appropriate step frequency based on current state
+        float currentStepFrequency = GetCurrentStepFrequency();
+    
         // Check if either foot has just touched the ground
-        if (Time.time - _lastStepTime >= stepFrequency && CanPlaySound)
+        if (Time.time - _lastStepTime >= currentStepFrequency && CanPlaySound)
         {
             if (!wasLeftFootOnGround && _leftFootOnGround)
             {
@@ -59,6 +65,19 @@ public class PlayerFootstepSoundController : MonoBehaviour
                 _lastStepTime = Time.time;
             }
         }
+    }
+
+    private float GetCurrentStepFrequency()
+    {
+        // Return the appropriate step frequency based on player state
+        if (IsCrouchRunning)
+            return stepFrequencyCrouchRunning;
+        else if (IsCrouching)
+            return stepFrequencyCrouch;
+        else if (IsRunning)
+            return stepFrequencyRunning;
+        else
+            return stepFrequency;
     }
     
     private void PlayFootstepSound(Vector3 position)

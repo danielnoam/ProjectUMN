@@ -3,16 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using PrimeTween;
+using VInspector;
 
 [RequireComponent(typeof(Light))]
 public class DynamicLight : MonoBehaviour
 {
     [Header("World Light")]
     [SerializeField] private bool respondToWorldLightLevel = true;
+    [EnableIf("respondToWorldLightLevel")]
     [SerializeField, Min(0)] private float fadeDuration = 10f;
+    [EndIf]
     
     [Header("Target Tracking")]
     [SerializeField] private bool trackTarget = false;
+    [EnableIf("trackTarget")]
     [SerializeField] private bool returnToStartRotation = true;
     [SerializeField] private float returnToStartRotationDuration = 2f;
     [SerializeField, Min(0)] private float initialRotationSpeed = 10f; 
@@ -22,6 +26,7 @@ public class DynamicLight : MonoBehaviour
     [SerializeField] private Vector3 trackingOffset = Vector3.zero;
     [SerializeField] private Transform target;
     [SerializeField] private bool usePlayerAsTarget = false;
+    [EndIf]
     
     private Light _light;
     private Tween _tween;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -124,9 +125,13 @@ public class MenuPage : MonoBehaviour
         
         // Save layout groups for animation
         AddLayoutGroupsRecursively(transform);
+    }
+
+    private void Start()
+    {
         OnPageDeselected(false);
     }
-    
+
     private void OnDestroy()
     {
         _animationSequence.Stop();

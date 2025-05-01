@@ -377,7 +377,6 @@ public class CameraManager : MonoBehaviour
             {
                 _startMenuCameraFollow.CameraSide = Mathf.Lerp(_startMenuCameraFollow.CameraSide, 1f, Time.deltaTime * 5f);
             }
-
             
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())
