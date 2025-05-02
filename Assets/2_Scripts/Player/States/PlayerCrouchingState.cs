@@ -42,14 +42,14 @@ public class PlayerCrouchingState : PlayerBaseState
         }
 
         // Jump
-        if (StateMachine.InputHandler.JumpInput)
+        if (StateMachine.inputHandler.JumpInput)
         {
             StateMachine.SwitchState(StateMachine.JumpingState);
             return;
         }
         
         // Interact
-        if (StateMachine.InputHandler.InteractInput)
+        if (StateMachine.inputHandler.InteractInput)
         {
             StateMachine.InteractWith();
             return;
@@ -58,16 +58,16 @@ public class PlayerCrouchingState : PlayerBaseState
         // Grounded
         if (StateMachine.CanStand)
         {
-            if (StateMachine.InputHandler.IsCrouchToggle)
+            if (StateMachine.inputHandler.IsCrouchToggle)
             {
-                if (StateMachine.InputHandler.CrouchInput)
+                if (StateMachine.inputHandler.CrouchInput)
                 {
-                    StateMachine.InputHandler.ConsumeCrouchInput();
+                    StateMachine.inputHandler.ConsumeCrouchInput();
                     StateMachine.SwitchState(StateMachine.GroundedState);
                     return;
                 }
             } else {
-                if (!StateMachine.InputHandler.CrouchInput)
+                if (!StateMachine.inputHandler.CrouchInput)
                 {
                     StateMachine.SwitchState(StateMachine.GroundedState);
                     return;

@@ -2,6 +2,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -98,8 +99,13 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     [SerializeField] private Transform aimRayStartPosition;
     [SerializeField] private GameObject aimRayEndPoint;
     [SerializeField, Tooltip("Layer mask defining what objects block the aim ray")] private LayerMask aimRayBlockLayer = 1;
-    
 
+    [Foldout("References")] 
+    public PlayerInputHandler inputHandler;
+    public CharacterController controller;
+    public LineRenderer lineRenderer;
+    [EndFoldout]
+    
     [Foldout("Events")] 
     public UnityEvent onPlayerDeath = new UnityEvent();
     public UnityEvent onPlayerSpawned = new UnityEvent();
@@ -118,7 +124,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public bool IsGrounded { get; private set; }
     public bool CanStand { get; private set; }
     public bool IsAiming { get; private set; }
-    public PlayerInputHandler InputHandler { get; private set; }
     public Interactable CurrentInteractable { get; private set; }
     public Interactable CurrentAimedInteractable { get; private set; }
     public float RotationMismatch { get; private set; }
@@ -128,8 +133,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public TestManager TestManager { get; private set; }
     
     private TextMeshProUGUI _debugText;
-    private CharacterController _controller;
-    private LineRenderer _lineRenderer;
     private float _lineRendererDefaultWidth;
     private Vector3 _targetLineEndPosition = Vector3.zero;
     private bool _isLineVisible;
@@ -163,9 +166,6 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             Instance = this;
         }
         
-        _lineRenderer = GetComponent<LineRenderer>();
-        _controller = GetComponent<CharacterController>();
-        InputHandler = GetComponent<PlayerInputHandler>();
         GroundedState = new PlayerGroundedState(this);
         JumpingState = new PlayerJumpingState(this);
         FallingState = new PlayerFallingState(this);
@@ -173,10 +173,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         InteractingState = new PlayerInteractingState(this);
         CrouchingState = new PlayerCrouchingState(this);
         InMenuState = new PlayerInMenuState(this);
-        _defaultCharacterHeight = _controller.height;
-        _defaultCharacterCenter = _controller.center;
+        _defaultCharacterHeight = controller.height;
+        _defaultCharacterCenter = controller.center;
         
-        _lineRendererDefaultWidth = _lineRenderer.startWidth;
+        _lineRendererDefaultWidth = lineRenderer.startWidth;
+        lineRenderer.startWidth = 0.0f;
+        lineRenderer.endWidth = _lineRendererDefaultWidth;
         IsAiming = cameraMode == CameraMode.AimOnly;
         SwitchState(GroundedState);
     }
@@ -263,12 +265,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         Robot = null;
         SwitchState(new PlayerTeleportingState(this, Vector3.zero + new Vector3(0, 0.9f, 0), Quaternion.Euler(0, 0, 0), 0.1f, TeleportationType.Checkpoint));
-        InputHandler.enabled = false;
+        inputHandler.enabled = false;
     }
 
     private void OnIntroSequenceEnd()
     {
-        InputHandler.enabled = true;
+        inputHandler.enabled = true;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -287,7 +289,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private void MoveCharacter()
     {
-        if (!_controller || _controller.enabled == false) return;
+        if (!controller || controller.enabled == false) return;
         
         // Get horizontal velocity from direction and speed
         Vector3 horizontalMovement = ActiveMoveDirection * ActiveHorizontalVelocity;
@@ -300,7 +302,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         );
     
         // Apply movement
-        _controller.Move(movement * Time.fixedDeltaTime);
+        controller.Move(movement * Time.fixedDeltaTime);
     }
     
     private void UpdateFallTime()
@@ -340,15 +342,15 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         right.Normalize();
 
         // Calculate movement direction relative to camera
-        return (forward * InputHandler.MovementInput.y + 
-                right * InputHandler.MovementInput.x).normalized;
+        return (forward * inputHandler.MovementInput.y + 
+                right * inputHandler.MovementInput.x).normalized;
     }
     
     private float CalculateTargetSpeed(float movementIntensity)
     {
-        bool lockSprintGait = InputHandler.MoveSpeedInput || !allowSprint || IsAiming || CurrentState == CrouchingState;
+        bool lockSprintGait = inputHandler.MoveSpeedInput || !allowSprint || IsAiming || CurrentState == CrouchingState;
 
-        if (movementIntensity < InputHandler.MovementInputThreshold)
+        if (movementIntensity < inputHandler.MovementInputThreshold)
             return 0f;
 
         // Determine base speed based on input and state
@@ -357,14 +359,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
         if (!lockSprintGait)
         {
-            startSpeed = InputHandler.SprintInput ? runSpeed : 0;
-            targetSpeed = InputHandler.SprintInput ? sprintSpeed : runSpeed;
+            startSpeed = inputHandler.SprintInput ? runSpeed : 0;
+            targetSpeed = inputHandler.SprintInput ? sprintSpeed : runSpeed;
             
         }
         else
         {
-            startSpeed = InputHandler.SprintInput ? walkSpeed : 0;
-            targetSpeed = InputHandler.SprintInput ? runSpeed : walkSpeed;
+            startSpeed = inputHandler.SprintInput ? walkSpeed : 0;
+            targetSpeed = inputHandler.SprintInput ? runSpeed : walkSpeed;
         }
     
         var baseSpeed = Mathf.Lerp(startSpeed, targetSpeed, movementIntensity);
@@ -381,18 +383,18 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (IsAiming)
         {
             // Check for backward movement (negative Y input)
-            if (InputHandler.MovementInput.y < -0.3f)
+            if (inputHandler.MovementInput.y < -0.3f)
             {
                 // More negative Y = more backward movement effect
-                float backwardFactor = Mathf.Abs(InputHandler.MovementInput.y);
+                float backwardFactor = Mathf.Abs(inputHandler.MovementInput.y);
                 directionMultiplier *= Mathf.Lerp(1.0f, backwardSpeedMultiplier, backwardFactor);
             }
 
             // Check for strafing movement (X input)
-            if (Mathf.Abs(InputHandler.MovementInput.x) > 0.3f)
+            if (Mathf.Abs(inputHandler.MovementInput.x) > 0.3f)
             {
                 // Stronger X input = more strafe effect
-                float strafeFactor = Mathf.Abs(InputHandler.MovementInput.x);
+                float strafeFactor = Mathf.Abs(inputHandler.MovementInput.x);
                 directionMultiplier *= Mathf.Lerp(1.0f, strafeSpeedMultiplier, strafeFactor);
             }
         }
@@ -415,16 +417,16 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         if (ActiveVerticalVelocity >= 0) return velocity;
         
         // Cast a sphere to detect surface normal
-        Vector3 origin = transform.position + Vector3.up * _controller.radius;
-        float distance = _controller.height * 0.5f + 0.1f;
+        Vector3 origin = transform.position + Vector3.up * controller.radius;
+        float distance = controller.height * 0.5f + 0.1f;
         
-        if (Physics.SphereCast(origin, _controller.radius, Vector3.down, 
+        if (Physics.SphereCast(origin, controller.radius, Vector3.down, 
                 out RaycastHit hitInfo, distance, environmentLayer))
         {
             float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
             
             // Only apply for steep slopes beyond character controller's slope limit
-            if (angle > _controller.slopeLimit)
+            if (angle > controller.slopeLimit)
             {
                 // Project movement onto the surface to slide
                 return Vector3.ProjectOnPlane(velocity, hitInfo.normal);
@@ -589,13 +591,14 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private void UpdateLineRenderer()
     {
-        if (!Robot || !Robot.IsOn() || !aimRayStartPosition || !_lineRenderer) return;
+        if (!Robot || !Robot.IsOn() || !aimRayStartPosition || !lineRenderer) return;
 
         // Handle line renderer visibility based on aiming state
         if (IsAiming && !_isLineVisible)
         {
-            _lineRenderer.enabled = true;
+            lineRenderer.enabled = true;
             _isLineVisible = true;
+            aimRayEndPoint.gameObject.SetActive(true);
         }
         else if (!IsAiming && _isLineVisible)
         {
@@ -611,7 +614,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         Vector3 rayDirection = CameraManager.GetCameraAimDirection() + new Vector3(0, 0.2f, 0);
 
         // Set first point of line renderer
-        _lineRenderer.SetPosition(0, rayOrigin);
+        lineRenderer.SetPosition(0, rayOrigin);
 
         // Set lerp speed based on whether the line is visible or not
         float lerpSpeed;
@@ -644,18 +647,19 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
 
         // Get current end position
-        Vector3 currentEndPosition = _lineRenderer.GetPosition(1);
+        Vector3 currentEndPosition = lineRenderer.GetPosition(1);
         
         // Lerp towards target position
         Vector3 newEndPosition = Vector3.Lerp(currentEndPosition, _targetLineEndPosition, lerpSpeed * Time.deltaTime);
-        _lineRenderer.SetPosition(1, newEndPosition);
+        lineRenderer.SetPosition(1, newEndPosition);
         aimRayEndPoint.transform.position = newEndPosition;
         
         // If line is nearly invisible, and we're not aiming, disable it completely
         if (!_isLineVisible && Vector3.Distance(rayOrigin, newEndPosition) < 0.5f)
         {
-            _lineRenderer.enabled = false;
-            aimRayEndPoint.transform.position = _lineRenderer.GetPosition(0);
+            aimRayEndPoint.gameObject.SetActive(false);
+            lineRenderer.enabled = false;
+            aimRayEndPoint.transform.position = lineRenderer.GetPosition(0);
         }
     }
     
@@ -674,9 +678,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         // Current velocity excluding vertical component
         Vector3 currentHorizontalVelocity = new Vector3(
-            _controller.velocity.x, 
+            controller.velocity.x, 
             0, 
-            _controller.velocity.z
+            controller.velocity.z
         );
         
         // Initialize the new velocity to current (will be modified below)
@@ -684,12 +688,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         // Calculate movement input magnitude
         float movementIntensity = Mathf.Clamp01(
-            Mathf.Abs(InputHandler.MovementInput.x) + 
-            Mathf.Abs(InputHandler.MovementInput.y)
+            Mathf.Abs(inputHandler.MovementInput.x) + 
+            Mathf.Abs(inputHandler.MovementInput.y)
         );
         
         // Check if input is above threshold
-        bool hasMovementInput = movementIntensity > InputHandler.MovementInputThreshold;
+        bool hasMovementInput = movementIntensity > inputHandler.MovementInputThreshold;
         
         // Process movement if allowed
         if (allowMovement && hasMovementInput)
@@ -703,8 +707,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                 Vector3 forward = new Vector3(aimDirection.x, 0, aimDirection.z).normalized;
                 Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
                 
-                inputDirection = (forward * InputHandler.MovementInput.y + 
-                               right * InputHandler.MovementInput.x).normalized;
+                inputDirection = (forward * inputHandler.MovementInput.y + 
+                               right * inputHandler.MovementInput.x).normalized;
             }
             else
             {
@@ -760,7 +764,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
         
         // Track if we're moving laterally for animation/rotation purposes
-        _isMovingLaterally = ActiveHorizontalVelocity > InputHandler.MovementInputThreshold;
+        _isMovingLaterally = ActiveHorizontalVelocity > inputHandler.MovementInputThreshold;
     }
 
 
@@ -856,8 +860,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             if (!_wasMovingLastFrame && _isMovingLaterally)
             {
                 // Check if we're moving primarily forward
-                bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
-                                                Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+                bool isMovingPrimarilyForward = inputHandler.MovementInput.y > 0.7f && 
+                                                Mathf.Abs(inputHandler.MovementInput.x) < 0.3f;
 
                 // Calculate target rotation based on movement direction
                 var targetDirection = isMovingPrimarilyForward ? _lastCameraForward : ActiveMoveDirection;
@@ -884,8 +888,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                 }
                 
                 // Check if we're moving primarily forward
-                bool isMovingPrimarilyForward = InputHandler.MovementInput.y > 0.7f && 
-                                               Mathf.Abs(InputHandler.MovementInput.x) < 0.3f;
+                bool isMovingPrimarilyForward = inputHandler.MovementInput.y > 0.7f && 
+                                               Mathf.Abs(inputHandler.MovementInput.x) < 0.3f;
 
                 // Calculate new target rotation
                 var targetRotation = Quaternion.LookRotation(
@@ -991,7 +995,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         Vector3 newVelocity = direction.normalized * velocity.magnitude;
         
         // Apply the new velocity to the character controller
-        _controller.Move(newVelocity * Time.fixedDeltaTime);
+        controller.Move(newVelocity * Time.fixedDeltaTime);
         
         // Update the active move direction
         ActiveMoveDirection = newVelocity.normalized;
@@ -999,15 +1003,15 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     public void SetCharacterPosition(Vector3 position, Quaternion rotation)
     {
-        _controller.transform.position = position;
-        _controller.transform.rotation = rotation;
+        controller.transform.position = position;
+        controller.transform.rotation = rotation;
     }
     
     public void SetCharacterColliderState(bool state)
     {
-        if (_controller)
+        if (controller)
         {
-            _controller.enabled = state;
+            controller.enabled = state;
         }
     }
     
@@ -1042,7 +1046,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
             case CameraMode.ExplorationAndAim:
                 // Toggle aim mode based on input (original behavior)
-                if (InputHandler.AimInput)
+                if (inputHandler.AimInput)
                 {
                     if (!IsAiming)
                     {
@@ -1074,9 +1078,9 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         
         
-        if (InputHandler.CommandRobotInput)
+        if (inputHandler.CommandRobotInput)
         {
-            InputHandler.ConsumeCommandRobotBuffer();
+            inputHandler.ConsumeCommandRobotBuffer();
             
             if (CurrentAimedInteractable && !CurrentAimedInteractable.OnlyPlayerCanInteract)
             {
@@ -1102,13 +1106,13 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         if (crouching)
         {
-            _controller.height = _crouchCharacterHeight;
-            _controller.center = _crouchCharacterCenter;
+            controller.height = _crouchCharacterHeight;
+            controller.center = _crouchCharacterCenter;
         }
         else
         {
-            _controller.height = _defaultCharacterHeight;
-            _controller.center = _defaultCharacterCenter;
+            controller.height = _defaultCharacterHeight;
+            controller.center = _defaultCharacterCenter;
         }
     }
 
@@ -1159,10 +1163,10 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  $"ActiveVerticalVelocity: {ActiveVerticalVelocity}\n" + 
                                  
                                  // Get input
-                                 $"\nMovementInput: {InputHandler.MovementInput}\n" +
-                                 $"AimInput: {InputHandler.AimInput}\n" +
-                                 $"CommandRobotInput: {InputHandler.CommandRobotInput}\n" +
-                                 $"InteractInput: {InputHandler.InteractInput}\n" +
+                                 $"\nMovementInput: {inputHandler.MovementInput}\n" +
+                                 $"AimInput: {inputHandler.AimInput}\n" +
+                                 $"CommandRobotInput: {inputHandler.CommandRobotInput}\n" +
+                                 $"InteractInput: {inputHandler.InteractInput}\n" +
                                  
                                  $"\nPlayerVersion: {TestManager.PlayerVersion:F4}\n"
                                  
@@ -1170,18 +1174,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
                                  
                                  ;
             }
-            
-            _lineRenderer.startWidth = _lineRendererDefaultWidth * 2;
-            _lineRenderer.endWidth = _lineRendererDefaultWidth * 2;
+        }
 
-        
-        }
-        else
-        {
-            _lineRenderer.startWidth = 0.0f;
-            _lineRenderer.endWidth = _lineRendererDefaultWidth;
-        
-        }
     }
 
 #if UNITY_EDITOR

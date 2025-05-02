@@ -37,17 +37,17 @@ public class PlayerIKHandler : MonoBehaviour
     [SerializeField] private float interactableDistanceThreshold = 1f;
     [SerializeField] private float ikSmoothSpeed = 5f;
     
-    private PlayerStateMachine _stateMachine;
+
+    [Header("References")]
+    [SerializeField] private PlayerStateMachine player;
+    
     private Camera _camera;
     private readonly float _targetHeadWeight = 1f;
     private readonly float _targetSpineWeight = 1f;
     private Vector3 _currentIKPosition;
     private IKTarget _currentIKTarget = IKTarget.None;
 
-    private void Awake()
-    {
-        _stateMachine = GetComponent<PlayerStateMachine>();
-    }
+
 
     private void Start()
     {
@@ -97,15 +97,15 @@ public class PlayerIKHandler : MonoBehaviour
 
     private void DetermineCurrentIKTarget()
     {
-        if (_stateMachine.CurrentState == _stateMachine.InMenuState)
+        if (player.CurrentState == player.InMenuState)
         {
             _currentIKTarget = IKTarget.Menu;
             return;
         }
         
-        if (_stateMachine.Robot && !_stateMachine.IsAiming && followRobot)
+        if (player.Robot && !player.IsAiming && followRobot)
         {
-            float distanceToRobot = Vector3.Distance(transform.position, _stateMachine.Robot.transform.position);
+            float distanceToRobot = Vector3.Distance(transform.position, player.Robot.transform.position);
             if (distanceToRobot < robotDistanceThreshold)
             {
                 _currentIKTarget = IKTarget.Robot;
@@ -113,9 +113,9 @@ public class PlayerIKHandler : MonoBehaviour
             }
         }
         
-        if (_stateMachine.CurrentInteractable && !_stateMachine.IsAiming)
+        if (player.CurrentInteractable && !player.IsAiming)
         {
-            float distanceToInteractable= Vector3.Distance(transform.position, _stateMachine.CurrentInteractable.transform.position);
+            float distanceToInteractable= Vector3.Distance(transform.position, player.CurrentInteractable.transform.position);
             if (distanceToInteractable < interactableDistanceThreshold)
             {
                 _currentIKTarget = IKTarget.Interactable;
@@ -124,7 +124,7 @@ public class PlayerIKHandler : MonoBehaviour
             return;
         }
         
-        if (_stateMachine.CameraManager)
+        if (player.CameraManager)
         {
             _currentIKTarget = IKTarget.CameraAimDir;
             return;
@@ -163,11 +163,11 @@ public class PlayerIKHandler : MonoBehaviour
     {
         if (!rig || !spineIK) return;
         
-        bool allowedState = _stateMachine.CurrentState != _stateMachine.InMenuState && 
-                            _stateMachine.CurrentState != _stateMachine.CrouchingState && 
-                            _stateMachine.CurrentState != _stateMachine.JumpingState && 
-                            _stateMachine.CurrentState != _stateMachine.FallingState &&
-                            Mathf.Abs(_stateMachine.ActiveHorizontalVelocity) < _stateMachine.runSpeed &&
+        bool allowedState = player.CurrentState != player.InMenuState && 
+                            player.CurrentState != player.CrouchingState && 
+                            player.CurrentState != player.JumpingState && 
+                            player.CurrentState != player.FallingState &&
+                            Mathf.Abs(player.ActiveHorizontalVelocity) < player.runSpeed &&
                             _currentIKTarget != IKTarget.Robot;
 
         if (allowedState)
@@ -184,9 +184,9 @@ public class PlayerIKHandler : MonoBehaviour
     {
         if (!rig || !headIK) return;
         
-        bool allowedState = _stateMachine.CurrentState != _stateMachine.CrouchingState && 
-                            _stateMachine.CurrentState != _stateMachine.FallingState &&
-                            Mathf.Abs(_stateMachine.ActiveHorizontalVelocity) < _stateMachine.runSpeed + 0.5f &&
+        bool allowedState = player.CurrentState != player.CrouchingState && 
+                            player.CurrentState != player.FallingState &&
+                            Mathf.Abs(player.ActiveHorizontalVelocity) < player.runSpeed + 0.5f &&
                             _currentIKTarget != IKTarget.None;
         
         if (allowedState)
@@ -220,10 +220,10 @@ public class PlayerIKHandler : MonoBehaviour
         
         if (ikTarget)
         {
-            ikTarget.transform.position = _stateMachine.transform.position;
+            ikTarget.transform.position = player.transform.position;
         }
         
-        _currentIKPosition = _stateMachine.transform.position;
+        _currentIKPosition = player.transform.position;
     }
 
 
@@ -237,13 +237,13 @@ public class PlayerIKHandler : MonoBehaviour
         switch (_currentIKTarget)
         {
             case IKTarget.Robot:
-                return _stateMachine.Robot.transform.position;
+                return player.Robot.transform.position;
                 
             case IKTarget.Interactable:
-                return _stateMachine.CurrentInteractable.GetInteractPosition(_stateMachine).position;
+                return player.CurrentInteractable.GetInteractPosition(player).position;
                 
             case IKTarget.CameraAimDir:
-                return _stateMachine.CameraManager.targetTransform.position + new Vector3(0, 0.2F, 0);
+                return player.CameraManager.targetTransform.position + new Vector3(0, 0.2F, 0);
                 
             case IKTarget.Menu:
                 // Get mouse position in screen coordinates
@@ -265,7 +265,7 @@ public class PlayerIKHandler : MonoBehaviour
         // Determine target weight based on rotation mismatch
         float rotationThreshold = _currentIKTarget == IKTarget.CameraAimDir ? 140 : 180;
         
-        if (!_stateMachine.IsAiming && Mathf.Abs(_stateMachine.RotationMismatch) > Mathf.Abs(rotationThreshold))
+        if (!player.IsAiming && Mathf.Abs(player.RotationMismatch) > Mathf.Abs(rotationThreshold))
         {
             targetWeight = 0f;
         }

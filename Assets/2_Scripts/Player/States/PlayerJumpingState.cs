@@ -8,7 +8,7 @@ public class PlayerJumpingState : PlayerBaseState
     {
         StateMachine.PlayJumpSfx();
         StateMachine.ClearCurrentInteractable();
-        StateMachine.InputHandler.ConsumeJumpBuffer();
+        StateMachine.inputHandler.ConsumeJumpBuffer();
         StateMachine.ActiveVerticalVelocity = Mathf.Sqrt(StateMachine.jumpForce * 3 * Mathf.Abs(StateMachine.gravity));
         StateMachine.AirTime = 0f;
     }

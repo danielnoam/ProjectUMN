@@ -40,30 +40,30 @@ public class PlayerGroundedState : PlayerBaseState
         }
 
         // Jump
-        if (StateMachine.InputHandler.JumpInput)
+        if (StateMachine.inputHandler.JumpInput)
         {
             StateMachine.SwitchState(StateMachine.JumpingState);
             return;
         }
         
         // Interact
-        if (StateMachine.InputHandler.InteractInput)
+        if (StateMachine.inputHandler.InteractInput)
         {
             StateMachine.InteractWith();
             return;
         }
         
         // Crouching
-        if (StateMachine.InputHandler.IsCrouchToggle)
+        if (StateMachine.inputHandler.IsCrouchToggle)
         {
-            if (StateMachine.InputHandler.CrouchInput)
+            if (StateMachine.inputHandler.CrouchInput)
             {
-                StateMachine.InputHandler.ConsumeCrouchInput();
+                StateMachine.inputHandler.ConsumeCrouchInput();
                 StateMachine.SwitchState(StateMachine.CrouchingState);
                 return;
             }
         } else {
-            if (StateMachine.InputHandler.CrouchInput)
+            if (StateMachine.inputHandler.CrouchInput)
             {
                 StateMachine.SwitchState(StateMachine.CrouchingState);
                 return;
@@ -71,7 +71,7 @@ public class PlayerGroundedState : PlayerBaseState
         }
         
         // SetState menu
-        if (StateMachine.InputHandler.ToggleMenuInput)
+        if (StateMachine.inputHandler.ToggleMenuInput)
         {
             StateMachine.SwitchState(StateMachine.InMenuState);
             return;

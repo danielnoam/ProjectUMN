@@ -14,7 +14,7 @@ public enum CableState
 public class Cable : MonoBehaviour
 {
     
-    [Header("Emission Settings")]
+    [Header("Settings")]
     [SerializeField] private bool enableEmission = true;
     [SerializeField] private float breathingSpeed = 1.0f;
     [SerializeField] private float minEmissionMultiplier = 0.2f;

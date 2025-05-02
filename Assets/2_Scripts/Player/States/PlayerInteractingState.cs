@@ -6,7 +6,7 @@ public class PlayerInteractingState : PlayerBaseState
     
     public override void EnterState()
     {
-        StateMachine.InputHandler.ConsumeInteractBuffer();
+        StateMachine.inputHandler.ConsumeInteractBuffer();
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
     }
@@ -40,7 +40,7 @@ public class PlayerInteractingState : PlayerBaseState
         }
 
         // Jump
-        if (StateMachine.InputHandler.JumpInput)
+        if (StateMachine.inputHandler.JumpInput)
         {
             StateMachine.SwitchState(StateMachine.JumpingState);
             StateMachine.CurrentInteractable.CancelInteraction();

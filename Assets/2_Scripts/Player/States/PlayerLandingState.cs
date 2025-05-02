@@ -41,7 +41,7 @@ public class PlayerLandingState : PlayerBaseState
         }
         
         // Jump
-        if (StateMachine.InputHandler.JumpInput)
+        if (StateMachine.inputHandler.JumpInput)
         {
             StateMachine.SwitchState(StateMachine.JumpingState);
             return;

@@ -24,6 +24,10 @@ public class PlayerAnimationHandler : MonoBehaviour
     [Header("Animation Smoothing")]
     [SerializeField, Range(0.01f, 1f)] private float animationSmoothTime = 0.1f;
     
+
+    [Header("References")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private PlayerStateMachine player;
     
     private readonly int _stateHash = Animator.StringToHash("StateIndex");
     private readonly int _verticalHash = Animator.StringToHash("VerticalValue");
@@ -33,14 +37,8 @@ public class PlayerAnimationHandler : MonoBehaviour
     private readonly int _rotationMismatchHash = Animator.StringToHash("RotationMismatch");
     private readonly int _isRotatingToTargetHash = Animator.StringToHash("IsRotatingToTarget");
     
-    private Animator _animator;
-    private PlayerStateMachine _stateMachine;
 
-    private void Awake()
-    {
-        _animator = GetComponentInChildren<Animator>();
-        _stateMachine = GetComponent<PlayerStateMachine>();
-    }
+    
     
     private void Update()
     {
@@ -56,7 +54,7 @@ public class PlayerAnimationHandler : MonoBehaviour
     private void UpdateStateIndex()
     {
         // Convert current state to animation state enum
-        PlayerAnimationState currentAnimState = _stateMachine.CurrentState switch
+        PlayerAnimationState currentAnimState = player.CurrentState switch
         {
             PlayerGroundedState => PlayerAnimationState.Grounded,
             PlayerJumpingState => PlayerAnimationState.Jump,
@@ -69,21 +67,21 @@ public class PlayerAnimationHandler : MonoBehaviour
         };
 
         // Set the animation state parameter
-        _animator.SetInteger(_stateHash, (int)currentAnimState);
+        animator.SetInteger(_stateHash, (int)currentAnimState);
     }
     
 
     private void UpdateRotationAnimation()
     {
-        _animator.SetFloat(_rotationMismatchHash, _stateMachine.RotationMismatch);
-        _animator.SetBool(_isRotatingToTargetHash, _stateMachine.IsRotatingToTarget);
+        animator.SetFloat(_rotationMismatchHash, player.RotationMismatch);
+        animator.SetBool(_isRotatingToTargetHash, player.IsRotatingToTarget);
     }
     
 
     private void UpdateFallAnimation()
     {
-        float fallBlend = Mathf.Clamp01(_stateMachine.ActiveVerticalVelocity / _stateMachine.maxVerticalVelocity);
-        _animator.SetFloat(_fallTimeHash, fallBlend);
+        float fallBlend = Mathf.Clamp01(player.ActiveVerticalVelocity / player.maxVerticalVelocity);
+        animator.SetFloat(_fallTimeHash, fallBlend);
     }
     
 private void UpdateMovementAnimation()
@@ -98,9 +96,9 @@ private void UpdateMovementAnimation()
 private void UpdateMovementDirectionAnimation()
 {
     // Get current movement data
-    Vector3 moveDirection = _stateMachine.ActiveMoveDirection;
-    float activeSpeed = _stateMachine.ActiveHorizontalVelocity;
-    bool isAiming = _stateMachine.IsAiming;
+    Vector3 moveDirection = player.ActiveMoveDirection;
+    float activeSpeed = player.ActiveHorizontalVelocity;
+    bool isAiming = player.IsAiming;
 
     // Initialize animation values
     float horizontalValue = 0f;
@@ -134,43 +132,43 @@ private void UpdateMovementDirectionAnimation()
     }
     
     // Apply values to animator with smoothing
-    _animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
-    _animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
+    animator.SetFloat(_verticalHash, verticalValue, animationSmoothTime, Time.deltaTime);
+    animator.SetFloat(_horizontalHash, horizontalValue, animationSmoothTime, Time.deltaTime);
 }
 
     private void UpdateGaitTypeAnimation()
     {
-        bool isAiming = _stateMachine.IsAiming;
-        bool isCrouching = _stateMachine.CurrentState is PlayerCrouchingState;
+        bool isAiming = player.IsAiming;
+        bool isCrouching = player.CurrentState is PlayerCrouchingState;
         
         // Get input for gait calculation - Using direct input from PlayerStateMachine
         // rather than the modified speed
         float inputIntensity = Mathf.Clamp01(
-            Mathf.Abs(_stateMachine.InputHandler.MovementInput.x) + 
-            Mathf.Abs(_stateMachine.InputHandler.MovementInput.y)
+            Mathf.Abs(player.inputHandler.MovementInput.x) + 
+            Mathf.Abs(player.inputHandler.MovementInput.y)
         );
         
         // Determine base speed based on input and flags
         float speedForAnimation = 0f;
-        bool lockSprintGait = _stateMachine.InputHandler.MoveSpeedInput || 
-                              !_stateMachine.allowSprint || 
+        bool lockSprintGait = player.inputHandler.MoveSpeedInput || 
+                              !player.allowSprint || 
                               isAiming || 
                               isCrouching;
         
-        if (inputIntensity > _stateMachine.InputHandler.MovementInputThreshold)
+        if (inputIntensity > player.inputHandler.MovementInputThreshold)
         {
             if (!lockSprintGait)
             {
                 // Can sprint, determine speed based on sprint input
-                float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : 0;
-                float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.sprintSpeed : _stateMachine.runSpeed;
+                float startSpeed = player.inputHandler.SprintInput ? player.runSpeed : 0;
+                float targetSpeed = player.inputHandler.SprintInput ? player.sprintSpeed : player.runSpeed;
                 speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
             }
             else
             {
                 // Cannot sprint, use walk/run only
-                float startSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.walkSpeed : 0;
-                float targetSpeed = _stateMachine.InputHandler.SprintInput ? _stateMachine.runSpeed : _stateMachine.walkSpeed;
+                float startSpeed = player.inputHandler.SprintInput ? player.walkSpeed : 0;
+                float targetSpeed = player.inputHandler.SprintInput ? player.runSpeed : player.walkSpeed;
                 speedForAnimation = Mathf.Lerp(startSpeed, targetSpeed, inputIntensity);
             }
         }
@@ -178,14 +176,14 @@ private void UpdateMovementDirectionAnimation()
         // If crouching, apply the crouch speed multiplier to animation speed
         if (isCrouching)
         {
-            speedForAnimation *= _stateMachine.crouchSpeedMultiplier;
+            speedForAnimation *= player.crouchSpeedMultiplier;
         }
         
         // Calculate gait type value based on this determined speed, IGNORING direction multipliers
         float moveType = CalculateMoveTypeValue(speedForAnimation);
         
         // Apply gait value to animator with smoothing
-        _animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime * 5, Time.deltaTime);
+        animator.SetFloat(_gaitTypeHash, moveType, animationSmoothTime * 5, Time.deltaTime);
     }
     
     #endregion Animator -------------------------------------------------------------------------------------------------------
@@ -201,21 +199,21 @@ private void UpdateMovementDirectionAnimation()
             return 0f;
         
         // Walking range: 0 to 0.5
-        if (currentSpeed <= _stateMachine.walkSpeed)
-            return (currentSpeed / _stateMachine.walkSpeed) * 0.5f;
+        if (currentSpeed <= player.walkSpeed)
+            return (currentSpeed / player.walkSpeed) * 0.5f;
         
         // Running range: 0.5 to 1.0
-        if (currentSpeed <= _stateMachine.runSpeed)
-            return 0.5f + ((currentSpeed - _stateMachine.walkSpeed) / 
-                           (_stateMachine.runSpeed - _stateMachine.walkSpeed)) * 0.5f;
+        if (currentSpeed <= player.runSpeed)
+            return 0.5f + ((currentSpeed - player.walkSpeed) / 
+                           (player.runSpeed - player.walkSpeed)) * 0.5f;
         
         // Sprinting: max at 2
-        if (currentSpeed > _stateMachine.sprintSpeed)
+        if (currentSpeed > player.sprintSpeed)
             return 2;
         
         // Sprinting range: 1.0 to 2.0
-        return 1.0f + ((currentSpeed - _stateMachine.runSpeed) / 
-                       (_stateMachine.sprintSpeed - _stateMachine.runSpeed)) * 1.0f;
+        return 1.0f + ((currentSpeed - player.runSpeed) / 
+                       (player.sprintSpeed - player.runSpeed)) * 1.0f;
     }
 
     #endregion Calculations -------------------------------------------------------------------------------------------------------

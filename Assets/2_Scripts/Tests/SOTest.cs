@@ -42,6 +42,11 @@ public class SOTest : ScriptableObject
     [Header("World")] 
     [SerializeField] private GameObject environmentPrefab;
     [SerializeField] private TestLightSettings lightSettings;
+    [SerializeField] private bool worldEdges = true;
+    [ShowIf("worldEdges")]
+    [SerializeField] private float worldRadius = 50f;
+    [SerializeField] private Vector3 worldCenterPosition = Vector3.zero;
+    [EndIf]
 
     
     public string Name => name;
@@ -49,6 +54,16 @@ public class SOTest : ScriptableObject
     public bool NeedsPlayer => needsPlayer;
     public bool NeedsRobot => needsRobot;
     public bool ShowTestInfo => showTestInfo;
+    public float WorldRadius => worldRadius;
+    public bool WorldEdges => worldEdges;
+    public Vector3 WorldCenterPosition {
+        get
+        {
+            GameObject worldParticle = GameObject.Find("WorldParticle");
+            return worldParticle ? worldParticle.transform.position : worldCenterPosition;
+        }
+    } 
+
     
     
     

@@ -10,8 +10,6 @@ public class PlayerFootstepSoundController : MonoBehaviour
     [SerializeField] private float raycastDistance = 0.04f;
     [SerializeField] private LayerMask groundLayer;
     
-
-
     [Header("Sound Settings")]
     [SerializeField] private SOAudioEvent footstepLightSfx;
     [SerializeField] private SOAudioEvent footstepHeavySfx;
@@ -20,19 +18,18 @@ public class PlayerFootstepSoundController : MonoBehaviour
     [SerializeField] private float stepFrequencyCrouch = 0.2f;
     [SerializeField] private float stepFrequencyCrouchRunning = 0.25f;
     
-    private PlayerStateMachine _player;
+    [Header("References")]
+    [SerializeField] private PlayerStateMachine player;
+    
+
     private bool _leftFootOnGround = false;
     private bool _rightFootOnGround = false;
     private float _lastStepTime = 0f;
-    private bool CanPlaySound => _player && _player.IsGrounded;
-    private bool IsRunning => _player && _player.ActiveHorizontalVelocity > 5f;
-    private bool IsCrouching => _player && _player.CurrentState == _player.CrouchingState;
+    private bool CanPlaySound => player && player.IsGrounded;
+    private bool IsRunning => player && player.ActiveHorizontalVelocity > 5f;
+    private bool IsCrouching => player && player.CurrentState == player.CrouchingState;
     private bool IsCrouchRunning => IsCrouching && IsRunning;
-
-    private void Awake()
-    {
-        _player = GetComponent<PlayerStateMachine>();
-    }
+    
 
     private void Update()
     {

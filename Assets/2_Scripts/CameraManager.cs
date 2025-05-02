@@ -154,7 +154,7 @@ public class CameraManager : MonoBehaviour
     public void Initialize(PlayerStateMachine player)
     {
         _player = player;
-        _playerInputHandler = _player.InputHandler;
+        _playerInputHandler = _player.inputHandler;
         menuCamera.Follow = _player.transform;
         startMenuCamera.Follow = _player.transform;
         freeLookCamera.Follow = aimCore.transform;

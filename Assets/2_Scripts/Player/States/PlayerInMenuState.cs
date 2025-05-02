@@ -17,7 +17,7 @@ public class PlayerInMenuState : PlayerBaseState
         StateMachine.onPlayerOpenedMenu?.Invoke();
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
-        StateMachine.InputHandler.ConsumeToggleMenuBuffer();
+        StateMachine.inputHandler.ConsumeToggleMenuBuffer();
         SelectPage(PausePage);
     }
     
@@ -56,9 +56,9 @@ public class PlayerInMenuState : PlayerBaseState
         }
 
         // Grounded
-        if (StateMachine.InputHandler.ToggleMenuInput)
+        if (StateMachine.inputHandler.ToggleMenuInput)
         {
-            StateMachine.InputHandler.ConsumeToggleMenuBuffer();
+            StateMachine.inputHandler.ConsumeToggleMenuBuffer();
             ExitMenu();
             return;
         }
@@ -84,7 +84,7 @@ public class PlayerInMenuState : PlayerBaseState
 
     public void ExitMenu()
     {
-        StateMachine.InputHandler.ConsumeJumpBuffer();
+        StateMachine.inputHandler.ConsumeJumpBuffer();
         StateMachine.SwitchState(StateMachine.GroundedState);
     }
 }

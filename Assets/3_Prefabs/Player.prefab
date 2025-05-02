@@ -636,13 +636,15 @@ GameObject:
   - component: {fileID: 5159062420402600487}
   - component: {fileID: 5222702382175107558}
   - component: {fileID: 6423507642453185515}
+  - component: {fileID: -1300629229981055667}
   - component: {fileID: 4944199171973541159}
   - component: {fileID: 5104919376805049993}
   - component: {fileID: 4320568683722358497}
   - component: {fileID: 8070195118980874543}
   - component: {fileID: 3546535393789149454}
+  - component: {fileID: 1396102752683458077}
+  - component: {fileID: 8509993530092122851}
   - component: {fileID: 7928860610601458710}
-  - component: {fileID: -1300629229981055667}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -804,6 +806,19 @@ CharacterController:
   m_SkinWidth: 0.0001
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-1300629229981055667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929691532129443097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  affectedByTestAnimations: 0
 --- !u!114 &4944199171973541159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -868,6 +883,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSmoothTime: 0.1
+  animator: {fileID: 8641144046026760829}
+  player: {fileID: 7928860610601458710}
 --- !u!114 &8070195118980874543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -893,6 +910,7 @@ MonoBehaviour:
   robotDistanceThreshold: 2
   interactableDistanceThreshold: 1
   ikSmoothSpeed: 5
+  player: {fileID: 7928860610601458710}
 --- !u!114 &3546535393789149454
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -917,6 +935,47 @@ MonoBehaviour:
   stepFrequencyRunning: 0.225
   stepFrequencyCrouch: 0.4
   stepFrequencyCrouchRunning: 0.25
+  player: {fileID: 7928860610601458710}
+--- !u!114 &1396102752683458077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929691532129443097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7adb8f297541f12448280085c6640a44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isWrapEnabled: 0
+  defaultWorldRadius: 100
+  defaultCenterPosition: {x: 0, y: 0, z: 0}
+  player: {fileID: 7928860610601458710}
+  _worldRadius: 0
+  _centerPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &8509993530092122851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929691532129443097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8da5e0a9d2f23d42baf234258824807, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableEmission: 1
+  breathingSpeed: 1
+  minEmissionMultiplier: 0.2
+  maxEmissionMultiplier: 1
+  transitionDuration: 1
+  damageColor: {r: 8, g: 0, b: 0, a: 1}
+  deathIntensityMultiplier: 1
+  isOn: 1
+  player: {fileID: 7928860610601458710}
+  rend: {fileID: 3824007131796169042}
 --- !u!114 &7928860610601458710
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -956,7 +1015,7 @@ MonoBehaviour:
   ceilingCheckOffset: {x: 0, y: 0.63, z: 0}
   environmentLayer:
     serializedVersion: 2
-    m_Bits: 3
+    m_Bits: 131
   interactableCheckRadius: 0.5
   interactableCheckPosition: {fileID: 6612204555609660401}
   interactableLayer:
@@ -969,6 +1028,9 @@ MonoBehaviour:
   aimRayBlockLayer:
     serializedVersion: 2
     m_Bits: 1
+  inputHandler: {fileID: 5104919376805049993}
+  controller: {fileID: 6423507642453185515}
+  lineRenderer: {fileID: 5222702382175107558}
   onPlayerDeath:
     m_PersistentCalls:
       m_Calls: []
@@ -981,19 +1043,6 @@ MonoBehaviour:
   onPlayerOpenedMenu:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &-1300629229981055667
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5929691532129443097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  affectedByTestAnimations: 0
 --- !u!1 &6024985466497793408
 GameObject:
   m_ObjectHideFlags: 0
@@ -4842,6 +4891,11 @@ MonoBehaviour:
   - m_Rig: {fileID: 6848896613521555473}
     m_Active: 1
   m_Effectors: []
+--- !u!137 &3824007131796169042 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7813590141776298306, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
+  m_PrefabInstance: {fileID: 2774524219561123820}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7580408597919689472 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -3480699329000672020, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
@@ -4850,6 +4904,11 @@ Transform:
 --- !u!4 &8603912243929737860 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -3321919801592875672, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
+  m_PrefabInstance: {fileID: 2774524219561123820}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &8641144046026760829 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 909c0d9961c561c4d936d29d32927c41, type: 3}
   m_PrefabInstance: {fileID: 2774524219561123820}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &9001959687672841214 stripped

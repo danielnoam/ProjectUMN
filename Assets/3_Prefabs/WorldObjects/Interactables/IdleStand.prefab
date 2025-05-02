@@ -650,18 +650,13 @@ MonoBehaviour:
   allowMultipleInteractions: 1
   interactionTime: 0.3
   interactPosition: {fileID: 3249013049459410206}
-  inputReader: {fileID: 11400000, guid: bc4b1fd8e08cece4899198f6f0f7ad7f, type: 2}
   robotInteractPosition: {fileID: 5268342197581029016}
   commandToSend: 3
-  interactPromptBackground: {fileID: 2483502512818690095}
-  interactPromptText: {fileID: 112417299232762353}
-  interactSfx: {fileID: 0}
+  interactPrompt: {fileID: 1324497580259789410}
   outlineObject: {fileID: 3224627494960767}
   playerOutlineColor: {r: 0, g: 1, b: 1, a: 1}
   robotOutlineColor: {r: 1, g: 0, b: 1, a: 1}
   outlineWidth: 4
-  promptFadeDuration: 0.3
-  promptFadeEase: 3
   outlineFadeDuration: 0.3
   outlineFadeEase: 3
   onInteractStartEvents:
@@ -784,26 +779,15 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
---- !u!114 &112417299232762353 stripped
+--- !u!114 &1324497580259789410 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1521244110413058143, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
+  m_CorrespondingSourceObject: {fileID: 500574716282287052, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
   m_PrefabInstance: {fileID: 1482785460894038446}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &2483502512818690095 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3955503963598152065, guid: 6c2b5707c46bb034bbee8bb873b3b0ee, type: 3}
-  m_PrefabInstance: {fileID: 1482785460894038446}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: 397322be384301f4f83fa9d869ffe5a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!224 &4437690903387639899 stripped
