@@ -64,7 +64,7 @@ public class PlayerEmissionHandler : MonoBehaviour
         TransitionToState(EmissionState.Death);
     }
     
-    private void OnPlayerSpawnedFromCheckpoint()
+    private void OnPlayerSpawnedFromCheckpoint(ISpawnPoint spawnPoint)
     {
         TransitionToState(EmissionState.Normal);
     }

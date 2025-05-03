@@ -23,6 +23,7 @@ public enum CommandToSend
     Follow,
     Sit,
     Idle,
+    Respawn,
 }
 
 [SelectionBase]
@@ -277,7 +278,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        }
    }
    
-   private void OnPlayerSpawned()
+   private void OnPlayerSpawned(ISpawnPoint spawnPoint = null)
    {
        if (!IsOn()) return;
        
@@ -424,7 +425,16 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = true;
        eye.gameObject.SetActive(false);
-       
+   }
+
+   public void Respawn()
+   {
+       TurnOn();
+       if (_player)
+       {
+           Teleport(_player.transform.position, Quaternion.identity);
+       }
+
    }
 
 

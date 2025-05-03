@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -44,7 +45,7 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private SOTest currentTest;
     [SerializeField, ReadOnly] private GameObject currentEnvironment;
-    [SerializeField, ReadOnly] private Transform currentCheckpoint;
+    [SerializeField, ReadOnly] private ISpawnPoint currentSpawnPoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
     [EndFoldout]
@@ -72,14 +73,16 @@ public class TestManager : MonoBehaviour
     public SOTest DefaultTest => defaultTest;
     
     public SOAudioEvent CurrentTheme => currentTheme;
-    public Vector3 CurrentCheckpoint {
+    public ISpawnPoint CurrentSpawnPoint {
         get
         {
-            if (currentCheckpoint) return currentCheckpoint.position;
-            return currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.up;
+            if (currentSpawnPoint != null) return currentSpawnPoint;
+            if (currentTest) currentTest.GetPlayerStartPoint();
+            return null;
         }
     }
-    public Vector3 CurrentSpawnPoint => currentTest ? currentTest.GetPlayerSpawnPoint() : Vector3.up;
+
+    public ISpawnPoint CurrentStartPoint => currentTest.GetPlayerStartPoint();
     public TextMeshProUGUI DebugTextLeft => debugTextLeft;
     public TextMeshProUGUI DebugTextRight => debugTextRight;
     public float IntroSequenceDuration => introSequenceDuration;
@@ -303,9 +306,10 @@ public class TestManager : MonoBehaviour
         }
     }
     
-    public void SetCheckpointPosition(Transform checkpoint)
+    public void SetSpawnPosition(ISpawnPoint spawnPoint)
     {
-        currentCheckpoint = checkpoint;
+        currentSpawnPoint?.SetSpawnPointNotReached();
+        currentSpawnPoint = spawnPoint;
     }
     
     
@@ -499,9 +503,10 @@ public class TestManager : MonoBehaviour
 
         if (currentTest.NeedsPlayer)
         {
-            if (!currentPlayer) 
+            if (!currentPlayer)
             {
-                currentPlayer = Instantiate(playerPrefab, currentTest.GetPlayerSpawnPoint(), quaternion.identity);
+                ISpawnPoint spawnPoint = currentTest.GetPlayerStartPoint();
+                currentPlayer = Instantiate(playerPrefab, spawnPoint.GetSpawnPosition(), spawnPoint.GetSpawnRotation());
                 SubscribeToPlayerEvents();
             }
         }
@@ -599,7 +604,7 @@ public class TestManager : MonoBehaviour
         if (currentRobot) Destroy(currentRobot.gameObject);
         currentTest = null;
         currentEnvironment = null;
-        currentCheckpoint = null;
+        currentSpawnPoint = null;
         currentTheme = null;
         ApplyLightSettings(defaultTest.GetLightSettings());
         _activeUnloadCoroutine = null;

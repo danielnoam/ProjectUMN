@@ -97,23 +97,23 @@ public class SOTest : ScriptableObject
         return environmentPrefab;
     }
     
-    public Vector3 GetPlayerSpawnPoint()
+    public ISpawnPoint GetPlayerStartPoint()
     {
         if (!environmentPrefab)
         {
             Debug.Log("No prefab set for " + name);
-            return Vector3.up;
+            return null;
         }
 
-        SpawnPlatform spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
-        if (!spawnPlatform)
+        ISpawnPoint spawnPlatform = environmentPrefab.GetComponentInChildren<SpawnPlatform>();
+        if (spawnPlatform == null)
         {
             Debug.Log("No TestSpawnPosition in " + name);
-            return Vector3.up;
+            return null;
         }
 
 
-        return spawnPlatform.GetSpawnPosition();
+        return spawnPlatform;
     }
     
     public SOAudioEvent GetTheme()

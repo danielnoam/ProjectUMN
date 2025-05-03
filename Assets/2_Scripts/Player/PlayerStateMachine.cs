@@ -108,8 +108,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     
     [Foldout("Events")] 
     public UnityEvent onPlayerDeath = new UnityEvent();
-    public UnityEvent onPlayerSpawned = new UnityEvent();
-    public UnityEvent onPlayerSpawnedFromCheckpoint = new UnityEvent();
+    public UnityEvent<ISpawnPoint> onPlayerSpawned = new UnityEvent<ISpawnPoint>();
+    public UnityEvent<ISpawnPoint> onPlayerSpawnedFromCheckpoint = new UnityEvent<ISpawnPoint>();
     public UnityEvent onPlayerOpenedMenu = new UnityEvent();
     [EndFoldout]
     
@@ -253,7 +253,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     private void OnTestStartLoading(SOTest test)
     {
         Robot = null;
-        SwitchState(new PlayerTeleportingState(this, TestManager.CurrentSpawnPoint, Quaternion.Euler(0, 0, 0), test.GetTimeToLoad(), TeleportationType.SpawnPoint));
+        SwitchState(new PlayerTeleportingState(this, TestManager.CurrentStartPoint, test.GetTimeToLoad(), TeleportationType.SpawnPoint));
     }
     
     private void OnTestStartUnLoading(SOTest test)
@@ -280,7 +280,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             if (!laserGround.AffectsPlayer) return;
             laserGround.PlayHitSfx(other.ClosestPointOnBounds(transform.position));
             onPlayerDeath?.Invoke();
-            SwitchState(new PlayerTeleportingState(this, TestManager.CurrentCheckpoint, Quaternion.Euler(0, 0, 0), 2f, TeleportationType.Checkpoint));
+            SwitchState(new PlayerTeleportingState(this, TestManager.CurrentSpawnPoint, 2f, TeleportationType.Checkpoint));
         }
     }
 
@@ -673,7 +673,10 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public void ResetHorizontalVelocity()
     {
         ActiveHorizontalVelocity = 0f;
+        ActiveMoveDirection = Vector3.zero;
+        controller.Move(Vector3.zero);
     }
+    
     public void HandleMovement(bool allowMovement, bool isAirborne)
     {
         // Current velocity excluding vertical component

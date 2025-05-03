@@ -104,7 +104,7 @@ public class TestInfoTextHandler : MonoBehaviour
     }
 
     [Button]
-    private void PlayTextAnimation()
+    private void PlayTextAnimation(ISpawnPoint spawnPoint)
     {
         if (_textSequence.isAlive)
         {

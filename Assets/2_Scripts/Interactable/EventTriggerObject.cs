@@ -116,6 +116,10 @@ public class EventTriggerObject : MonoBehaviour
                     break;
                 case CommandToSend.Nothing:
                     break;
+                
+                default:
+                    Debug.Log($"Command {commandToSend} not recognized. No action taken.");
+                    break;
             }
         }
     }

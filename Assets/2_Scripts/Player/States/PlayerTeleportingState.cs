@@ -20,14 +20,38 @@ public class PlayerTeleportingState : PlayerBaseState
         _teleportationRotation = rotation;
         _time = time;
         _teleportationType = type;
+        _spawnPoint = null;
     }
+    
+    public PlayerTeleportingState(PlayerStateMachine stateMachine, ISpawnPoint spawnPoint, float time, TeleportationType type) : base(stateMachine)
+    {
+        StateMachine.TeleportingState = this;
+        _time = time;
+        _teleportationType = type;
 
-    private readonly float _time;
+        if (spawnPoint != null)
+        {
+            _teleportationDestination = spawnPoint.GetSpawnPosition();
+            _teleportationRotation = spawnPoint.GetSpawnRotation();
+            _spawnPoint = spawnPoint;
+        }
+        else
+        {
+            _teleportationDestination = Vector3.up;
+            _teleportationRotation = Quaternion.identity;
+            _spawnPoint = null;
+        }
+
+    }
+    
     private readonly Vector3 _teleportationDestination;
     private readonly Quaternion _teleportationRotation;
-    private bool _teleportationComplete = false;
-    private float _teleportationTimer = 0f;
-    private TeleportationType _teleportationType;
+    private readonly TeleportationType _teleportationType;
+    private readonly ISpawnPoint _spawnPoint;
+    private readonly float _time;
+    private bool _teleportationComplete;
+    private float _teleportationTimer;
+
 
     
     public override void EnterState()
@@ -58,11 +82,11 @@ public class PlayerTeleportingState : PlayerBaseState
         switch (_teleportationType)
         {
             case TeleportationType.Checkpoint:
-                StateMachine.onPlayerSpawnedFromCheckpoint?.Invoke();
+                StateMachine.onPlayerSpawnedFromCheckpoint?.Invoke(_spawnPoint);
                 StateMachine.SetCharacterColliderState(true);
                 break;
             case TeleportationType.SpawnPoint:
-                StateMachine.onPlayerSpawned?.Invoke();
+                StateMachine.onPlayerSpawned?.Invoke(_spawnPoint);
                 StateMachine.SetCharacterColliderState(true);
                 break;
             case TeleportationType.EndPoint:

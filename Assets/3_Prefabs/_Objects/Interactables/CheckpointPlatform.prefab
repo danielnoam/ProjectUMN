@@ -202,9 +202,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPosition: {fileID: 2429509276980685143}
+  audioSource: {fileID: 8543958901233806901}
   particleSystems:
   - {fileID: 1438610026378087283}
   - {fileID: 3456838656879252026}
+  onReachedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onUsedEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &-1315135174865260042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -352,12 +359,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f574d4f385aa8dd4b9cec463043c3536, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fadeDuration: 7
   respondToWorldLightLevel: 1
+  fadeDuration: 7
   trackTarget: 0
-  target: {fileID: 0}
-  trackingDistance: 5
+  returnToStartRotation: 1
+  returnToStartRotationDuration: 2
+  initialRotationSpeed: 10
+  initialSpeedDuration: 0.5
   rotationSpeed: 5
+  trackingDistance: 5
+  trackingOffset: {x: 0, y: 0, z: 0}
+  target: {fileID: 0}
+  usePlayerAsTarget: 0
 --- !u!1 &5992164670506136640
 GameObject:
   m_ObjectHideFlags: 0
