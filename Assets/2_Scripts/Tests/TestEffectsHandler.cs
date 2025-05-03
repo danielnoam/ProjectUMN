@@ -151,4 +151,17 @@ public class TestEffectsHandler : MonoBehaviour
     }
     
     
+    public void ForceStopAllEffects()
+    {
+        if (_fadeSequence.isAlive) 
+        {
+            _fadeSequence.Stop();
+        }
+        
+        fullscreenImage.color = Color.clear;
+        _vignette.intensity.value = 0;
+        _chromaticAberration.intensity.value = 0;
+        _paniProjection.distance.value = 0;
+    }
+    
 }

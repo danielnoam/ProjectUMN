@@ -43,9 +43,9 @@ GameObject:
   m_Component:
   - component: {fileID: 5942120296784646586}
   - component: {fileID: 6278220777421644708}
+  - component: {fileID: 8097149128480194494}
   - component: {fileID: 4316732067262316704}
   - component: {fileID: 393644897920634709}
-  - component: {fileID: 8097149128480194494}
   m_Layer: 0
   m_Name: LaserMirrorPiller
   m_TagString: Untagged
@@ -167,6 +167,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &8097149128480194494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6107411117692997092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  affectedByTestAnimations: 1
 --- !u!114 &4316732067262316704
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,19 +223,6 @@ MonoBehaviour:
   rotationTime: 0.5
   rotationEase: 4
   rotationSfx: {fileID: 11400000, guid: ff3212f948e17074f90f9876accb774c, type: 2}
---- !u!114 &8097149128480194494
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6107411117692997092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d1c542c19ef4e94e80b925aed988cfe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  affectedByTestAnimations: 1
 --- !u!1001 &732265528917072515
 PrefabInstance:
   m_ObjectHideFlags: 0

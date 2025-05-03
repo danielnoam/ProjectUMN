@@ -104,15 +104,22 @@ public class CameraManager : MonoBehaviour
 
     private void OnEnable()
     {
-        TestManager.Instance?.onIntroSequenceStart.AddListener(StartIntroSequenceCamera);
-        TestManager.Instance?.onCreditsSequenceStart.AddListener(StartCreditsCamera);
+        TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
+        TestManager.Instance?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+        TestManager.Instance?.onCreditsSequenceEnd.AddListener(OnCreditsSequenceEnd);
     }
+    
 
     private void OnDisable()
     {
-        TestManager.Instance?.onIntroSequenceStart.RemoveListener(StartIntroSequenceCamera);
-        TestManager.Instance?.onCreditsSequenceStart.RemoveListener(StartCreditsCamera);
+        TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        TestManager.Instance?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
+        TestManager.Instance?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+        TestManager.Instance?.onCreditsSequenceEnd.RemoveListener(OnCreditsSequenceEnd);
     }
+
+
 
     private void Update()
     {
@@ -120,18 +127,6 @@ public class CameraManager : MonoBehaviour
         {
             float easedPosition = introSequenceCameraCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
             _introCameraDolly.CameraPosition = easedPosition;
-    
-            if (!TestManager.Instance.IsIntroSequenceActive)
-            {
-                SwitchToCamera(startMenuCamera, true);
-            }
-        }
-        else if (TestManager.Instance && TestManager.Instance.IsCreditsSequenceActive)
-        {
-            if (!TestManager.Instance.IsCreditsSequenceActive)
-            {
-                SwitchToCamera(freeLookCamera, true);
-            }
         }
         else
         {
@@ -407,17 +402,26 @@ public class CameraManager : MonoBehaviour
         
     }
     
-    private void StartIntroSequenceCamera()
+    private void OnIntroSequenceStart()
     {
         _introCameraDolly.CameraPosition = 0;
         SwitchToCamera(introCamera, false);
     }
     
-    private void StartCreditsCamera()
+    private void OnCreditsSequenceStart()
     {
         SwitchToCamera(creditsCamera, false);
     }
     
+    private void OnCreditsSequenceEnd()
+    {
+        SwitchToCamera(freeLookCamera, true);
+    }
+    
+    private void OnIntroSequenceEnd()
+    {
+        SwitchToCamera(startMenuCamera, true);
+    }
     
     #endregion Private methods ----------------------------------------------------------------------------
     

@@ -1,4 +1,5 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -18,9 +19,10 @@ public class State
 public class StateChanger : MonoBehaviour
 {
     [Header("Settings")]
+    [SerializeField] private bool canChangeState = true;
     [SerializeField] private bool cycleStates = true;
     [SerializeField, Min(0)] private int startingStateIndex = 0;
-    [SerializeField] private State[] states;
+    [SerializeField] public State[] states;
     
     
     [SerializeField, ReadOnly] private string currentStateName;
@@ -52,10 +54,8 @@ public class StateChanger : MonoBehaviour
     private void Update()
     {
         _currentState?.stateUpdateEvent?.Invoke();
-        
-
     }
-    
+
     public void ChangeState(string stateName)
     {
         foreach (var state in states)
@@ -75,10 +75,18 @@ public class StateChanger : MonoBehaviour
             }
         }
     }
+    
+    public bool CanChangeState
+    {
+        get => canChangeState;
+        set => canChangeState = value;
+    }
 
     [Button]
     public void SetNextState()
     {
+        if (!canChangeState) return;
+        
         if (cycleStates)
         {
             // Safety check for empty states array
@@ -128,6 +136,8 @@ public class StateChanger : MonoBehaviour
     [Button]
     public void SetPreviousState()
     {
+        if (!canChangeState) return;
+        
         if (cycleStates)
         {
             // Safety check for empty states array
@@ -185,3 +195,25 @@ public class StateChanger : MonoBehaviour
         return true;
     }
 }
+
+#if UNITY_EDITOR
+// Custom inspector button to under each state in the list to select it
+[CustomEditor(typeof(StateChanger))]
+public class StateChangerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        StateChanger stateChanger = (StateChanger)target;
+        foreach (var state in stateChanger.states)
+        {
+            GUILayout.Space(10);
+            if (GUILayout.Button($"Select {state.name}"))
+            {
+                stateChanger.ChangeState(state.name);
+            }
+        }
+    }
+}
+
+#endif

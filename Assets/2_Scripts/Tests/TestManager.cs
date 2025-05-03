@@ -41,6 +41,7 @@ public class TestManager : MonoBehaviour
     [SerializeField] private bool debugMode;
     [SerializeField] private TextMeshProUGUI debugTextRight;
     [SerializeField] private TextMeshProUGUI debugTextLeft;
+    [SerializeField] private TextMeshProUGUI debugTextBottomRight;
     [SerializeField, ReadOnly] private PlayerStateMachine currentPlayer;
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private SOTest currentTest;
@@ -182,13 +183,21 @@ public class TestManager : MonoBehaviour
             ToggleDebugMode();
         }
         
+        // Skip credits sequence
         if (IsCreditsSequenceActive && Input.GetKeyDown(KeyCode.Escape))
         {
-            StopCoroutine(CreditsSequenceCoroutine());
             _creditsSequenceTime = 0;
-            onCreditsSequenceEnd?.Invoke();
-            StartIntroSequence();
+            _testEffectsHandler.ForceStopAllEffects();
         }
+        
+        // Skip intro sequence
+        if (IsIntroSequenceActive && Input.GetKeyDown(KeyCode.Escape))
+        {
+            _introSequenceTime = 0;
+            _testEffectsHandler.ForceStopAllEffects();
+        }
+
+        UpdateDebugInformation();
     }
 
 
@@ -303,6 +312,7 @@ public class TestManager : MonoBehaviour
         {
             debugTextLeft.text = "";
             debugTextRight.text = "";
+            debugTextBottomRight.text = "";
         }
     }
     
@@ -348,6 +358,7 @@ public class TestManager : MonoBehaviour
     
     private IEnumerator IntroSequenceCoroutine()
     {
+
         _testEffectsHandler.FadeScreen(true, 0f);
         
         if (currentTest) 
@@ -487,7 +498,7 @@ public class TestManager : MonoBehaviour
 
     private IEnumerator LoadTest(SOTest testIndex, bool isStandaloneCall = true)
     {
-        if (testIndex == null)
+        if (!testIndex)
         {
             if (isStandaloneCall) _activeLoadCoroutine = null;
             yield break;
@@ -506,7 +517,15 @@ public class TestManager : MonoBehaviour
             if (!currentPlayer)
             {
                 ISpawnPoint spawnPoint = currentTest.GetPlayerStartPoint();
-                currentPlayer = Instantiate(playerPrefab, spawnPoint.GetSpawnPosition(), spawnPoint.GetSpawnRotation());
+                if (spawnPoint != null)
+                {
+                    currentPlayer = Instantiate(playerPrefab, spawnPoint.GetSpawnPosition(), spawnPoint.GetSpawnRotation());
+                }
+                else
+                {
+                    currentPlayer = Instantiate(playerPrefab, new Vector3(0,0.9f,0), quaternion.identity);
+                }
+
                 SubscribeToPlayerEvents();
             }
         }
@@ -640,4 +659,29 @@ public class TestManager : MonoBehaviour
     }
 
     #endregion Version ----------------------------------------------------------------------------
+    
+    
+    
+    private void UpdateDebugInformation()
+    {
+        if (DebugMode)
+        {
+            if (debugTextBottomRight)
+            {
+                string playerInfo = Player ? $"Player: {Player}, {Player.CurrentState}" : "Player: null";
+                string robotInfo = Robot ? $"Robot: {Robot}, {Robot.CurrentState}" : "Robot: null";
+                string creditsInfo = IsCreditsSequenceActive ? $"Credits Sequence {_creditsSequenceTime:F0}/{CreditsSequenceDuration}" : "";
+                string introInfo = IsIntroSequenceActive ? $"Intro Sequence {_introSequenceTime:F0}/{IntroSequenceDuration}" : "";
+            
+                debugTextBottomRight.text = $"Test: {currentTest}\n" +
+                                            $"{playerInfo}\n" +
+                                            $"{robotInfo}\n" +
+                                            $"{creditsInfo}\n" +
+                                            $"{introInfo}\n"
+          
+                    ;
+            }
+        }
+
+    }
 }
