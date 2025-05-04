@@ -138,7 +138,6 @@ public class PositionedBillboard : MonoBehaviour
         transform.rotation = Quaternion.Euler(smoothedX, smoothedY, smoothedZ);
     }
 
-#if UNITY_EDITOR
     private void OnValidate()
     {
         if (Application.isPlaying || SceneManager.GetActiveScene().buildIndex != 0) return;
@@ -151,5 +150,5 @@ public class PositionedBillboard : MonoBehaviour
             UpdatePosition(true);
         }
     }
-#endif
+    
 }

@@ -144,11 +144,11 @@ public class TestManager : MonoBehaviour
         currentRobot = FindFirstObjectByType<RobotCompanion>();
         
 
-        if (SceneManager.GetActiveScene().buildIndex == 0)
+        if (SceneManager.GetActiveScene().name == "MainScene")
         {
             StartIntroSequence();
         }
-        else if (SceneManager.GetActiveScene().buildIndex == 1 && !debugMode)
+        else if (SceneManager.GetActiveScene().name == "TestScene" && !debugMode)
         {
             StartClearTestSequence();
         }
@@ -215,6 +215,7 @@ public class TestManager : MonoBehaviour
     {
         UnsubscribeFromPlayerEvents();
     }
+    
 
     #region Test control ----------------------------------------------------------------------------
 
@@ -420,7 +421,7 @@ public class TestManager : MonoBehaviour
             if (_creditsSequenceTime <= fadeOutTime && !fadeOutTimeReached)
             {
                 fadeOutTimeReached = true;
-                _testEffectsHandler.FadeScreen(true, fadeOutTime * 1.5f);
+                _testEffectsHandler.FadeScreen(true, fadeOutTime);
             }
             
             
@@ -675,8 +676,9 @@ public class TestManager : MonoBehaviour
                 string robotInfo = Robot ? $"Robot: {Robot}, {Robot.CurrentState}" : "Robot: null";
                 string creditsInfo = IsCreditsSequenceActive ? $"Credits Sequence {_creditsSequenceTime:F0}/{CreditsSequenceDuration}" : "";
                 string introInfo = IsIntroSequenceActive ? $"Intro Sequence {_introSequenceTime:F0}/{IntroSequenceDuration}" : "";
+                string testInfo = currentTest ? $"Test: {currentTest.Name}" : "Test: null";
             
-                debugTextBottomRight.text = $"Test: {currentTest.Name}\n" +
+                debugTextBottomRight.text = $"Test: {testInfo}\n" +
                                             $"{playerInfo}\n" +
                                             $"{robotInfo}\n" +
                                             $"{creditsInfo}\n" +

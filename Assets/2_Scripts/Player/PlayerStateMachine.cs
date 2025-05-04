@@ -1,4 +1,5 @@
 
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -131,7 +132,8 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     public RobotCompanion Robot { get; private set; }
     public CameraManager CameraManager { get; private set; }
     public TestManager TestManager { get; private set; }
-    
+
+    private IEnumerator _deathRoutine;
     private TextMeshProUGUI _debugText;
     private float _lineRendererDefaultWidth;
     private Vector3 _targetLineEndPosition = Vector3.zero;
@@ -275,7 +277,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent(out LaserGround laserGround))
+        if (other.TryGetComponent(out LaserGround laserGround) && _deathRoutine == null && CurrentState != TeleportingState)
         {
             if (!laserGround.AffectsPlayer) return;
             laserGround.PlayHitSfx(other.ClosestPointOnBounds(transform.position));
@@ -283,6 +285,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
             SwitchState(new PlayerTeleportingState(this, TestManager.CurrentSpawnPoint, 2f, TeleportationType.Checkpoint));
         }
     }
+    
 
     
     #region State machine ---------------------------------------------------------------

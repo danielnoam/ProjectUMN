@@ -46,8 +46,10 @@ public class TestInfoTextHandler : MonoBehaviour
     {
         TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
         TestManager.Instance?.onTestStartUnloading.AddListener(OnTestStartUnloading);
+        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
         TestManager.Instance?.onIntroSequenceStart.AddListener(ForceHideAnimation);
-        player?.onPlayerSpawned.AddListener(PlayTextAnimation);
+        
+        player?.onPlayerSpawned.AddListener(OnPlayerSpawnedAnimation);
         player?.onPlayerOpenedMenu.AddListener(ForceHideAnimation);
     }
     
@@ -55,17 +57,64 @@ public class TestInfoTextHandler : MonoBehaviour
     private void OnDisable()
     {
         TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
+        TestManager.Instance?.onTestStartLoading.RemoveListener(OnTestStartLoading);
         TestManager.Instance?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
         TestManager.Instance?.onIntroSequenceStart.RemoveListener(ForceHideAnimation);
         
-        player?.onPlayerSpawned.RemoveListener(PlayTextAnimation);
+        player?.onPlayerSpawned.RemoveListener(OnPlayerSpawnedAnimation);
         player?.onPlayerOpenedMenu.RemoveListener(ForceHideAnimation);
     }
     
-    private void OnTestLoaded(SOTest test)
+    private void OnTestStartUnloading(SOTest test)
     {
+        
+        if (_textSequence.isAlive)
+        {
+            ForceHideAnimation();
+        }
+        
+        float duration = test.GetTimeToUnload();
+        if (duration <= 1f) return;
+        
+        testNameText.alpha = 0f;
+        testNameText.text = "Unloading test...";
+
+        _textSequence = Sequence.Create()
+            // Show text
+            .ChainCallback(() => { _testNameWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: duration/4))
+            // Wait between show and hide
+            .ChainDelay(duration/3)
+            // Hide text 
+            .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: duration/4));
+    }
+    
+    private void OnTestStartLoading(SOTest test)
+    {
+        if (_textSequence.isAlive)
+        {
+            ForceHideAnimation();
+        } 
+        
+        float duration = test.GetTimeToLoad();
+        if (duration <= 1f) return;
+        testNameText.alpha = 0f;
+        testNameText.text = "Loading test...";
 
         
+        _textSequence = Sequence.Create()
+            // Show text
+            .ChainCallback(() => { _testNameWriter.RestartWriter(); })
+            .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: duration/4))
+            // Wait between show and hide
+            .ChainDelay(duration/3)
+            // Hide text 
+            .Chain(Tween.Alpha(testNameText, endValue: 0f, duration: duration/4));
+    }
+    
+    
+    private void OnTestLoaded(SOTest test)
+    {
         if (test.ShowTestInfo)
         {
             string prfix = "";
@@ -84,27 +133,11 @@ public class TestInfoTextHandler : MonoBehaviour
         }
     }
     
-    private void OnTestStartUnloading(SOTest test)
-    {
-        if (_textSequence.isAlive)
-        {
-            ForceHideAnimation();
-        }
-    }
 
-    private float GetAnimationTime()
-    {
-        // Initial delay + time for all 4 fade ins with delays between them
-        float totalTime = initialDelay + (textFadeInDuration * 4) + (textTransitionDelay * 3);
     
-        // Delay before hide + time for all 4 fade outs with delays between them
-        totalTime += displayDuration + (textFadeOutDuration * 4) + (textTransitionDelay * 3);
-    
-        return totalTime;
-    }
 
     [Button]
-    private void PlayTextAnimation(ISpawnPoint spawnPoint)
+    private void OnPlayerSpawnedAnimation(ISpawnPoint spawnPoint)
     {
         if (_textSequence.isAlive)
         {
@@ -166,34 +199,16 @@ public class TestInfoTextHandler : MonoBehaviour
             .Chain(Tween.Alpha(musicAuthorText, endValue: 0f, duration: textFadeOutDuration/2));
     }
     
-    [Button]
-    private void ForceShowAnimation()
-    {
-        if (_textSequence.isAlive)
-        {
-            _textSequence.Stop();
-        }
-        
-        
-        _textSequence = Sequence.Create()
-            .ChainCallback(() => { _testNameWriter.RestartWriter(); })
-            .Chain(Tween.Alpha(testNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
-            .ChainDelay(textTransitionDelay/2)
-            .ChainCallback(() => { _testDescriptionWriter.RestartWriter(); })
-            .Chain(Tween.Alpha(testDescriptionText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
-            .ChainDelay(textTransitionDelay/2)
-            .ChainCallback(() => { _musicNameWriter.RestartWriter(); })
-            .Chain(Tween.Alpha(musicNameText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2))
-            .ChainDelay(textTransitionDelay/2)
-            .ChainCallback(() => { _musicAuthorWriter.RestartWriter(); })
-            .Chain(Tween.Alpha(musicAuthorText, startValue: 0f, endValue: 1f, duration: textFadeInDuration/2));
-    }
-
-
-#if UNITY_EDITOR
+    
     private void OnValidate()
     {
-        animationTime = GetAnimationTime();
+        // Initial delay + time for all 4 fade ins with delays between them
+        float totalTime = initialDelay + (textFadeInDuration * 4) + (textTransitionDelay * 3);
+    
+        // Delay before hide + time for all 4 fade outs with delays between them
+        totalTime += displayDuration + (textFadeOutDuration * 4) + (textTransitionDelay * 3);
+        
+        animationTime = totalTime;
     }
-#endif
+    
 }

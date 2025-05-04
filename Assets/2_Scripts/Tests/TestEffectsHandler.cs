@@ -66,13 +66,17 @@ public class TestEffectsHandler : MonoBehaviour
         }
         
         
-        
         float time = _testManager.IntroSequenceDuration * introDurationEffectMultiplier;
         float startValue = 1;
         float endValue = 0;
 
-        _fadeSequence = Sequence.Create();
-        _fadeSequence = _fadeSequence
+        fullscreenImage.color = Color.black;
+        _vignette.intensity.value = 1;
+        _chromaticAberration.intensity.value = 1;
+        _paniProjection.distance.value = 1;
+        
+        _fadeSequence = Sequence.Create()
+                .ChainDelay(1f)
                 .Group(Tween.Alpha(fullscreenImage, startValue, endValue, duration: time / 3f))
                 .Group(Tween.Custom(startValue, endValue,  duration: time / 1.5f, onValueChange: val => _vignette.intensity.value = val))
                 .Group(Tween.Custom(startValue, endValue,  duration: time * 2, onValueChange: val =>_chromaticAberration.intensity.value = val))
@@ -89,9 +93,8 @@ public class TestEffectsHandler : MonoBehaviour
         }
 
         float time = _testManager.CreditsSequenceDuration * creditsDurationEffectMultiplier;
-
-        _fadeSequence = Sequence.Create();
-        _fadeSequence = _fadeSequence
+        
+        _fadeSequence = Sequence.Create()
                 .Group(Tween.Custom(0, 0.3f,  duration: time, onValueChange: val => _vignette.intensity.value = val))
                 .Group(Tween.Custom(_chromaticAberration.intensity.value, 0,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
                 .Group(Tween.Custom(_paniProjection.distance.value, 0,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
@@ -104,9 +107,8 @@ public class TestEffectsHandler : MonoBehaviour
         float time = test.GetTimeToUnload();
         float startValue = 0;
         float endValue = 1;
-
-        _fadeSequence = Sequence.Create();
-        _fadeSequence = _fadeSequence
+        
+        _fadeSequence = Sequence.Create()
                 .Group(Tween.Custom(startValue, 0.4f,  duration: time, onValueChange: val => _vignette.intensity.value = val))
                 .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
                 .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
@@ -119,9 +121,8 @@ public class TestEffectsHandler : MonoBehaviour
         float time = test.GetTimeToLoad();
         float startValue = 1;
         float endValue = 0;
-
-        _fadeSequence = Sequence.Create();
-        _fadeSequence = _fadeSequence
+        
+        _fadeSequence = Sequence.Create()
                 .Group(Tween.Custom(0.4f, endValue,  duration: time, onValueChange: val => _vignette.intensity.value = val))
                 .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val =>_chromaticAberration.intensity.value = val))
                 .Group(Tween.Custom(startValue, endValue,  duration: time, onValueChange: val => _paniProjection.distance.value = val))
@@ -142,9 +143,8 @@ public class TestEffectsHandler : MonoBehaviour
         _vignette.intensity.value = 0;
         _chromaticAberration.intensity.value = 0;
         _paniProjection.distance.value = 0;
-
-        _fadeSequence = Sequence.Create();
-        _fadeSequence = _fadeSequence
+        
+        _fadeSequence = Sequence.Create()
                 .Group(Tween.Alpha(fullscreenImage, startValue, endValue, duration: duration))
             ;
 
