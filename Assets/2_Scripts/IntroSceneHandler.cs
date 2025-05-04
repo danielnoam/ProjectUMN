@@ -4,32 +4,40 @@ using System.Collections.Generic;
 using CustomAttribute;
 using UnityEngine;
 using PrimeTween;
+using TMPEffects.CharacterData;
 using TMPEffects.Components;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class IntroSceneHandler : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private float animationDuration = 15f;
+    [Header("Settings")] [SerializeField] private float animationDuration = 15f;
     [SerializeField] private float startDelay = 1f;
-    
-    [Header("Loading Text")]
-    [SerializeField] private float loadingTextCycleInterval = 0.5f;
-    [SerializeField] private string finishedLoadingText = "Finished Loading Simulation";
-    [SerializeField] private string[] loadingTextArray = { "Loading Simulation", "Loading Simulation.", "Loading Simulation..", "Loading Simulation..." };
-    
+    [SerializeField] private SOAudioEvent writerStartSfx;
 
-    [Header("Floating Text")]
-    [SerializeField] private float floatingTextSpawnInterval = 1.5f;
-    [SerializeField] private float floatingTextFadeDuration = 1.5f;
-    [SerializeField] private float floatingTextMoveDuration = 3f;
-    [SerializeField] private float floatingTextMoveDistance = 100f;
+    [Header("Loading Text")] [SerializeField]
+    private float loadingTextCycleInterval = 0.5f;
+
+    [SerializeField] private string finishedLoadingText = "Finished Loading Simulation.";
+    [SerializeField] private string startingSimulationText = "Starting Simulation.";
+
+    [SerializeField] private string[] loadingTextArray =
+        { "Loading Simulation", "Loading Simulation.", "Loading Simulation..", "Loading Simulation..." };
+
+    [Header("Floating Text")] [SerializeField]
+    private float floatingTextSpawnInterval = 2f;
+
+    [SerializeField] private float floatingTextFadeDuration = 3f;
+    [SerializeField] private float floatingTextMoveDuration = 7f;
+    [SerializeField] private float floatingTextMoveDistance = 200f;
     [SerializeField, Range(0f, 1f)] private float textGenerationDurationPercentage = 0.8f;
     [SerializeField] private string[] textArray;
-    
-    
-    [Header("References")]
+
+
+    [Header("References")] [SerializeField]
+    private AudioSource audioSource;
+
     [SerializeField] private TextMeshProUGUI loadingText;
     [SerializeField] private Transform textPosition;
     [SerializeField] private TextMeshProUGUI textPrefab;
@@ -44,12 +52,34 @@ public class IntroSceneHandler : MonoBehaviour
     private void Awake()
     {
         if (mainScene == null) return;
+
         _loadingTextWriter = loadingText.GetComponent<TMPWriter>();
+
+        _loadingTextWriter.OnStartWriter.AddListener(OnStartWriter);
+    }
+
+    private void OnDisable()
+    {
+        _loadingTextWriter.OnStartWriter.RemoveListener(OnStartWriter);
     }
 
     private void Start()
     {
         StartLoadingAnimation();
+    }
+
+    private void Update()
+    {
+        // Skip the loading animation if the user presses the space key
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)) {
+            SceneManager.LoadScene(mainScene.BuildIndex);
+        }
+    }
+
+    private void OnStartWriter(TMPWriter writer)
+    {
+        if (!audioSource) return;
+        writerStartSfx?.Play(audioSource);
     }
 
     private void StartLoadingAnimation()
@@ -114,14 +144,16 @@ public class IntroSceneHandler : MonoBehaviour
             _loadingTextCycleCoroutine = null;
         }
         
-        yield return new WaitForSeconds(1f);
-        
-        // Fade out current loading text
+        yield return new WaitForSeconds(3f);
         loadingText.text = finishedLoadingText;
         _loadingTextWriter.enabled = true;
         _loadingTextWriter.RestartWriter();
-        
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(3f);
+        _loadingTextWriter.enabled = false;
+        loadingText.text = startingSimulationText;
+        _loadingTextWriter.enabled = true;
+        _loadingTextWriter.RestartWriter();
+        yield return new WaitForSeconds(1f);
         Tween.Alpha(loadingText, startValue: 1f, endValue: 0f, duration: 1);
         yield return new WaitForSeconds(1f);
         
@@ -162,8 +194,15 @@ public class IntroSceneHandler : MonoBehaviour
             newText.text = textArray[index];
             newText.alpha = 0;
             
+            // Get the writer component and play the sound
+            TMPWriter writer = newText.GetComponent<TMPWriter>();
+            if (writer)
+            {
+                writer.OnStartWriter.AddListener(OnStartWriter);
+            }
+            
             // Start animation for this text
-            StartCoroutine(AnimateFloatingText(newText));
+            StartCoroutine(AnimateFloatingText(newText, writer));
             
             // Move to next text in array
             index = (index + 1) % textArray.Length;
@@ -173,7 +212,7 @@ public class IntroSceneHandler : MonoBehaviour
         }
     }
 
-    private IEnumerator AnimateFloatingText(TextMeshProUGUI text)
+    private IEnumerator AnimateFloatingText(TextMeshProUGUI text, TMPWriter textWriter)
     {
         Vector3 startPosition = text.transform.position;
         Vector3 endPosition = startPosition + Vector3.up * floatingTextMoveDistance;
@@ -194,6 +233,12 @@ public class IntroSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(floatingTextFadeDuration + 0.1f);
         
         // Destroy the text object
+        
+        // Remove the writer listener to prevent memory leaks
+        if (textWriter)
+        {
+            textWriter.OnStartWriter.RemoveListener(OnStartWriter);
+        }
         Destroy(text.gameObject);
     }
 }

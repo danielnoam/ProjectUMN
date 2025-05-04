@@ -40,15 +40,15 @@ public class TextParticleEffect : MonoBehaviour
     [SerializeField] private float scalingSpeed = 10f;
     
     [Header("References")]
-    [SerializeField] private Image background;
     [SerializeField] private TextMeshProUGUI text;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private SOAudioEvent simulationTextSfx;
     
     
     private Camera _targetCamera;
     private Vector3 _originalScale;
     private Vector3 _originalPosition;
     private Vector3 _originalRotation;
-    private float _defaultBackgroundAlpha;
     private float _defaultTextAlpha;
     private int _currentTextIndex;
     
@@ -65,12 +65,6 @@ public class TextParticleEffect : MonoBehaviour
         _originalRotation = transform.eulerAngles;
         _originalScale = transform.localScale;
         _originalPosition = transform.localPosition;
-        
-        if (background)
-        {
-            _defaultBackgroundAlpha = background.color.a;
-            SetAlpha(background, 0f);
-        }
         
         if (text)
         {
@@ -92,6 +86,9 @@ public class TextParticleEffect : MonoBehaviour
         {
             _targetCamera = Camera.main;
         }
+        
+        simulationTextSfx?.Play(audioSource);
+        
     }
 
     // Method to set the next cycle time with randomness

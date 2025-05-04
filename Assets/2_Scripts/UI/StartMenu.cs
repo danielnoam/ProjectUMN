@@ -73,7 +73,7 @@ public class StartMenu : MonoBehaviour
 
     private IEnumerator StartGameRoutine()
     {
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(2.5f);
         TestManager.Instance.StartTest(0);
     }
 }

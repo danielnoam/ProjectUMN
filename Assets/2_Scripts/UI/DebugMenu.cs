@@ -48,7 +48,7 @@ public class DebugMenu : MonoBehaviour
             
             restartSimulationButton.onClick.AddListener(() =>
             {
-                TestManager.Instance.StartIntroSequence();
+                SceneManager.LoadScene(0);
             });
             
             loadTest0.onClick.AddListener(() =>
