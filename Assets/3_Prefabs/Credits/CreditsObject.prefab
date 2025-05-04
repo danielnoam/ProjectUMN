@@ -127,24 +127,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca5ec747f4ddaca4dbc35b9126d252aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoStart: 0
-  scrollSpeed: 0.5
-  scrollSpeedMultiplier: 3
+  startingOffset: {x: 0, y: -3, z: 0}
   spacing: 0.5
   categorySpacing: 1
-  scrollDirection: {x: 0, y: 1, z: 0}
-  startingOffset: {x: 0, y: -3, z: 0}
-  useDurationMode: 0
-  creditsDuration: 60
-  loopCredits: 1
-  loopDelay: 0
-  resetDistance: 30
-  fadeEnabled: 1
-  fadeSpeed: 5
-  minFadeDistance: 0
-  maxFadeDistance: 5
+  titleFontSizeMultiplier: 1.5
+  titleExtraSpacing: 3
+  attributionExtraSpacing: 2
   titleText: Credits
   attributionText: A game by Daniel Noam
+  attributionPauseDurationRatio: 0.1
   credits:
   - {fileID: 11400000, guid: 3fa7fab643c5e734087aea334283b4fa, type: 2}
   - {fileID: 11400000, guid: e103440d45949f444b28c5c995051f01, type: 2}
@@ -177,5 +168,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 454cd80b6234ed843a483178488b4593, type: 2}
   - {fileID: 11400000, guid: 2dec77f51387f96478834128068fe24f, type: 2}
   - {fileID: 11400000, guid: 39829551512b0c84cb48ed4f53c3187a, type: 2}
+  fadeEnabled: 1
+  fadeSpeed: 5
+  minFadeDistance: 0
+  maxFadeDistance: 5
+  useDurationMode: 0
+  creditsDuration: 60
+  autoStart: 0
+  sequenceEventTriggerThreshold: 0.2
+  onSequenceEventThresholdReached:
+    m_PersistentCalls:
+      m_Calls: []
   creditsTextPrefab: {fileID: 1036076733637116073, guid: 19ad47ff3ca4bd448a00d7871bb70e7e, type: 3}
   creditsHeaderPrefab: {fileID: 7305000563526641236, guid: 50ee7fb1c4b001e4ab015f80ab57763d, type: 3}

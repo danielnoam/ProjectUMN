@@ -1,12 +1,14 @@
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class DebugMenu : MonoBehaviour
 {
+
     [Header("Buttons")]
-    [SerializeField] private Button pauseMenuButton;
+    [SerializeField] private Button backMenuButton;
     [SerializeField] private Button toggleDebugMode;
     [SerializeField] private Button removeCurrentTestButton;
     [SerializeField] private Button restartSimulationButton;
@@ -22,11 +24,11 @@ public class DebugMenu : MonoBehaviour
     private void Start()
     {
         
-        if (pauseMenuButton)
+        if (backMenuButton)
         {
-            pauseMenuButton.onClick.AddListener(() =>
+            backMenuButton.onClick.AddListener(() =>
             {
-                player.InMenuState.SelectPage(player.InMenuState.PausePage);
+                player.InMenuState.SelectPage(player.InMenuState.PreviousPage);
             });
         }
         

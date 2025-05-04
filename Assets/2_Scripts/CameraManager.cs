@@ -47,6 +47,7 @@ public class CameraManager : MonoBehaviour
     private CinemachineThirdPersonFollow _startMenuCameraFollow;
     private CinemachineBasicMultiChannelPerlin _aimCameraNoise;
     private CinemachineBasicMultiChannelPerlin _freeLookCameraNoise;
+    private CinemachineBasicMultiChannelPerlin _introCameraNoise;
     private CinemachineSplineDolly _introCameraDolly;
     private PlayerStateMachine _player;
     private PlayerInputHandler _playerInputHandler;
@@ -65,6 +66,8 @@ public class CameraManager : MonoBehaviour
     private int _startMenuCameraPriority;
     private int _introCameraPriority;  
     private int _creditsCameraPriority;
+    private float _introCameraStartingNoiseAmplitude;
+    private float _introCameraStartingNoiseFrequency;
     
 
     private void Awake()
@@ -99,6 +102,9 @@ public class CameraManager : MonoBehaviour
         _menuCameraFollow = menuCamera.GetComponent<CinemachineThirdPersonFollow>();
         _startMenuCameraFollow = startMenuCamera.GetComponent<CinemachineThirdPersonFollow>();
         _introCameraDolly = introCamera.GetComponent<CinemachineSplineDolly>();
+        _introCameraNoise = introCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        _introCameraStartingNoiseAmplitude = _introCameraNoise.AmplitudeGain;
+        _introCameraStartingNoiseFrequency = _introCameraNoise.FrequencyGain;
     }
 
 
@@ -125,8 +131,14 @@ public class CameraManager : MonoBehaviour
     {
         if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
         {
+            // Set the camera position along the spline
             float easedPosition = introSequenceCameraCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
             _introCameraDolly.CameraPosition = easedPosition;
+            
+            // lower the noise amplitude and frequency until the end of the intro sequence
+            // then set it to 0
+            _introCameraNoise.AmplitudeGain = Mathf.MoveTowards(_introCameraStartingNoiseAmplitude, 0, _introCameraStartingNoiseAmplitude * easedPosition /3);
+            _introCameraNoise.FrequencyGain = Mathf.MoveTowards(_introCameraStartingNoiseFrequency, 0, _introCameraStartingNoiseFrequency * easedPosition/3);
         }
         else
         {
@@ -394,6 +406,7 @@ public class CameraManager : MonoBehaviour
         aimCamera.Priority = _aimCameraPriority;
         startMenuCamera.Priority = _startMenuCameraPriority;
         introCamera.Priority = _introCameraPriority;
+        creditsCamera.Priority = _creditsCameraPriority;
 
         _currentCamera = cam;
         cam.Priority = 10;
@@ -405,6 +418,8 @@ public class CameraManager : MonoBehaviour
     private void OnIntroSequenceStart()
     {
         _introCameraDolly.CameraPosition = 0;
+        _introCameraNoise.AmplitudeGain = _introCameraStartingNoiseAmplitude;
+        _introCameraNoise.FrequencyGain = _introCameraStartingNoiseFrequency;
         SwitchToCamera(introCamera, false);
     }
     

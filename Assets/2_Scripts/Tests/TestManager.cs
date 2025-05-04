@@ -6,7 +6,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -25,13 +24,13 @@ public class TestManager : MonoBehaviour
     [SerializeField] private SOAudioManager audioManager;
 
     [Header("Intro Sequence")] 
-    [SerializeField, Min(0)] private float introSequenceDuration = 10f;
+    [SerializeField, Min(0)] private float introSequenceDuration = 12f;
     [SerializeField] private SOTest introTest;
         
     [Header("Credits Sequence")] 
-    [SerializeField, Min(0)] private float creditsSequenceDuration = 40f;
-    [SerializeField] private SOTest creditsTest;
-    [SerializeField] private SOAudioEvent robotSfx;
+    [SerializeField, Min(0)] private float creditsSequenceDuration = 55f;
+    [SerializeField] private SOTest creditsTestEndGame;
+    [SerializeField] private SOTest creditsTestMainMenu;
     [Space(10)]
     
     [SerializeField] private SOTest[] tests;
@@ -70,7 +69,8 @@ public class TestManager : MonoBehaviour
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
     public SOTest IntroTest => introTest;
-    public SOTest CreditsTest => creditsTest;
+    public SOTest CreditsTestEndGame => creditsTestEndGame;
+    public SOTest CreditsTestMainMenu => creditsTestMainMenu;
     public SOTest DefaultTest => defaultTest;
     
     public SOAudioEvent CurrentTheme => currentTheme;
@@ -176,6 +176,11 @@ public class TestManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.KeypadPeriod))
         {
             StartClearTestSequence();
+        }
+        
+        if (Input.GetKeyDown(KeyCode.Keypad8))
+        {
+            StartCreditsSequence(false);
         }
         
         if (Input.GetKeyDown(KeyCode.Keypad9))
@@ -386,12 +391,12 @@ public class TestManager : MonoBehaviour
     #region Credits Sequence ----------------------------------------------------------------------------
     
     [Button]
-    public void StartCreditsSequence()
+    public void StartCreditsSequence(bool mainMenu)
     {
-        StartCoroutine(CreditsSequenceCoroutine());
+        StartCoroutine(CreditsSequenceCoroutine(mainMenu));
     }
     
-    private IEnumerator CreditsSequenceCoroutine()
+    private IEnumerator CreditsSequenceCoroutine(bool mainMenu)
     {
         bool fadeOutTimeReached = false;
         float fadeOutTime = creditsSequenceDuration * 0.1f;
@@ -402,7 +407,8 @@ public class TestManager : MonoBehaviour
             yield return UnLoadTest();
         }
         
-        StartCoroutine(LoadTest(creditsTest));
+        StartCoroutine(LoadTest(mainMenu ? creditsTestMainMenu : creditsTestEndGame));
+
         _creditsSequenceTime = creditsSequenceDuration;
         onCreditsSequenceStart?.Invoke();
         _testEffectsHandler.FadeScreen(false, 1f);
@@ -411,13 +417,10 @@ public class TestManager : MonoBehaviour
         
         while (_creditsSequenceTime > 0)
         {
-            // Check if we've reached 80% of the sequence
             if (_creditsSequenceTime <= fadeOutTime && !fadeOutTimeReached)
             {
                 fadeOutTimeReached = true;
-                // fade out the screen with the left time
                 _testEffectsHandler.FadeScreen(true, fadeOutTime * 1.5f);
-                robotSfx?.PlayAtPoint();
             }
             
             
@@ -673,7 +676,7 @@ public class TestManager : MonoBehaviour
                 string creditsInfo = IsCreditsSequenceActive ? $"Credits Sequence {_creditsSequenceTime:F0}/{CreditsSequenceDuration}" : "";
                 string introInfo = IsIntroSequenceActive ? $"Intro Sequence {_introSequenceTime:F0}/{IntroSequenceDuration}" : "";
             
-                debugTextBottomRight.text = $"Test: {currentTest}\n" +
+                debugTextBottomRight.text = $"Test: {currentTest.Name}\n" +
                                             $"{playerInfo}\n" +
                                             $"{robotInfo}\n" +
                                             $"{creditsInfo}\n" +

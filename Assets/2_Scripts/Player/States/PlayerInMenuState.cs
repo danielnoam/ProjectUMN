@@ -18,7 +18,17 @@ public class PlayerInMenuState : PlayerBaseState
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
         StateMachine.inputHandler.ConsumeToggleMenuBuffer();
-        SelectPage(PausePage);
+
+
+        if (StateMachine.TestManager && StateMachine.TestManager.CurrentTest == StateMachine.TestManager.IntroTest)
+        {
+            SelectPage(StartPage);
+        }
+        else
+        {
+            SelectPage(PausePage);
+        }
+
     }
     
     public override void ExitState()

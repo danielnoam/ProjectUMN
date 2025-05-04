@@ -1,137 +1,314 @@
-
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using VInspector;
 
 public class CreditsText : MonoBehaviour
 {
     [Header("Credits")]
-    [SerializeField] private string titleText = "Credits";
-    [SerializeField] private string attributionText = "A game by Daniel Noam";
-    [SerializeField] private SOCredit[] credits;
-    
-    
-    [Header("Settings")]
-    [SerializeField] private bool autoStart = true;
-    [SerializeField] private float scrollSpeed = 0.2f;
+    [SerializeField] private Vector3 startingOffset = Vector3.down; 
     [SerializeField, Min(0)] private float spacing = 0.5f;
     [SerializeField, Min(0)] private float categorySpacing = 1f;
-    [SerializeField] private Vector3 scrollDirection = Vector3.up;
-    [SerializeField] private Vector3 startingOffset = Vector3.down; 
-    
-    [Header("Duration")]
-    [SerializeField] private bool useDurationMode;
-    [SerializeField] private float creditsDuration = 60f;
+    [SerializeField] private float titleFontSizeMultiplier = 1.5f;
+    [SerializeField] private float titleExtraSpacing = 2f;
+    [SerializeField] private float attributionExtraSpacing = 2f;
+    [SerializeField] private string titleText = "Credits";
+    [SerializeField] private string attributionText = "A game by Daniel Noam";
     [SerializeField, Range(0.01f, 0.5f)] private float attributionPauseDurationRatio = 0.1f;
+    [SerializeField] private SOCredit[] credits;
     
     [Header("Fade")]
     [SerializeField] private bool fadeEnabled = true;
-    [SerializeField] private float fadeSpeed = 0.2f;
-    [SerializeField ,Tooltip("Distance where alpha = 1")] private float minFadeDistance; 
-    [SerializeField ,Tooltip("Distance where alpha = 0")] private float maxFadeDistance = 5f;
+    [SerializeField] private float fadeSpeed = 5f;
+    [SerializeField, Tooltip("Distance where alpha = 1")] private float minFadeDistance; 
+    [SerializeField, Tooltip("Distance where alpha = 0")] private float maxFadeDistance = 5f;
     
+    [Header("Duration")]
+    [SerializeField] private bool useDurationMode;
+    [ShowIf("useDurationMode")]
+    [SerializeField] private float creditsDuration = 60f;
+    [SerializeField] private bool autoStart = true;
+    [EndIf]
+    
+    [Header("Events")]
+    [SerializeField, Range(0.01f, 0.99f)] private float sequenceEventTriggerThreshold = 0.8f;
+    [SerializeField] private UnityEvent onSequenceEventThresholdReached = new UnityEvent();
     
     [Header("References")]
     [SerializeField] private TextMeshProUGUI creditsTextPrefab;
     [SerializeField] private TextMeshProUGUI creditsHeaderPrefab;
     
-    
     private readonly List<TextMeshProUGUI> _creditTexts = new List<TextMeshProUGUI>();
-    private bool _isPaused;
-    private Vector3 _normalizedDirection;
+    private readonly Vector3 _normalizedDirection = Vector3.up; // Fixed upward scrolling
     private TextMeshProUGUI _attributionTextObject;
     private bool _attributionReachedCenter;
     private float _creditsStartTime;
     private float _effectiveDuration;
+    private float _totalScrollDistance;
+    private bool _hasTriggeredSequenceEvent;
+    private float _calculatedScrollSpeed;
+    
     private float CurrentCreditsDuration
     {
         get
         {
-            float distance = CalculateTotalScrollDistance();
-            if (scrollSpeed <= 0f) return 0f;
-            return distance / scrollSpeed;
+            if (_calculatedScrollSpeed <= 0f) return 0f;
+            return _totalScrollDistance / _calculatedScrollSpeed;
         }
     }
 
-
     private void OnEnable()
     {
-        TestManager.Instance?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+        if (TestManager.Instance != null)
+        {
+            TestManager.Instance.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+        }
     }
     
     private void OnDisable()
     {
-        TestManager.Instance?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+        if (TestManager.Instance != null)
+        {
+            TestManager.Instance.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+        }
+    }
+    
+    private void OnCreditsSequenceStart()
+    {
+        // Restart the credits to sync with the sequence
+        CreateCreditsText();
+
+        // Use the duration from TestManager if available
+        if (TestManager.Instance != null && TestManager.Instance.CreditsSequenceDuration > 0f)
+        {
+            AdjustSpeedForDuration(TestManager.Instance.CreditsSequenceDuration);
+        }
+
+        // Reset flags
+        _attributionReachedCenter = false;
+        _hasTriggeredSequenceEvent = false;
+        _creditsStartTime = Time.time;
+        
+        Debug.Log("Credits sequence started");
     }
 
     private void Start()
     {
-        if (!creditsTextPrefab || !creditsHeaderPrefab || credits.Length == 0)
+        // Validate required components
+        if (!creditsTextPrefab || !creditsHeaderPrefab || credits == null || credits.Length == 0)
         {
             Debug.LogError("Credits system is missing required components!");
             return;
         }
         
-        // Normalize the direction vector
-        _normalizedDirection = scrollDirection.normalized;
-        
-        // Create all credit text objects
-        if (autoStart)
+        // If using duration mode, adjust the scroll speed and start the credits
+        if (useDurationMode && creditsDuration > 0f && autoStart)
         {
             CreateCreditsText();
-            
-            // If using duration mode, adjust the scroll speed
-            if (useDurationMode && creditsDuration > 0f)
-            {
-                AdjustSpeedForDuration(creditsDuration);
-                _creditsStartTime = Time.time;
-            }
+            AdjustSpeedForDuration(creditsDuration);
+            _creditsStartTime = Time.time;
         }
     }
     
     private void Update()
     {
-        if (_isPaused) return;
-        
-        // Check if we're in duration mode
+        // Check how we should update the credits movement
         if (useDurationMode)
         {
-            float elapsedTime = Time.time - _creditsStartTime;
-            
-            // If we've reached the end of the total duration
-            if (elapsedTime >= creditsDuration)
+            UpdateCreditsWithDurationMode();
+        }
+        else if (TestManager.Instance != null && TestManager.Instance.IsCreditsSequenceActive)
+        {
+            UpdateCreditsWithSequenceState();
+        }
+        
+        ApplyFadeEffect();
+    }
+    
+    private void UpdateCreditsWithDurationMode()
+    {
+        float elapsedTime = Time.time - _creditsStartTime;
+        
+        // If we've reached the end of the total duration
+        if (elapsedTime >= creditsDuration)
+        {
+            // Time is up, restart
+            RestartCredits();
+            return;
+        }
+        
+        // Calculate progress based on elapsed time
+        float progress = elapsedTime / creditsDuration;
+        
+        // Check if we've reached the custom threshold
+        if (progress >= sequenceEventTriggerThreshold && !_hasTriggeredSequenceEvent)
+        {
+            onSequenceEventThresholdReached?.Invoke();
+            _hasTriggeredSequenceEvent = true;
+        }
+        
+        UpdateCreditsPositioning(progress);
+    }
+    
+    private void UpdateCreditsWithSequenceState()
+    {
+        if (TestManager.Instance == null) return;
+        
+        // Convert sequence state (which goes from 1 to 0) to progress (0 to 1)
+        float progress = 1f - TestManager.Instance.CreditsSequenceState;
+        
+        // Check if we've reached the custom threshold
+        if (TestManager.Instance.CreditsSequenceState <= sequenceEventTriggerThreshold && !_hasTriggeredSequenceEvent)
+        {
+            // Fire the event when reaching the threshold
+            onSequenceEventThresholdReached?.Invoke();
+            _hasTriggeredSequenceEvent = true;
+        }
+        
+        UpdateCreditsPositioning(progress);
+    }
+    
+    // Unified method to handle credits positioning based on progress
+    private void UpdateCreditsPositioning(float progress)
+    {
+        // Calculate when to pause attribution text
+        float pauseStartRatio = 1 - attributionPauseDurationRatio;
+        
+        // Ensure we don't divide by zero
+        if (pauseStartRatio <= 0f)
+        {
+            pauseStartRatio = 0.01f;
+        }
+        
+        // If we've reached the pause point
+        if (progress >= pauseStartRatio)
+        {
+            // Position attribution text at center ONCE when we first reach this point
+            if (!_attributionReachedCenter)
             {
-                // Time is up, restart or handle as needed
-                RestartCredits();
-                return;
-            }
-            
-            // Calculate when we should pause the attribution text
-            float pauseStartTime = creditsDuration * (1 - attributionPauseDurationRatio);
-            
-            // Check if we should pause the attribution text
-            if (!_attributionReachedCenter && elapsedTime >= pauseStartTime)
-            {
-                // We've reached the time when the attribution should be at center
-                // Force it to the center position
                 PositionAttributionTextAtCenter();
                 _attributionReachedCenter = true;
+                Debug.Log($"Attribution reached center at progress: {progress}");
+            }
+            
+            // Keep all other credits in their positions at the pause point
+            // This prevents them from continuing to scroll off-screen
+            if (progress > pauseStartRatio)
+            {
+                // Don't move any further during pause phase
+                return;
             }
         }
         
-        MoveCredits();
-        ApplyFadeEffect();
-        CheckAttributionPosition();
+        // Scale progress to account for the pause ratio
+        float scaledProgress = Mathf.Min(progress / pauseStartRatio, 1.0f);
+        
+        // Move credits with scaled progress
+        MoveCreditsWithProgress(scaledProgress);
+    }
+    
+    private void MoveCreditsWithProgress(float progress)
+    {
+        // Clamp progress to 0-1 range
+        progress = Mathf.Clamp01(progress);
+
+        // The starting position for all texts
+        Vector3 basePosition = transform.position + startingOffset;
+        
+        // Get center position
+        Vector3 centerPosition = transform.position;
+
+        // Process each text element
+        for (int i = 0; i < _creditTexts.Count; i++)
+        {
+            TextMeshProUGUI text = _creditTexts[i];
+            if (text == null) continue;
+            
+            RectTransform textRT = text.GetComponent<RectTransform>();
+            if (textRT == null) continue;
+            
+            // Special handling for attribution text
+            if (text == _attributionTextObject)
+            {
+                // For the attribution text, we want to move it directly toward the center
+                // Calculate its target position (center)
+                Vector3 startPos = basePosition + new Vector3(0, -CalculateAttributionInitialOffset(), 0);
+                
+                // Lerp between start position and center position based on progress
+                Vector3 newPosition = Vector3.Lerp(startPos, centerPosition, progress);
+                
+                // Apply the new position
+                textRT.position = newPosition;
+                
+                // If we're at full progress, ensure it's exactly at center
+                if (progress >= 0.99f)
+                {
+                    textRT.position = centerPosition;
+                }
+            }
+            else
+            {
+                // For other texts, calculate standard scrolling positions
+                // Get the reversed index - this makes the first item (title) positioned on top
+                int reversedIndex = (_creditTexts.Count - 1) - i;
+                
+                // Calculate the offset based on index (vertical spacing)
+                float offsetDistance = reversedIndex * spacing;
+                
+                // Add extra spacing for the title (first element)
+                if (i == 0)
+                {
+                    offsetDistance += titleExtraSpacing * spacing;
+                }
+                
+                // Calculate the distance to move based on progress
+                float moveDistance = _totalScrollDistance * progress;
+                
+                // Set the new position
+                Vector3 newPosition = basePosition + (_normalizedDirection * (moveDistance - offsetDistance));
+                textRT.position = newPosition;
+            }
+        }
+    }
+    
+    // Helper method to calculate initial vertical offset for attribution text
+    private float CalculateAttributionInitialOffset()
+    {
+        float offset = 0f;
+        
+        // Count number of texts
+        int textCount = _creditTexts.Count;
+        
+        // Find attribution text index
+        int attributionIndex = -1;
+        for (int i = 0; i < textCount; i++)
+        {
+            if (_creditTexts[i] == _attributionTextObject)
+            {
+                attributionIndex = i;
+                break;
+            }
+        }
+        
+        if (attributionIndex >= 0)
+        {
+            // Get the reversed index - for positioning calculation
+            int reversedIndex = (textCount - 1) - attributionIndex;
+            
+            // Calculate offset based on position in the list
+            offset = reversedIndex * spacing + attributionExtraSpacing;
+        }
+        
+        return offset;
     }
     
     private void PositionAttributionTextAtCenter()
     {
-        if (_attributionTextObject == null)
-            return;
-            
+        if (_attributionTextObject == null) return;
+        
         RectTransform attributionRect = _attributionTextObject.GetComponent<RectTransform>();
-        if (attributionRect)
+        if (attributionRect != null)
         {
             // Set the attribution text exactly at the center
             attributionRect.position = transform.position;
@@ -141,51 +318,10 @@ public class CreditsText : MonoBehaviour
             textColor.a = 1.0f;
             _attributionTextObject.color = textColor;
             
-            _attributionReachedCenter = true;
             Debug.Log("Attribution text positioned at center");
         }
     }
-    
-    private void CheckAttributionPosition()
-    {
-        if (!_attributionTextObject || _attributionReachedCenter)
-            return;
-        
-        // Get the attribution text position and check if it's at the center
-        RectTransform attributionRect = _attributionTextObject.GetComponent<RectTransform>();
-        if (attributionRect)
-        {
-            // Calculate the distance between attribution text and the center on the scroll axis
-            float dotProduct = Vector3.Dot(attributionRect.position - transform.position, _normalizedDirection);
-            
-            // If attribution text is at or past the center (considering the direction)
-            if (Mathf.Abs(dotProduct) < 0.1f) // Small threshold for "center"
-            {
-                _attributionReachedCenter = true;
-            }
-        }
-    }
-    
-    private void OnCreditsSequenceStart()
-    {
-        // Set duration mode to true
-        useDurationMode = true;
-    
-        // Restart the credits
-        CreateCreditsText();
-    
-        // Use the duration from TestManager, not the local creditsDuration
-        if (useDurationMode && TestManager.Instance.CreditsSequenceDuration > 0f)
-        {
-            AdjustSpeedForDuration(TestManager.Instance.CreditsSequenceDuration);
-        }
-    
-        // Ensure credits are playing
-        _isPaused = false;
-        _attributionReachedCenter = false;
-        _creditsStartTime = Time.time;
-    }
-    
+
     private void CreateCreditsText()
     {
         // Clear any existing texts
@@ -197,43 +333,49 @@ public class CreditsText : MonoBehaviour
         _attributionReachedCenter = false;
         
         // Set initial position with the offset from transform's position
-        Vector3 currentPosition = transform.position + startingOffset;
+        Vector3 startPosition = transform.position + startingOffset;
         float currentYOffset = 0f;
         
-        // Add main title at the beginning
+        // We'll collect all text elements first, then add them in reverse order
+        List<TextMeshProUGUI> allTexts = new List<TextMeshProUGUI>();
+        
+        // Add main title first (but it will be added last to _creditTexts to appear at the top)
         TextMeshProUGUI mainTitle = Instantiate(creditsHeaderPrefab, transform);
         mainTitle.text = titleText;
-        mainTitle.fontSize *= 1.5f; // Make the font larger based on multiplier
+        mainTitle.fontSize *= titleFontSizeMultiplier;
         
-        // Position the main title with the current position
+        // Position the title
         RectTransform titleRect = mainTitle.GetComponent<RectTransform>();
-        titleRect.position = new Vector3(
-            currentPosition.x, 
-            currentPosition.y - currentYOffset,
-            currentPosition.z
-        );
-        
-        // Set initial alpha if fading is enabled
-        if (fadeEnabled)
+        if (titleRect != null)
         {
-            // Calculate the distance from center to determine initial alpha
-            float distance = Vector3.Distance(titleRect.position, transform.position);
-            float alpha = CalculateAlphaFromDistance(distance);
+            titleRect.position = new Vector3(
+                startPosition.x, 
+                startPosition.y - currentYOffset,
+                startPosition.z
+            );
             
-            Color textColor = mainTitle.color;
-            textColor.a = alpha;
-            mainTitle.color = textColor;
+            // Set initial alpha if fading is enabled
+            if (fadeEnabled)
+            {
+                float distance = Vector3.Distance(titleRect.position, transform.position);
+                float alpha = CalculateAlphaFromDistance(distance);
+                
+                Color textColor = mainTitle.color;
+                textColor.a = alpha;
+                mainTitle.color = textColor;
+            }
         }
         
-        currentYOffset += spacing * 2; // Add extra spacing after main title
-        
-        _creditTexts.Add(mainTitle);
+        currentYOffset += spacing * titleExtraSpacing;
+        allTexts.Add(mainTitle);
         
         // Group credits by category
         Dictionary<CreditsCategories, List<SOCredit>> groupedCredits = new Dictionary<CreditsCategories, List<SOCredit>>();
         
         foreach (SOCredit credit in credits)
         {
+            if (credit == null) continue;
+            
             if (!groupedCredits.ContainsKey(credit.CreditCategory))
             {
                 groupedCredits[credit.CreditCategory] = new List<SOCredit>();
@@ -249,29 +391,30 @@ public class CreditsText : MonoBehaviour
             TextMeshProUGUI categoryHeader = Instantiate(creditsHeaderPrefab, transform);
             categoryHeader.text = category.ToString().ToUpper();
             
-            // Position the category header with the current position
+            // Position the category header
             RectTransform headerRect = categoryHeader.GetComponent<RectTransform>();
-            headerRect.position = new Vector3(
-                currentPosition.x, 
-                currentPosition.y - currentYOffset,
-                currentPosition.z
-            );
-            
-            // Set initial alpha if fading is enabled
-            if (fadeEnabled)
+            if (headerRect != null)
             {
-                // Calculate the distance from center to determine initial alpha
-                float distance = Vector3.Distance(headerRect.position, transform.position);
-                float alpha = CalculateAlphaFromDistance(distance);
+                headerRect.position = new Vector3(
+                    startPosition.x, 
+                    startPosition.y - currentYOffset,
+                    startPosition.z
+                );
                 
-                Color textColor = categoryHeader.color;
-                textColor.a = alpha;
-                categoryHeader.color = textColor;
+                // Set initial alpha if fading is enabled
+                if (fadeEnabled)
+                {
+                    float distance = Vector3.Distance(headerRect.position, transform.position);
+                    float alpha = CalculateAlphaFromDistance(distance);
+                    
+                    Color textColor = categoryHeader.color;
+                    textColor.a = alpha;
+                    categoryHeader.color = textColor;
+                }
             }
             
             currentYOffset += spacing;
-            
-            _creditTexts.Add(categoryHeader);
+            allTexts.Add(categoryHeader);
             
             // Add all credits in this category
             foreach (SOCredit credit in groupedCredits[category])
@@ -279,81 +422,78 @@ public class CreditsText : MonoBehaviour
                 TextMeshProUGUI creditText = Instantiate(creditsTextPrefab, transform);
                 creditText.text = credit.CreditString;
                 
-                // Position the credit text with the current position
+                // Position the credit text
                 RectTransform textRect = creditText.GetComponent<RectTransform>();
-                textRect.position = new Vector3(
-                    currentPosition.x, 
-                    currentPosition.y - currentYOffset,
-                    currentPosition.z
-                );
-                
-                // Set initial alpha if fading is enabled
-                if (fadeEnabled)
+                if (textRect != null)
                 {
-                    // Calculate the distance from center to determine initial alpha
-                    float distance = Vector3.Distance(textRect.position, transform.position);
-                    float alpha = CalculateAlphaFromDistance(distance);
+                    textRect.position = new Vector3(
+                        startPosition.x, 
+                        startPosition.y - currentYOffset,
+                        startPosition.z
+                    );
                     
-                    Color textColor = creditText.color;
-                    textColor.a = alpha;
-                    creditText.color = textColor;
+                    // Set initial alpha if fading is enabled
+                    if (fadeEnabled)
+                    {
+                        float distance = Vector3.Distance(textRect.position, transform.position);
+                        float alpha = CalculateAlphaFromDistance(distance);
+                        
+                        Color textColor = creditText.color;
+                        textColor.a = alpha;
+                        creditText.color = textColor;
+                    }
                 }
                 
                 currentYOffset += spacing;
-                
-                _creditTexts.Add(creditText);
+                allTexts.Add(creditText);
             }
             
             // Add extra spacing between categories
             currentYOffset += categorySpacing;
         }
         
-        // Add attribution text at the end with extra spacing
+        // Add attribution text at the end
         TextMeshProUGUI gameByText = Instantiate(creditsTextPrefab, transform);
         gameByText.text = attributionText;
-        _attributionTextObject = gameByText; // Store reference to the attribution text object
+        _attributionTextObject = gameByText;
         
         // Position with extra spacing
         RectTransform gameByRect = gameByText.GetComponent<RectTransform>();
-        currentYOffset += spacing * 2; // Apply the requested extra spacing
-        
-        gameByRect.position = new Vector3(
-            currentPosition.x, 
-            currentPosition.y - currentYOffset,
-            currentPosition.z
-        );
-        
-        // Set initial alpha if fading is enabled
-        if (fadeEnabled)
+        if (gameByRect != null)
         {
-            // Calculate the distance from center to determine initial alpha
-            float distance = Vector3.Distance(gameByRect.position, transform.position);
-            float alpha = CalculateAlphaFromDistance(distance);
+            currentYOffset += attributionExtraSpacing;
             
-            Color textColor = gameByText.color;
-            textColor.a = alpha;
-            gameByText.color = textColor;
+            gameByRect.position = new Vector3(
+                startPosition.x, 
+                startPosition.y - currentYOffset,
+                startPosition.z
+            );
+            
+            // Set initial alpha if fading is enabled
+            if (fadeEnabled)
+            {
+                float distance = Vector3.Distance(gameByRect.position, transform.position);
+                float alpha = CalculateAlphaFromDistance(distance);
+                
+                Color textColor = gameByText.color;
+                textColor.a = alpha;
+                gameByText.color = textColor;
+            }
         }
         
-        _creditTexts.Add(gameByText);
-    }
-    
-    private void MoveCredits()
-    {
-        foreach (var text in _creditTexts)
+        allTexts.Add(gameByText);
+        
+        // Now, add all texts to _creditTexts in REVERSE order
+        // This will make the attribution appear at the bottom and the title at the top
+        for (int i = allTexts.Count - 1; i >= 0; i--)
         {
-            if (!text) continue;
-            
-            RectTransform textRT = text.GetComponent<RectTransform>();
-            if (!textRT) continue;
-            
-            // If this is the attribution text, and it has reached the center, don't move it
-            if (_attributionReachedCenter && text == _attributionTextObject)
-                continue;
-            
-            Vector3 newPosition = textRT.position + _normalizedDirection * (scrollSpeed * Time.deltaTime);
-            textRT.position = newPosition;
+            _creditTexts.Add(allTexts[i]);
         }
+        
+        // Calculate total scroll distance
+        _totalScrollDistance = CalculateTotalScrollDistance();
+        
+        Debug.Log($"Created {_creditTexts.Count} credit texts with total scroll distance: {_totalScrollDistance}");
     }
     
     private void ApplyFadeEffect()
@@ -362,15 +502,15 @@ public class CreditsText : MonoBehaviour
         
         foreach (TextMeshProUGUI text in _creditTexts)
         {
-            if (!text) continue;
+            if (text == null) continue;
             
             RectTransform textRT = text.GetComponent<RectTransform>();
-            if (!textRT) continue;
+            if (textRT == null) continue;
             
             // Calculate absolute distance from center
             float distance = Vector3.Distance(textRT.position, transform.position);
             
-            // Calculate alpha based on distance using our helper function
+            // Calculate alpha based on distance
             float alpha = CalculateAlphaFromDistance(distance);
             
             // If this is the attribution text, and it has reached center, keep it fully visible
@@ -404,35 +544,28 @@ public class CreditsText : MonoBehaviour
         }
     }
     
-    // Calculate the total distance the credits need to travel
+    // Calculate the total distance for credits scrolling
     private float CalculateTotalScrollDistance()
     {
-        if (_creditTexts.Count == 0)
+        // Focus on calculating the distance needed for attribution text to reach center
+        if (_attributionTextObject == null)
         {
-            return 0f;
+            Debug.LogError("Attribution text is null! Cannot calculate distance.");
+            return 10f; // Default fallback
         }
         
-        // Get first and last credit positions
-        Vector3 firstPosition = _creditTexts[0].transform.position;
-        Vector3 lastPosition = _creditTexts[^1].transform.position;
+        Vector3 attributionStartPos = _attributionTextObject.transform.position;
+        Vector3 centerPos = transform.position;
         
-        // Add the height of the last credit to ensure it scrolls completely off-screen
-        if (_creditTexts[^1].TryGetComponent<RectTransform>(out RectTransform lastRect))
-        {
-            lastPosition += _normalizedDirection * lastRect.rect.height;
-        }
+        // Calculate direct distance from attribution text to center
+        float attributionToCenterDistance = Vector3.Distance(attributionStartPos, centerPos);
         
-        // Calculate the position where the last credit should end (the center position plus max fade distance)
-        Vector3 endPosition = transform.position + (_normalizedDirection * maxFadeDistance);
+        Debug.Log($"Attribution text distance to center: {attributionToCenterDistance}");
         
-        // Calculate total distance: from first credit to the point where last credit is fully offscreen
-        float totalDistance = Vector3.Distance(firstPosition, endPosition) + 
-                              Vector3.Distance(lastPosition, firstPosition);
-        
-        return totalDistance;
+        return attributionToCenterDistance;
     }
     
-    // Adjust the scroll speed based on the desired duration
+    // Adjust the speed for duration calculation
     private void AdjustSpeedForDuration(float durationInSeconds)
     {
         if (durationInSeconds <= 0f)
@@ -441,19 +574,32 @@ public class CreditsText : MonoBehaviour
             return;
         }
         
-        // Account for the attribution pause time when calculating speed
-        // We want the credits to reach their final positions after (1-attributionPauseDurationRatio) of the total time
-        _effectiveDuration = durationInSeconds * (1 - attributionPauseDurationRatio);
+        // Protect against potential division by zero
+        float pauseRatio = Mathf.Clamp01(attributionPauseDurationRatio);
+        if (pauseRatio >= 0.99f)
+        {
+            pauseRatio = 0.99f;
+        }
         
-        float totalDistance = CalculateTotalScrollDistance();
+        // Calculate the actual scrolling time (excluding pause time)
+        float activeScrollTime = durationInSeconds * (1f - pauseRatio);
         
-        // Calculate the required speed based on the distance and effective duration
-        float requiredSpeed = totalDistance / _effectiveDuration;
+        // Get the distance from attribution text to center
+        float attributionDistance = CalculateTotalScrollDistance();
+        _totalScrollDistance = attributionDistance;
         
-        // Set the scroll speed
-        scrollSpeed = requiredSpeed;
+        // Ensure we don't divide by zero
+        if (activeScrollTime <= 0.01f)
+        {
+            activeScrollTime = 0.01f;
+        }
+        
+        // Calculate the required speed to have attribution text reach center at right time
+        _calculatedScrollSpeed = attributionDistance / activeScrollTime;
+        _effectiveDuration = durationInSeconds; // Store the full duration including pause
+        
+        Debug.Log($"Adjusted scroll speed: {_calculatedScrollSpeed} units/sec for duration: {durationInSeconds}s (active scroll: {activeScrollTime}s)");
     }
-    
     
     [Button]
     private void RestartCredits()
@@ -467,28 +613,20 @@ public class CreditsText : MonoBehaviour
             AdjustSpeedForDuration(creditsDuration);
         }
         
-        // Reset the attribution position flag
+        // Reset flags
         _attributionReachedCenter = false;
+        _hasTriggeredSequenceEvent = false;
         
         // Record the start time
         _creditsStartTime = Time.time;
         
-        // Ensure credits are playing
-        _isPaused = false;
+        Debug.Log("Credits restarted");
     }
-    
-    [Button]
-    private void TogglePause()
-    {
-        _isPaused = !_isPaused;
-    }
-    
     
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (!fadeEnabled)
-            return;
+        if (!fadeEnabled) return;
             
         // Define colors for visualization
         Color minFadeColor = new Color(0, 1, 0, 0.8f);    // Green - full visibility
@@ -506,10 +644,10 @@ public class CreditsText : MonoBehaviour
         Gizmos.color = maxFadeColor;
         DrawCircle(center, maxFadeDistance, 32);
         
-        
         // Draw start position
         Gizmos.color = startPositionColor;
         DrawCircle(center + startingOffset, 0.5f, 32);
+        
         
         // Draw labels
         DrawLabel(center + new Vector3(0, minFadeDistance, 0), "Min Fade (α=1)");

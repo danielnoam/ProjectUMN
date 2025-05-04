@@ -694,7 +694,7 @@ public class TestEnvironmentAnimator : MonoBehaviour
         return _testManager &&
                _testManager.Player &&
                _testManager.CurrentTest != _testManager.IntroTest &&
-               _testManager.CurrentTest != _testManager.CreditsTest &&
+               _testManager.CurrentTest != _testManager.CreditsTestEndGame &&
                !_testManager.IsIntroSequenceActive &&
                !_testManager.IsCreditsSequenceActive;
     }

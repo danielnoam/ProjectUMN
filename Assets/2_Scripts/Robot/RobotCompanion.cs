@@ -269,13 +269,14 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    private void OnTestLoaded(SOTest test)
    {
        _player = TestManager.Instance.Player;
-       _playerFollowPosition = _player.transform.GetChild(1);
-       _playerAimingFollowPosition = _player.transform.GetChild(2);
-
-       if (IsOn() && _player)
+       if (_player)
        {
-           CommandFollowPlayer();
+           _playerFollowPosition = _player.transform.GetChild(1);
+           _playerAimingFollowPosition = _player.transform.GetChild(2);
        }
+       
+        CommandFollowPlayer();
+
    }
    
    private void OnPlayerSpawned(ISpawnPoint spawnPoint = null)
@@ -1299,12 +1300,14 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
             if (_debugText)
             {
             
+                string distanceToPlayer = _player ? $"Distance to Player: {Vector3.Distance(transform.position, _player.transform.position):F2} / {maxFollowTeleportDistance}\n": "No Player";
+                
                 _debugText.text = $"State: {CurrentState}\n" +
                                   $"Battery: {currentBattery}\n" +
                                   $"Velocity: {_rigidBody.linearVelocity}\n" +
                                   $"Target: {_target}\n" +
                                   $"Stuck Timer: {_stuckTimer:F2} / {teleportAfterStuckTime}\n" +
-                                  $"Distance to Player: {Vector3.Distance(transform.position, _player.transform.position):F2} / {maxFollowTeleportDistance}\n"
+                                  $"Distance to Player: {distanceToPlayer}\n"
                           ;
             }
         }
