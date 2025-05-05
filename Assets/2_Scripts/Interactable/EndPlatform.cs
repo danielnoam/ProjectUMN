@@ -14,7 +14,8 @@ public class EndPlatform : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private Light pointLight;
     [SerializeField] private Transform endPoint;
-    [SerializeField] private ParticleSystem[] particleSystems;
+    [SerializeField] private ParticleSystem[] activateEffects;
+    [SerializeField] private ParticleSystem[] loopingEffects;
     
     private TestManager _testManager;
     private float _lightIntensity;
@@ -59,7 +60,6 @@ public class EndPlatform : MonoBehaviour
             if (startCreditsSequence)
             {
                 _testManager.StartCreditsSequence(false);
-                _testManager.OnGameCompleted();
             }
             else
             {
@@ -77,8 +77,12 @@ public class EndPlatform : MonoBehaviour
         {
             audioSource?.Play();
             
+            foreach (var particle in activateEffects)
+            {
+                particle?.Play();
+            }
             
-            foreach (var particle in particleSystems)
+            foreach (var particle in loopingEffects)
             {
                 particle?.Play();
             }
@@ -87,7 +91,7 @@ public class EndPlatform : MonoBehaviour
         {
             audioSource?.Stop();
             
-            foreach (var particle in particleSystems)
+            foreach (var particle in loopingEffects)
             {
                 particle?.Stop();
             }

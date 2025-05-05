@@ -38,7 +38,13 @@ public class TestClosingWalls : MonoBehaviour
     [SerializeField] private float openingEndDelay = 0f;
     [SerializeField] private float openingTime = 2f;
     [SerializeField] private Ease openingEase = Ease.Linear;
-    [SerializeField] private UnityEvent openingEvent = new UnityEvent();
+    [SerializeField] private UnityEvent openingStartEvent = new UnityEvent();
+    [SerializeField] private UnityEvent openingEndEvent = new UnityEvent();
+    [EndFoldout]
+    
+    
+    [Foldout("Mechanism Disabled")]
+    [SerializeField] private UnityEvent mechanismDisabledEvent = new UnityEvent();
     [EndFoldout]
     
     [Foldout("Left Walls")]
@@ -54,6 +60,7 @@ public class TestClosingWalls : MonoBehaviour
     [EndFoldout]
     
     [Header("Debug")]
+    [SerializeField, ReadOnly] private bool isOpen = true;
     [SerializeField, ReadOnly] private bool isSemiClosed;
     [SerializeField, ReadOnly] private bool isClosed;
     
@@ -136,6 +143,7 @@ public class TestClosingWalls : MonoBehaviour
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
             
+        isOpen = !closed;
         isClosed = closed;
         isSemiClosed = closed;
         
@@ -183,11 +191,11 @@ public class TestClosingWalls : MonoBehaviour
         }
     }
     
-    private void OpenWalls()
+    public void DisableMechanism()
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
             
-        if (!isClosed) return;
+        if (isOpen) return;
         
         if (_animationSequence.isAlive) 
         {
@@ -198,8 +206,8 @@ public class TestClosingWalls : MonoBehaviour
         _animationSequence = Sequence.Create();
 
         _animationSequence = _animationSequence
-            .ChainCallback(() => { Debug.Log("Opening"); })
-            .ChainCallback(() => { openingEvent?.Invoke(); });
+            .ChainCallback(() => { Debug.Log("Disabling"); });
+        
 
         // Animate all left walls
         for (int i = 0; i < leftWalls.Count; i++)
@@ -227,6 +235,59 @@ public class TestClosingWalls : MonoBehaviour
         }
 
         _animationSequence = _animationSequence
+            .ChainCallback(() => { mechanismDisabledEvent?.Invoke(); })
+            .ChainCallback(() => isOpen = true)
+            .ChainCallback(() => isSemiClosed = false)
+            .ChainCallback(() => isClosed = false);
+    }
+    
+    private void OpenWalls()
+    {
+        if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
+            
+        if (isOpen) return;
+        
+        if (_animationSequence.isAlive) 
+        {
+            _animationSequence.Stop();
+        }
+        
+        var tweenSettings = new TweenSettings(openingTime, openingEase, startDelay: openingStartDelay, endDelay: openingEndDelay);
+        _animationSequence = Sequence.Create();
+
+        _animationSequence = _animationSequence
+            .ChainCallback(() => { Debug.Log("Opening"); })
+            .ChainCallback(() => { openingStartEvent?.Invoke(); });
+        
+
+        // Animate all left walls
+        for (int i = 0; i < leftWalls.Count; i++)
+        {
+            if (leftWalls[i] != null && i < _openedPosL.Count)
+            {
+                if (i == 0)
+                {
+                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+                }
+                else
+                {
+                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+                }
+            }
+        }
+
+        // Animate all right walls
+        for (int i = 0; i < rightWalls.Count; i++)
+        {
+            if (rightWalls[i] != null && i < _openedPosR.Count)
+            {
+                _animationSequence = _animationSequence.Group(Tween.LocalPosition(rightWalls[i], _openedPosR[i], tweenSettings));
+            }
+        }
+
+        _animationSequence = _animationSequence
+            .ChainCallback(() => { openingStartEvent?.Invoke(); })
+            .ChainCallback(() => isOpen = true)
             .ChainCallback(() => isSemiClosed = false)
             .ChainCallback(() => isClosed = false);
     }
@@ -235,11 +296,10 @@ public class TestClosingWalls : MonoBehaviour
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
         
-        if (isClosed) return;
 
         if (_animationSequence.isAlive) 
         {
-            _animationSequence.Stop();
+            return;
         }
         
         _animationSequence = Sequence.Create();
@@ -248,6 +308,7 @@ public class TestClosingWalls : MonoBehaviour
 
         _animationSequence = _animationSequence
             // Part 1: Initial shake
+            .ChainCallback(() => { isOpen = false; })
             .ChainCallback(() => { Debug.Log("Initial Shake"); })
             .ChainCallback(() => { initialShakeEvent?.Invoke(); });
         

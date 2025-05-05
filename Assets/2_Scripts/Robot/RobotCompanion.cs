@@ -155,6 +155,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     
     
     [Foldout("References")]
+    [SerializeField] private GameObject lightDissolver;
     [SerializeField] private GameObject eye;
     [SerializeField] private Light eyeLight;
     [SerializeField] private Light eyeAreaLight;
@@ -201,6 +202,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     public RobotState CurrentState => currentState;
     public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
     public Interactable CurrentInteractable { get; private set;}
+    public GameObject LightDissolver => lightDissolver;
 
    private void Awake()
    {

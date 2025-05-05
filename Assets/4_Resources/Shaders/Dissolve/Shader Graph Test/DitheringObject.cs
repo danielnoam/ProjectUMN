@@ -4,24 +4,60 @@ using UnityEngine;
 public class DitheringObject : MonoBehaviour
 {
     [Header("Settings")]
-    [SerializeField] private bool subscribeToPlayer = true;
+    [SerializeField] private SubscribeTo subscribeTo = SubscribeTo.Player;
     
+    private enum SubscribeTo { None, Player, Robot, RobotLight, }
+    private bool SubscribeToNone => subscribeTo == SubscribeTo.None;
     private Transform _target;
     private static readonly int PositionID = Shader.PropertyToID("_Dither_Object_Position");
 
     
     private void Start()
     {
-        if (!PlayerStateMachine.Instance || !subscribeToPlayer) return;
-        
-        _target = PlayerStateMachine.Instance.transform;
+        if (SubscribeToNone) return;
+
+        switch (subscribeTo)
+        {
+            case SubscribeTo.Robot:
+                if (!TestManager.Instance || !TestManager.Instance.Robot) return;
+                _target = TestManager.Instance.Robot.transform;
+                break;
+            case SubscribeTo.RobotLight:
+                if (!TestManager.Instance || !TestManager.Instance.Robot) return;
+                
+                _target = TestManager.Instance.Robot.LightDissolver.transform;;
+                break;
+            case SubscribeTo.Player:
+                
+                if (!PlayerStateMachine.Instance) return;
+                
+                _target = PlayerStateMachine.Instance.transform;
+                break;
+        }
     }
     
     private void OnEnable()
     {
-        if (!PlayerStateMachine.Instance || !subscribeToPlayer) return;
+        if (SubscribeToNone) return;
         
-        _target = PlayerStateMachine.Instance.transform;
+        switch (subscribeTo)
+        {
+            case SubscribeTo.Robot:
+                if (!TestManager.Instance || !TestManager.Instance.Robot) return;
+                _target = TestManager.Instance.Robot.transform;
+                break;
+            case SubscribeTo.RobotLight:
+                if (!TestManager.Instance || !TestManager.Instance.Robot) return;
+                
+                _target = TestManager.Instance.Robot.LightDissolver.transform;;
+                break;
+            case SubscribeTo.Player:
+                
+                if (!PlayerStateMachine.Instance) return;
+                
+                _target = PlayerStateMachine.Instance.transform;
+                break;
+        }
     }
     
     private void OnDisable()

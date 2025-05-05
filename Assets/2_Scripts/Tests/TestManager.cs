@@ -395,6 +395,8 @@ public class TestManager : MonoBehaviour
     public void StartCreditsSequence(bool mainMenu)
     {
         StartCoroutine(CreditsSequenceCoroutine(mainMenu));
+        
+        if (!mainMenu) CompleteGame();
     }
     
     private IEnumerator CreditsSequenceCoroutine(bool mainMenu)
@@ -646,7 +648,7 @@ public class TestManager : MonoBehaviour
         SaveManager.SaveFloat("playerDeaths", _playerDeaths);
     }
     
-    public void OnGameCompleted()
+    private void CompleteGame()
     {
         _gameCompleted += 1;
         SaveManager.SaveInt("gameCompleted", _gameCompleted);
