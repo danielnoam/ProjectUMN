@@ -2,6 +2,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -156,7 +157,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     
     [Foldout("References")]
     [SerializeField] private GameObject lightDissolver;
-    [SerializeField] private GameObject eye;
+    [FormerlySerializedAs("eye")] [SerializeField] private Renderer eyeRend;
     [SerializeField] private Light eyeLight;
     [SerializeField] private Light eyeAreaLight;
     [SerializeField] private Transform leftEarPivot;
@@ -180,6 +181,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     private Transform _playerAimingFollowPosition;
     private Transform _target;
     private TextMeshProUGUI _debugText;
+    private Material _eyeMaterial;
+    private Color _defaultEmissionColor;
+    private float _emissionIntensity;
+    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
     private RobotState _previousState;
     private float _lastHeightAdjustmentTime;
     private float _lastTargetHeight;
@@ -219,6 +224,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        }
        currentBattery = fullBattery;
        _previousState = currentState;
+
+       InitializeMaterial();
    }
 
    private void Start()
@@ -402,7 +409,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        sfxTurnOff?.Play(_audioSource);
        currentState = RobotState.Off;
        _rigidBody.useGravity = true;
-       eye.gameObject.SetActive(false);
+       eyeRend.gameObject.SetActive(false);
+       UpdateEmissionState();
    }
 
    [Button]
@@ -414,7 +422,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        sfxTurnOn?.Play(_audioSource);
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = false;
-       eye.gameObject.SetActive(true);
+       eyeRend.gameObject.SetActive(true);
+       UpdateEmissionState();
    }
 
    [Button]
@@ -427,7 +436,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        onRobotDeath?.Invoke();
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = true;
-       eye.gameObject.SetActive(false);
+       eyeRend.gameObject.SetActive(false);
    }
 
    public void Respawn()
@@ -1315,10 +1324,64 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         }
 
     }
+    
+
    
 
    #endregion Utility ------------------------------------------------------------------------
    
+   
+       private void InitializeMaterial()
+    {
+        // Create a material instance to avoid changing the shared material
+        _eyeMaterial = new Material(eyeRend.material);
+        eyeRend.material = _eyeMaterial;
+        
+        // Check if the emission properties exist in the material
+        if (!_eyeMaterial.HasProperty(EmissionColor))
+        {
+            Debug.LogWarning($"Material on {gameObject.name} does not have required emission properties { EmissionColor}");
+            return;
+        }
+        
+        // Enable emission on the material
+        _eyeMaterial.EnableKeyword("_Emission");
+        
+        // Get the existing emission color from the material
+        _defaultEmissionColor = _eyeMaterial.GetColor(EmissionColor);
+        
+        // Calculate the emission intensity from the brightest component
+        _emissionIntensity = Mathf.Max(_defaultEmissionColor.r, _defaultEmissionColor.g, _defaultEmissionColor.b);
+        
+        // Normalize the color if it has intensity
+        if (_emissionIntensity > 0)
+        {
+            _defaultEmissionColor /= _emissionIntensity;
+        }
+        else
+        {
+            // Default to white if there's no emission
+            _defaultEmissionColor = Color.white;
+            _emissionIntensity = 1.0f;
+        }
+        
+        // Initialize the material with the appropriate state
+        UpdateEmissionState();
+    }
+    
+    private void UpdateEmissionState()
+    {
+        if (IsOn())
+        {
+            // Set the emission color to the default color
+            _eyeMaterial.SetColor(EmissionColor, _defaultEmissionColor * (_emissionIntensity * 1));
+        }
+        else
+        {
+            // Set the emission color to black (off)
+            _eyeMaterial.SetColor(EmissionColor, Color.black);
+        }
+    }
    
    #region Gizmos ------------------------------------------------------------------------
 

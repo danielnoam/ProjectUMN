@@ -741,11 +741,11 @@
     "m_Guid": {
         "m_GuidSerialized": "b4f2817c-38b4-4da7-b7d3-8cf9257b9b5f"
     },
-    "m_Name": "Emission",
+    "m_Name": "Emission Color",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Emission",
-    "m_DefaultReferenceName": "_Emission",
-    "m_OverrideReferenceName": "",
+    "m_RefNameGeneratedByDisplayName": "Emission Color",
+    "m_DefaultReferenceName": "_Emission_Color",
+    "m_OverrideReferenceName": "_EmissionColor",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
@@ -1036,7 +1036,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "59349f56eedf4edfa76f9f10ed0493a6",
     "m_Id": 0,
-    "m_DisplayName": "Emission",
+    "m_DisplayName": "Emission Color",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -1172,6 +1172,29 @@
         "y": 0.0,
         "z": 0.0,
         "w": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
+    "m_ObjectId": "674f6384b8d9445e9e0f7e5eca209c22",
+    "m_Id": 469267200,
+    "m_DisplayName": "World Position",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "_World_Position",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
     },
     "m_Labels": []
 }
@@ -1525,6 +1548,29 @@
     "m_Property": {
         "m_Id": "02225695bf4b45b1a6fa3549452596c8"
     }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
+    "m_ObjectId": "80a9906e489243ddbc31cc65b0b46c52",
+    "m_Id": -2127589700,
+    "m_DisplayName": "Object Position",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "_Object_Position",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "m_Labels": []
 }
 
 {
@@ -2471,6 +2517,12 @@
             "m_Id": "36a27592355e49c88f9c817e684a1652"
         },
         {
+            "m_Id": "674f6384b8d9445e9e0f7e5eca209c22"
+        },
+        {
+            "m_Id": "80a9906e489243ddbc31cc65b0b46c52"
+        },
+        {
             "m_Id": "a940eefadd704cb28b23edd354e13b37"
         }
     ],
@@ -2484,13 +2536,21 @@
     },
     "m_SerializedSubGraph": "{\n    \"subGraph\": {\n        \"fileID\": -5475051401550479605,\n        \"guid\": \"1bfc1d1e1d3ffad4cb1f4bd7757b694e\",\n        \"type\": 3\n    }\n}",
     "m_PropertyGuids": [
-        "7fa573b7-67e4-4937-ad76-6c8e85c087d6"
+        "7fa573b7-67e4-4937-ad76-6c8e85c087d6",
+        "aa8e92a0-7152-43eb-a8bd-a5ad5a2d385f",
+        "7466bd1c-84fb-4278-bde4-e074e653d1c3"
     ],
     "m_PropertyIds": [
-        1853465211
+        1853465211,
+        469267200,
+        -2127589700
     ],
-    "m_Dropdowns": [],
-    "m_DropdownSelectedEntries": []
+    "m_Dropdowns": [
+        "_Dropdown"
+    ],
+    "m_DropdownSelectedEntries": [
+        "Camera"
+    ]
 }
 
 {

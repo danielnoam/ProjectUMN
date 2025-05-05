@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using VInspector;
 using PrimeTween;
-
+using Shapes;
 
 
 [SelectionBase]
@@ -18,6 +20,7 @@ public class TouchPanel : MonoBehaviour
     [Header("Panel Feedback")]
     [SerializeField] private SOAudioEvent sfxPanelPress;
     [SerializeField] private Renderer panelRenderer;
+    [SerializeField] private ShapeGroup shapeGroup;
     [SerializeField] private Color punchEmissionColor = Color.white;
     [SerializeField] private float punchDuration = 0.5f;
     [SerializeField] private Cable[] connectedCables;
@@ -31,10 +34,23 @@ public class TouchPanel : MonoBehaviour
     private AudioSource _audioSource;
     private Material _panelMaterial;
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+    private readonly Dictionary<ShapeRenderer, Color> _shapeColors = new Dictionary<ShapeRenderer, Color>();
 
     private void Awake()
     {
         _audioSource = GetComponent<AudioSource>();
+        if (shapeGroup)
+        {
+            foreach (var shapeRenderer in shapeGroup.GetComponentsInChildren<ShapeRenderer>())
+            {
+                if (shapeRenderer)
+                {
+                    _shapeColors[shapeRenderer] = shapeRenderer.Color;
+                    shapeRenderer.Color = Color.clear;
+                }
+            }
+            
+        }
         
         // Get the material from the panel renderer
         if (panelRenderer)
@@ -92,6 +108,36 @@ public class TouchPanel : MonoBehaviour
                     ease: Ease.InOutQuad,
                     onValueChange: newColor => _panelMaterial.SetColor(EmissionColor, newColor)
                 ));
+        }
+
+
+        if (shapeGroup)
+        {
+            // Punch the colors of all child shapes with a small start delay between each
+            float delay = 0f;
+            foreach (var shape in _shapeColors)
+            {
+                if (shape.Key)
+                {
+                    Sequence.Create()
+                        .Chain(Tween.Custom(
+                            startDelay: delay,
+                            startValue: Color.clear, 
+                            endValue: shape.Value,
+                            duration: punchDuration * 0.3f,
+                            ease: Ease.OutQuad,
+                            onValueChange: newColor => shape.Key.Color = newColor
+                        ))
+                        .Chain(Tween.Custom(
+                            startValue: punchEmissionColor,
+                            endValue: Color.clear, 
+                            duration: punchDuration * 0.7f,
+                            ease: Ease.InOutQuad,
+                            onValueChange: newColor => shape.Key.Color = newColor
+                        ));
+                    delay += 0.1f; 
+                }
+            }
         }
     }
     
