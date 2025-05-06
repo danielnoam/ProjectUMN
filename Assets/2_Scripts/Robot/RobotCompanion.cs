@@ -2,7 +2,6 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -123,20 +122,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Tooltip("Animation curve controlling how rotation speed changes based on angle difference")]
     [SerializeField] private AnimationCurve rotationCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [EndFoldout]
-
-
-    [Foldout("Ears rotation")] 
-    [SerializeField] private bool rotateEars = true;
-
-    [Tooltip("Maximum bend angle of the ears")]
-    [SerializeField] private float maxEarBend = 45f;
-
-    [Tooltip("How smoothly the ears rotate")]
-    [SerializeField] private float earRotationSmoothness = 0.2f;
-
-    [Tooltip("Speed at which ears reach their maximum bend")]
-    [SerializeField] private float maxSpeedForEarRotation = 4f;
-    [EndFoldout]
+    
     
     
     [Foldout("Following Player Settings")]
@@ -157,11 +143,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     
     [Foldout("References")]
     [SerializeField] private GameObject lightDissolver;
-    [FormerlySerializedAs("eye")] [SerializeField] private Renderer eyeRend;
-    [SerializeField] private Light eyeLight;
-    [SerializeField] private Light eyeAreaLight;
-    [SerializeField] private Transform leftEarPivot;
-    [SerializeField] private Transform rightEarPivot;
     [SerializeField] private SOAudioEvent sfxTurnOn;
     [SerializeField] private SOAudioEvent sfxTurnOff;
     [SerializeField] private SOAudioEvent sfxDeath;
@@ -172,6 +153,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [Foldout("Events")]
     public UnityEvent onRobotDeath = new UnityEvent();
     public UnityEvent onRobotRespawn = new UnityEvent();
+    public UnityEvent onRobotTurnedOn = new UnityEvent();
+    public UnityEvent onRobotTurnedOff = new UnityEvent();
     [EndFoldout]
     
     private AudioSource _audioSource;
@@ -181,10 +164,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     private Transform _playerAimingFollowPosition;
     private Transform _target;
     private TextMeshProUGUI _debugText;
-    private Material _eyeMaterial;
-    private Color _defaultEmissionColor;
-    private float _emissionIntensity;
-    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
     private RobotState _previousState;
     private float _lastHeightAdjustmentTime;
     private float _lastTargetHeight;
@@ -193,39 +172,25 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     private float _targetSitHeight;
     private Vector3 _leftEarRotation;
     private Vector3 _rightEarRotation;
-    private Quaternion _leftEarBaseRotation;
-    private Quaternion _rightEarBaseRotation;
-    private Color _defaultEyeLightColor;
-    private float _fullEyeLightIntensity;
-    private float _defaultInnerSpotAngle;
-    private float _defaultOuterSpotAngle;
     private float _sitCommandTime;
     private float _stuckTimer = 0f;
     private bool _isCheckingStuck = false;
-    
+    public float MaxAngularVelocity => maxAngularVelocity;
     public bool PlayerIsAiming => _player && _player.IsAiming;
     public RobotState CurrentState => currentState;
     public InteractorType InteractorType { get; private set;} = InteractorType.Robot;
     public Interactable CurrentInteractable { get; private set;}
     public GameObject LightDissolver => lightDissolver;
+    public int CurrentButtery => currentBattery;
+    public int FullBattery => fullBattery;
+    public int LowBattery => lowBattery;
 
    private void Awake()
    {
        _rigidBody = GetComponent<Rigidbody>();
        _audioSource = GetComponent<AudioSource>();
-       if (leftEarPivot) _leftEarBaseRotation = leftEarPivot.localRotation;
-       if (rightEarPivot) _rightEarBaseRotation = rightEarPivot.localRotation;
-       if (eyeLight)
-       {
-           _defaultEyeLightColor = eyeLight.color;
-           _fullEyeLightIntensity = eyeLight.intensity;
-           _defaultInnerSpotAngle = eyeLight.innerSpotAngle;
-           _defaultOuterSpotAngle = eyeLight.spotAngle;
-       }
        currentBattery = fullBattery;
        _previousState = currentState;
-
-       InitializeMaterial();
    }
 
    private void Start()
@@ -347,9 +312,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    private void Update()
    {
-       UpdateLight();
-       UpdateEarRotation();
-       UpdateDebugInformation();
        
        if (IsOn())
        {
@@ -364,6 +326,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            }
            _previousState = currentState;
        }
+       
+       UpdateDebugInformation();
    }
 
    private void FixedUpdate()
@@ -409,8 +373,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        sfxTurnOff?.Play(_audioSource);
        currentState = RobotState.Off;
        _rigidBody.useGravity = true;
-       eyeRend.gameObject.SetActive(false);
-       UpdateEmissionState();
+       onRobotTurnedOff?.Invoke();
    }
 
    [Button]
@@ -422,8 +385,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        sfxTurnOn?.Play(_audioSource);
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = false;
-       eyeRend.gameObject.SetActive(true);
-       UpdateEmissionState();
+       onRobotTurnedOn?.Invoke();
    }
 
    [Button]
@@ -433,10 +395,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
          
        currentState = RobotState.Dead;
        sfxDeath?.Play(_audioSource);
-       onRobotDeath?.Invoke();
        _rigidBody.useGravity = false;
        _rigidBody.isKinematic = true;
-       eyeRend.gameObject.SetActive(false);
+       onRobotDeath?.Invoke();
    }
 
    public void Respawn()
@@ -1104,62 +1065,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        _rigidBody.position = position + offset;
    }
    
-   private void UpdateEarRotation() 
-   {
-        if (!leftEarPivot || !rightEarPivot) return;
-        if (!rotateEars) return;
-
-        // Get the movement direction in local space
-        Vector3 localVelocity = transform.InverseTransformDirection(_rigidBody.linearVelocity);
-        Vector3 localAngularVelocity = transform.InverseTransformDirection(_rigidBody.angularVelocity);
-
-        float movementSpeed = _rigidBody.linearVelocity.magnitude;
-        float rotationSpeed = _rigidBody.angularVelocity.magnitude;
-
-        // Calculate bend strength for both movement and rotation
-        float movementBendStrength = Mathf.Clamp01(movementSpeed / maxSpeedForEarRotation);
-        float rotationBendStrength = Mathf.Clamp01(rotationSpeed / maxAngularVelocity);
-
-        // Calculate movement-based rotation
-        Vector3 movementRotation = new Vector3(
-            -localVelocity.z, // Forward/back movement causes up/down rotation
-            -localVelocity.x, // Left/right movement causes side rotation
-            0
-        ).normalized * (maxEarBend * movementBendStrength);
-
-        // Calculate rotation-based ear bend
-        // For the left ear
-        Vector3 leftRotationBend = new Vector3(
-            0,
-            localAngularVelocity.y, // Yaw rotation causes side bend
-            0
-        ) * (maxEarBend * rotationBendStrength);
-
-        // For the right ear (opposite of left ear for rotation)
-        Vector3 rightRotationBend = new Vector3(
-            0,
-            localAngularVelocity.y, // Opposite direction for right ear
-            0
-        ) * (maxEarBend * rotationBendStrength);
-
-        // Combine movement and rotation effects
-        Quaternion leftTargetRotation = Quaternion.Euler(movementRotation + leftRotationBend);
-        Quaternion rightTargetRotation = Quaternion.Euler(movementRotation + rightRotationBend);
-
-        // Apply rotation with smoothing
-        leftEarPivot.localRotation = Quaternion.Slerp(
-            leftEarPivot.localRotation,
-            leftTargetRotation * _leftEarBaseRotation,
-            1f - Mathf.Pow(earRotationSmoothness, Time.deltaTime)
-        );
-
-        rightEarPivot.localRotation = Quaternion.Slerp(
-            rightEarPivot.localRotation,
-            rightTargetRotation * _rightEarBaseRotation,
-            1f - Mathf.Pow(earRotationSmoothness, Time.deltaTime)
-        );
-   }
-   
    private void CheckBattery()
    {
        if (currentBattery <= 0)
@@ -1169,58 +1074,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        }
    }
 
-
-    private void UpdateLight()
-    {
-
-        
-        bool isPlayerAiming = currentState == RobotState.FollowingPlayer && _player && _player.IsAiming;
-        float lerpSpeed = 5f * Time.deltaTime;
-        
-        if (currentBattery <= 0)
-        {
-            eyeLight.intensity = 0;
-            eyeLight.color = Color.black;
-        }
-        else if (currentBattery <= lowBattery)
-        {
-            eyeLight.color = Color.Lerp(eyeLight.color, Color.red, lerpSpeed);
-        }
-        else
-        {
-
-            if (isPlayerAiming)
-            {
-                // Lerp to aiming values
-                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _fullEyeLightIntensity * 3, lerpSpeed);
-                eyeLight.range = Mathf.Lerp(eyeLight.range, 90f, lerpSpeed);
-                eyeLight.innerSpotAngle = Mathf.Lerp(eyeLight.innerSpotAngle, _defaultInnerSpotAngle * 2, lerpSpeed);
-                eyeLight.spotAngle = Mathf.Lerp(eyeLight.spotAngle, _defaultOuterSpotAngle * 2, lerpSpeed);
-            }
-            else
-            {
-                // Lerp to normal values
-                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _fullEyeLightIntensity, lerpSpeed);
-                eyeLight.range = Mathf.Lerp(eyeLight.range, 5f, lerpSpeed);
-                eyeLight.innerSpotAngle = Mathf.Lerp(eyeLight.innerSpotAngle, _defaultInnerSpotAngle, lerpSpeed);
-                eyeLight.spotAngle = Mathf.Lerp(eyeLight.spotAngle, _defaultOuterSpotAngle, lerpSpeed);
-            }
-            eyeLight.color = Color.Lerp(eyeLight.color, _defaultEyeLightColor, lerpSpeed);
-        }
-        
-        
-        // Area light
-        switch (RenderSettings.ambientIntensity)
-        {
-            case 0 when !eyeAreaLight.gameObject.activeSelf:
-                eyeAreaLight.gameObject.SetActive(true);
-                break;
-            case > 0 when eyeAreaLight.gameObject.activeSelf:
-                eyeAreaLight.gameObject.SetActive(false);
-                break;
-        }
-    }
-    
+   
+   
     private void CheckFollowTeleport()
     {
         // Only run checks if feature is enabled and we're following the player
@@ -1330,58 +1185,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    #endregion Utility ------------------------------------------------------------------------
    
-   
-       private void InitializeMaterial()
-    {
-        // Create a material instance to avoid changing the shared material
-        _eyeMaterial = new Material(eyeRend.material);
-        eyeRend.material = _eyeMaterial;
-        
-        // Check if the emission properties exist in the material
-        if (!_eyeMaterial.HasProperty(EmissionColor))
-        {
-            Debug.LogWarning($"Material on {gameObject.name} does not have required emission properties { EmissionColor}");
-            return;
-        }
-        
-        // Enable emission on the material
-        _eyeMaterial.EnableKeyword("_Emission");
-        
-        // Get the existing emission color from the material
-        _defaultEmissionColor = _eyeMaterial.GetColor(EmissionColor);
-        
-        // Calculate the emission intensity from the brightest component
-        _emissionIntensity = Mathf.Max(_defaultEmissionColor.r, _defaultEmissionColor.g, _defaultEmissionColor.b);
-        
-        // Normalize the color if it has intensity
-        if (_emissionIntensity > 0)
-        {
-            _defaultEmissionColor /= _emissionIntensity;
-        }
-        else
-        {
-            // Default to white if there's no emission
-            _defaultEmissionColor = Color.white;
-            _emissionIntensity = 1.0f;
-        }
-        
-        // Initialize the material with the appropriate state
-        UpdateEmissionState();
-    }
-    
-    private void UpdateEmissionState()
-    {
-        if (IsOn())
-        {
-            // Set the emission color to the default color
-            _eyeMaterial.SetColor(EmissionColor, _defaultEmissionColor * (_emissionIntensity * 1));
-        }
-        else
-        {
-            // Set the emission color to black (off)
-            _eyeMaterial.SetColor(EmissionColor, Color.black);
-        }
-    }
    
    #region Gizmos ------------------------------------------------------------------------
 

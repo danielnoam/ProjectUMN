@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using VInspector;
 
-
 public class RobotLightDissolver : MonoBehaviour
 {
+    [Header("Transform to Control")]
+    [Tooltip("The transform that will be moved instead of this object's transform")]
+    public Transform targetTransform;
 
     [Header("Shape Settings")]
     public float radius = 1.7f;
@@ -13,25 +15,20 @@ public class RobotLightDissolver : MonoBehaviour
     public float minRadius = 1.7f;
     public float maxRadius = 1.75f;
     
-    
     [Header("Raycast Movement")]
     public bool enableRaycastMovement = true;
     public float movementSpeed = 15.0f;
     public float maxRaycastDistance = 10.0f;
     public LayerMask raycastLayers;
     
-    
     [Header("Affected Renderers")]
     [Tooltip("List of renderers to affect. Only these renderers will be affected.")]
     public List<Renderer> targetRenderers = new List<Renderer>();
-    
-
     
     private RobotCompanion _robot;
     private Vector3 _targetPosition;
     private bool _isMoving;
     private bool MoveToTarget => _robot.PlayerIsAiming && _robot.IsOn() && _robot.CurrentState != RobotState.Sitting;
-    
     
     // Static variables for managing multiple interactors
     private const int MaxInteractors = 20;
@@ -45,11 +42,24 @@ public class RobotLightDissolver : MonoBehaviour
     private static readonly int InteractorRadiusesID = Shader.PropertyToID("_ShaderInteractorsRadiuses");
     private bool _needsRefresh = true;
     
-
     private void Awake()
     {
-        _robot = GetComponentInParent<RobotCompanion>();
-        _targetPosition = transform.position;
+        // Now getting the robot component from this object instead of parent
+        _robot = GetComponent<RobotCompanion>();
+        
+        // Check if we have a targetTransform assigned
+        if (targetTransform == null)
+        {
+            Debug.LogWarning("No target transform assigned to RobotLightDissolver. Creating one.");
+            
+            // Create a new GameObject as child with transform to control
+            GameObject newObj = new GameObject("LightDissolverTransform");
+            newObj.transform.parent = transform;
+            newObj.transform.localPosition = Vector3.zero;
+            targetTransform = newObj.transform;
+        }
+        
+        _targetPosition = targetTransform.position;
     }
 
     private void Start()
@@ -77,7 +87,6 @@ public class RobotLightDissolver : MonoBehaviour
     {
         TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
         TestManager.Instance?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
-        
         
         // Unregister this interactor
         if (ActiveInteractors.Contains(this))
@@ -111,10 +120,10 @@ public class RobotLightDissolver : MonoBehaviour
         }
         else
         {
-            // move to the original position
-            transform.position = Vector3.MoveTowards(
+            // Move to the original position - now using the robot transform (this transform)
+            targetTransform.position = Vector3.MoveTowards(
+                targetTransform.position, 
                 transform.position, 
-                _robot.transform.position, 
                 movementSpeed * Time.deltaTime
             );
         }
@@ -147,11 +156,11 @@ public class RobotLightDissolver : MonoBehaviour
     
     private void HandleRaycastMovement()
     {
-        // Get robot's look direction
+        // Get robot's look direction - now using this transform
         Vector3 lookDirection = _robot.GetLookDirection();
         
-        // Perform raycast
-        Vector3 rayOrigin = _robot.transform.position;
+        // Perform raycast - now using this transform
+        Vector3 rayOrigin = transform.position;
         
         if (Physics.Raycast(rayOrigin, lookDirection, out var hit, maxRaycastDistance, raycastLayers))
         {
@@ -169,15 +178,15 @@ public class RobotLightDissolver : MonoBehaviour
     
     private void MoveTowardsTarget()
     {
-        // Move towards the target position
-        transform.position = Vector3.MoveTowards(
-            transform.position, 
+        // Move towards the target position - now moving targetTransform instead of this transform
+        targetTransform.position = Vector3.MoveTowards(
+            targetTransform.position, 
             _targetPosition, 
             movementSpeed * Time.deltaTime
         );
         
         // Check if we've reached the target
-        if (Vector3.Distance(transform.position, _targetPosition) < 0.01f)
+        if (Vector3.Distance(targetTransform.position, _targetPosition) < 0.01f)
         {
             _isMoving = false;
         }
@@ -194,14 +203,13 @@ public class RobotLightDissolver : MonoBehaviour
         ClearAllInteractors();
     }
     
-    
-
     // Update a single material with this interaction's properties
     private void UpdateSingleInteractorMaterial(Material material)
     {
         if (material.shader.name.Contains("Custom/UnifiedDissolve"))
         {
-            material.SetVector(PositionID, transform.position);
+            // Now using targetTransform.position instead of transform.position
+            material.SetVector(PositionID, targetTransform.position);
             
             // Set shape type (0 for sphere)
             material.SetFloat(ShapeTypeID, 0);
@@ -226,7 +234,8 @@ public class RobotLightDissolver : MonoBehaviour
         {
             RobotLightDissolver interactor = ActiveInteractors[i];
             
-            positions[i] = interactor.transform.position;
+            // Now using targetTransform.position instead of transform.position
+            positions[i] = interactor.targetTransform.position;
             radiuses[i] = interactor.radius;
         }
 
@@ -243,7 +252,7 @@ public class RobotLightDissolver : MonoBehaviour
     }
 
     // Find all materials using our dissolve shader, only from targetRenderers
-    private  Material[] GetAllDissolveShaderMaterials()
+    private Material[] GetAllDissolveShaderMaterials()
     {
         List<Material> materials = new List<Material>();
         
@@ -351,16 +360,17 @@ public class RobotLightDissolver : MonoBehaviour
         RefreshAffectedRenderers();
     }
     
-    
-    
 #if UNITY_EDITOR
     
     #region Gizmos
     
     private void OnDrawGizmosSelected()
     {
-        DrawShapeGizmo();
-        DrawConnectionGizmos();
+        if (targetTransform != null)
+        {
+            DrawShapeGizmo();
+            DrawConnectionGizmos();
+        }
         DrawRaycastGizmo();
     }
     
@@ -372,7 +382,7 @@ public class RobotLightDissolver : MonoBehaviour
         if (animateRadius)
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, maxRadius);
+            Gizmos.DrawWireSphere(targetTransform.position, maxRadius);
         }
     }
     
@@ -380,7 +390,7 @@ public class RobotLightDissolver : MonoBehaviour
     {
         // Draw wireframe for better visibility
         Gizmos.color = new Color(Color.cyan.r, Color.cyan.g, Color.cyan.b, 0.1f);
-        Gizmos.DrawWireSphere(transform.position, radius);
+        Gizmos.DrawWireSphere(targetTransform.position, radius);
     }
     
     private void DrawConnectionGizmos()
@@ -402,17 +412,17 @@ public class RobotLightDissolver : MonoBehaviour
                 Vector3 rendererCenter = rend.bounds.center;
                 
                 // Draw connection line
-                Gizmos.DrawLine(transform.position, rendererCenter);
+                Gizmos.DrawLine(targetTransform.position, rendererCenter);
                 
                 // Draw small sphere at renderer position
                 Gizmos.DrawSphere(rendererCenter, 0.1f);
                 
                 // Draw distance label
-                float distance = Vector3.Distance(transform.position, rendererCenter);
+                float distance = Vector3.Distance(targetTransform.position, rendererCenter);
                     
                 // Only draw labels in scene view, not in game view
                 UnityEditor.Handles.Label(
-                    Vector3.Lerp(transform.position, rendererCenter, 0.5f), 
+                    Vector3.Lerp(targetTransform.position, rendererCenter, 0.5f), 
                     distance.ToString("F1") + "m");
             }
         }
@@ -423,7 +433,7 @@ public class RobotLightDissolver : MonoBehaviour
         if (enableRaycastMovement && _robot != null)
         {
             // Draw ray from robot in look direction
-            Vector3 startPos = _robot.transform.position;
+            Vector3 startPos = transform.position;
             Vector3 direction = _robot.GetLookDirection();
             
             Gizmos.color = Color.red;
