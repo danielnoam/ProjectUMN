@@ -23,10 +23,16 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField] private SOInputReader inputReader;
     [SerializeField, Min(0f)] private float jumpBufferTime = 0.2f;
     [SerializeField, Min(0f)] private float interactBufferTime = 0.15f;
+    [SerializeField, Min(0f)] private float commandRobotBufferTime = 0.15f;
+    [SerializeField, Min(0f)] private float crouchBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float toggleMenuBufferTime = 0.15f;
+    [SerializeField, Min(0f)] private float sprintBufferTime = 0.15f;
+    [SerializeField, Min(0f)] private float moveSpeedBufferTime = 0.15f;
+    [SerializeField, Min(0f)] private float aimBufferTime = 0.15f;
     [SerializeField] private InputSettings mouseKeyboardSettings = new InputSettings();
     [SerializeField] private InputSettings gamepadSettings = new InputSettings();
-    
+
+    private PlayerStateMachine _player;
     private InputSettings _activeSettings;
     private bool _toggleMoveSpeed;
     private bool _toggleCrouch;
@@ -39,10 +45,14 @@ public class PlayerInputHandler : MonoBehaviour
     private float _jumpBufferCounter;
     private float _interactBufferCounter;
     private float _commandRobotBufferCounter;
+    private float _crouchBufferCounter;
     private float _toggleMenuBufferCounter;
+    private float _sprintBufferCounter;
+    private float _moveSpeedBufferCounter;
+    private float _aimBufferCounter;
 
     
-    
+    public SOInputReader InputReader => inputReader;
     public Vector2 MovementInput { get; private set; }
     public Vector2 MouseDelta { get; private set; }
     public bool JumpInput { get; private set; }
@@ -58,8 +68,12 @@ public class PlayerInputHandler : MonoBehaviour
     public float FreeCameraSensitivity => _freeCameraSensitivity;
     public float AimCameraSensitivity => _aimCameraSensitivity;
     public bool IsCrouchToggle => _toggleCrouch;
-    
 
+
+    private void Awake()
+    {
+        _player = GetComponent<PlayerStateMachine>();
+    }
 
     private void OnEnable()
     {
@@ -115,6 +129,26 @@ public class PlayerInputHandler : MonoBehaviour
         _movementInputThreshold = _activeSettings.movementInputThreshold;
         _freeCameraSensitivity = _activeSettings.freeCameraSensitivity;
         _aimCameraSensitivity = _activeSettings.aimCameraSensitivity;
+        
+        
+        if (_player && _player.CurrentState == _player.InMenuState)
+        {
+            if (controlType == ControlType.Gamepad)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+        }
+        else if (_player)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
     
     private void OnToggleMenuInput(InputAction.CallbackContext context)
@@ -128,7 +162,6 @@ public class PlayerInputHandler : MonoBehaviour
     private void OnMovementInput(InputAction.CallbackContext context)
     {
         MovementInput = context.ReadValue<Vector2>();
-
     }
 
     private void OnMouseInput(InputAction.CallbackContext context)
@@ -148,6 +181,11 @@ public class PlayerInputHandler : MonoBehaviour
         else 
         {
             AimInput = context.performed || context.started;
+            
+            if (context.started)
+            {
+                _aimBufferCounter = aimBufferTime;
+            }
         }
     }
 
@@ -165,15 +203,13 @@ public class PlayerInputHandler : MonoBehaviour
         {
             _interactBufferCounter = interactBufferTime;
         }
-        
     }
     
     private void OnCommandRobotInput(InputAction.CallbackContext context)
     {
-        
         if (context.started)
         {
-            _commandRobotBufferCounter = interactBufferTime;
+            _commandRobotBufferCounter = commandRobotBufferTime;
         }
     }
 
@@ -189,6 +225,11 @@ public class PlayerInputHandler : MonoBehaviour
         else 
         {
             CrouchInput = context.performed;
+            
+            if (context.started)
+            {
+                _crouchBufferCounter = crouchBufferTime;
+            }
         }
     }
 
@@ -204,6 +245,11 @@ public class PlayerInputHandler : MonoBehaviour
         else 
         {
             SprintInput = context.performed;
+            
+            if (context.started)
+            {
+                _sprintBufferCounter = sprintBufferTime;
+            }
         }
     }
 
@@ -219,6 +265,11 @@ public class PlayerInputHandler : MonoBehaviour
         else 
         {
             MoveSpeedInput = context.performed;
+            
+            if (context.started)
+            {
+                _moveSpeedBufferCounter = moveSpeedBufferTime;
+            }
         }
     }
 
@@ -256,34 +307,80 @@ public class PlayerInputHandler : MonoBehaviour
         {
             _toggleMenuBufferCounter -= Time.deltaTime;
         }
+        
+        // Crouch buffer (for non-toggle mode)
+        if (!_toggleCrouch && _crouchBufferCounter > 0)
+        {
+            _crouchBufferCounter -= Time.deltaTime;
+        }
+        
+        // Sprint buffer (for non-toggle mode)
+        if (!_toggleSprint && _sprintBufferCounter > 0)
+        {
+            _sprintBufferCounter -= Time.deltaTime;
+        }
+        
+        // Move speed buffer (for non-toggle mode)
+        if (!_toggleMoveSpeed && _moveSpeedBufferCounter > 0)
+        {
+            _moveSpeedBufferCounter -= Time.deltaTime;
+        }
+        
+        // Aim buffer (for non-toggle mode)
+        if (!_toggleAimInput && _aimBufferCounter > 0)
+        {
+            _aimBufferCounter -= Time.deltaTime;
+        }
     }
     
-    public void ConsumeJumpBuffer()
+    // Combined consumption methods
+    public void ConsumeJumpInput()
     {
         _jumpBufferCounter = 0;
+        JumpInput = false;
     }
     
-    public void ConsumeInteractBuffer()
+    public void ConsumeInteractInput()
     {
         _interactBufferCounter = 0;
+        InteractInput = false;
     }
     
-    public void ConsumeCommandRobotBuffer()
+    public void ConsumeCommandRobotInput()
     {
         _commandRobotBufferCounter = 0;
+        CommandRobotInput = false;
     }
     
-    public void ConsumeToggleMenuBuffer()
+    public void ConsumeToggleMenuInput()
     {
         _toggleMenuBufferCounter = 0;
+        ToggleMenuInput = false;
     }
     
     public void ConsumeCrouchInput()
     {
+        _crouchBufferCounter = 0;
         CrouchInput = false;
+    }
+    
+    public void ConsumeSprintInput()
+    {
+        _sprintBufferCounter = 0;
+        SprintInput = false;
+    }
+    
+    public void ConsumeMoveSpeedInput()
+    {
+        _moveSpeedBufferCounter = 0;
+        MoveSpeedInput = false;
+    }
+    
+    public void ConsumeAimInput()
+    {
+        _aimBufferCounter = 0;
+        AimInput = false;
     }
 
     #endregion Buffers -------------------------------------------------------------------------------------------
-
-
 }

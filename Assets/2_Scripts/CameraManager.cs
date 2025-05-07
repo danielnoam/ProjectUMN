@@ -406,11 +406,11 @@ public class CameraManager : MonoBehaviour
         {
             if (!IsMenuCameraActive() && (_player.InMenuState.CurrentPage == _player.InMenuState.DebugPage || _player.InMenuState.CurrentPage == _player.InMenuState.PausePage))
             {
-                SwitchToCamera(menuCamera, true);
+                SwitchToCamera(menuCamera);
                 
             } else if (!IsStartMenuCameraActive() && (_player.InMenuState.CurrentPage == _player.InMenuState.StartPage || _player.InMenuState.CurrentPage == _player.InMenuState.OptionsPage))
             {
-                SwitchToCamera(startMenuCamera, true);
+                SwitchToCamera(startMenuCamera);
             }
 
             if (_player.InMenuState.CurrentPage == _player.InMenuState.DebugPage && _menuCameraFollow.CameraSide != 0)
@@ -430,18 +430,18 @@ public class CameraManager : MonoBehaviour
         } 
         else if (IsPlayerAiming && !IsAimCameraActive())
         {
-            SwitchToCamera(aimCamera, false);
+            SwitchToCamera(aimCamera);
         }
         else if (!IsAimOnlyMode && !IsPlayerAiming &&!IsFreeLookCameraActive())
         {
-            SwitchToCamera(freeLookCamera, false);
+            SwitchToCamera(freeLookCamera);
         }
     }
     
     
     
    
-    private void SwitchToCamera(CinemachineCamera cam, bool enableCursor)
+    private void SwitchToCamera(CinemachineCamera cam)
     {
         menuCamera.Priority = _menuCameraPriority;
         freeLookCamera.Priority = _freeLookCameraPriority;
@@ -452,9 +452,6 @@ public class CameraManager : MonoBehaviour
 
         _currentCamera = cam;
         cam.Priority = 10;
-        Cursor.lockState = enableCursor ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = enableCursor;
-        
     }
     
     private void OnIntroSequenceStart()
@@ -462,22 +459,22 @@ public class CameraManager : MonoBehaviour
         _introCameraDolly.CameraPosition = 0;
         _introCameraNoise.AmplitudeGain = _introCameraStartingNoiseAmplitude;
         _introCameraNoise.FrequencyGain = _introCameraStartingNoiseFrequency;
-        SwitchToCamera(introCamera, false);
+        SwitchToCamera(introCamera);
     }
     
     private void OnCreditsSequenceStart()
     {
-        SwitchToCamera(creditsCamera, false);
+        SwitchToCamera(creditsCamera);
     }
     
     private void OnCreditsSequenceEnd()
     {
-        SwitchToCamera(freeLookCamera, true);
+        SwitchToCamera(freeLookCamera);
     }
     
     private void OnIntroSequenceEnd()
     {
-        SwitchToCamera(startMenuCamera, true);
+        SwitchToCamera(startMenuCamera);
     }
     
     #endregion Private methods ----------------------------------------------------------------------------

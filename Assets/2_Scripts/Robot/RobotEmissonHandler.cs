@@ -8,12 +8,14 @@ public class RobotEmissonHandler : MonoBehaviour
 
     [Header("Light Settings")]
     [SerializeField] private float lightSmoothSpeed = 5f;
-    
+    [SerializeField] private float eyeLightIntensityMultiplier = 3f;
+    [SerializeField] private float eyeLightOuterSpotMultiplier = 2f;
+    [SerializeField] private float eyeLightInnerSpotMultiplier = 2f;
     
     [Header("Emission Settings")]
-    [SerializeField] private float animationDuration = 0.5f;
+    [SerializeField] private float animationDuration = 5f;
     [SerializeField] private Ease animationEase = Ease.OutCubic;
-    [SerializeField] private float bodyEmissionIntensity = 1.0f;
+    [SerializeField] private float bodyEmissionIntensity = 25.0f;
     
     [Header("References")] 
     [SerializeField] private RobotCompanion robot;
@@ -34,7 +36,8 @@ public class RobotEmissonHandler : MonoBehaviour
     private bool _lastAmbientState = false;
     
     private Color _defaultEyeLightColor;
-    private float _fullEyeLightIntensity;
+    private float _defaultEyeLightIntensity;
+    private float _defaultEyeLightRange;
     private float _defaultInnerSpotAngle;
     private float _defaultOuterSpotAngle;
     
@@ -45,7 +48,8 @@ public class RobotEmissonHandler : MonoBehaviour
         if (eyeLight)
         {
             _defaultEyeLightColor = eyeLight.color;
-            _fullEyeLightIntensity = eyeLight.intensity;
+            _defaultEyeLightRange = eyeLight.range;
+            _defaultEyeLightIntensity = eyeLight.intensity;
             _defaultInnerSpotAngle = eyeLight.innerSpotAngle;
             _defaultOuterSpotAngle = eyeLight.spotAngle;
         }
@@ -132,16 +136,16 @@ public class RobotEmissonHandler : MonoBehaviour
             if (isPlayerAiming)
             {
                 // Lerp to aiming values
-                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _fullEyeLightIntensity * 3, lightSmoothSpeed * Time.deltaTime);
                 eyeLight.range = Mathf.Lerp(eyeLight.range, 90f, lightSmoothSpeed * Time.deltaTime);
-                eyeLight.innerSpotAngle = Mathf.Lerp(eyeLight.innerSpotAngle, _defaultInnerSpotAngle * 2, lightSmoothSpeed * Time.deltaTime);
-                eyeLight.spotAngle = Mathf.Lerp(eyeLight.spotAngle, _defaultOuterSpotAngle * 2, lightSmoothSpeed * Time.deltaTime);
+                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _defaultEyeLightIntensity * eyeLightIntensityMultiplier, lightSmoothSpeed * Time.deltaTime);
+                eyeLight.innerSpotAngle = Mathf.Lerp(eyeLight.innerSpotAngle, _defaultInnerSpotAngle * eyeLightInnerSpotMultiplier, lightSmoothSpeed * Time.deltaTime);
+                eyeLight.spotAngle = Mathf.Lerp(eyeLight.spotAngle, _defaultOuterSpotAngle * eyeLightOuterSpotMultiplier, lightSmoothSpeed * Time.deltaTime);
             }
             else
             {
                 // Lerp to normal values
-                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _fullEyeLightIntensity, lightSmoothSpeed * Time.deltaTime);
-                eyeLight.range = Mathf.Lerp(eyeLight.range, 5f, lightSmoothSpeed * Time.deltaTime);
+                eyeLight.range = Mathf.Lerp(eyeLight.range, _defaultEyeLightRange, lightSmoothSpeed * Time.deltaTime);
+                eyeLight.intensity = Mathf.Lerp(eyeLight.intensity, _defaultEyeLightIntensity, lightSmoothSpeed * Time.deltaTime);
                 eyeLight.innerSpotAngle = Mathf.Lerp(eyeLight.innerSpotAngle, _defaultInnerSpotAngle, lightSmoothSpeed * Time.deltaTime);
                 eyeLight.spotAngle = Mathf.Lerp(eyeLight.spotAngle, _defaultOuterSpotAngle, lightSmoothSpeed * Time.deltaTime);
             }
@@ -169,6 +173,8 @@ public class RobotEmissonHandler : MonoBehaviour
 
     private void UpdateEyeEmissionState()
     {
+        if (!_eyeMaterial) return;
+        
         if (_eyeEmissionSequence.isAlive)
         {
             _eyeEmissionSequence.Stop();
@@ -185,6 +191,8 @@ public class RobotEmissonHandler : MonoBehaviour
     
     private void UpdateBodyEmissionState(bool turnOn)
     {
+        if (!_bodyMaterial) return;
+        
         if (_bodyEmissionSequence.isAlive)
         {
             _bodyEmissionSequence.Stop();

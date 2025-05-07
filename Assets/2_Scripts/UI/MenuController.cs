@@ -21,6 +21,7 @@ public class MenuController : MonoBehaviour
     [Space(10)]
     [ReadOnly] public MenuPage currentPage;
     public AudioSource AudioSource => audioSource;
+    public SOInputReader InputReader => inputReader;
     
 
     private void Start()
@@ -36,6 +37,7 @@ public class MenuController : MonoBehaviour
         if (inputReader)
         {
             inputReader.NavigateEvent += OnNavigate;
+            inputReader.ControlSchemeChangedEvent += OnControlSchemeChanged;
         }
     }
 
@@ -44,6 +46,7 @@ public class MenuController : MonoBehaviour
         if (inputReader)
         {
             inputReader.NavigateEvent -= OnNavigate;
+            inputReader.ControlSchemeChangedEvent -= OnControlSchemeChanged;
         }
     }
     
@@ -52,6 +55,14 @@ public class MenuController : MonoBehaviour
         if (currentPage) 
         {
             currentPage.OnNavigate(context);
+        }
+    }
+    
+    private void OnControlSchemeChanged(ControlType type)
+    {
+        if (currentPage)
+        {
+            currentPage.OnControlSchemeChanged(type);
         }
     }
     

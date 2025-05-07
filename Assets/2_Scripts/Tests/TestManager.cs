@@ -13,6 +13,7 @@ using VInspector;
 [RequireComponent(typeof(TestEnvironmentAnimator))]
 [RequireComponent(typeof(TestEffectsHandler))]
 [RequireComponent(typeof(TestMusicHandler))]
+[RequireComponent(typeof(TestLightingAnimator))]
 public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
@@ -22,6 +23,7 @@ public class TestManager : MonoBehaviour
     [SerializeField] private RobotCompanion robotPrefab;
     [SerializeField] private SOTest defaultTest;
     [SerializeField] private SOAudioManager audioManager;
+    [SerializeField] private SOInputReader inputReader;
 
     [Header("Intro Sequence")] 
     [SerializeField, Min(0)] private float introSequenceDuration = 12f;
@@ -45,9 +47,9 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private SOTest currentTest;
     [SerializeField, ReadOnly] private GameObject currentEnvironment;
-    [ReadOnly] private ISpawnPoint _currentSpawnPoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
+    [ReadOnly] private ISpawnPoint _currentSpawnPoint;
     [EndFoldout]
     
     [Foldout("Events")]
@@ -64,7 +66,6 @@ public class TestManager : MonoBehaviour
     
     public bool DebugMode => debugMode;
     public TestLightSettings DefaultLightSettings => defaultTest.GetLightSettings();
-    public GameObject DefaultEnvironment => defaultTest.GetPrefab();
     public PlayerStateMachine Player => currentPlayer;
     public RobotCompanion Robot => currentRobot;
     public SOTest CurrentTest => currentTest;
@@ -99,6 +100,7 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeSequenceCoroutine;
     private TestEnvironmentAnimator _testEnvironmentAnimator;
     private TestEffectsHandler _testEffectsHandler;
+    private TestLightingAnimator _testLightingAnimator;
     private float _introSequenceTime;
     private float _creditsSequenceTime;
     private float _playerDeaths;
@@ -135,7 +137,6 @@ public class TestManager : MonoBehaviour
     private void Start()
     {
         audioManager.LoadAllVolumes();
-        
         currentPlayer = PlayerStateMachine.Instance;
         SubscribeToPlayerEvents();
         currentRobot = FindFirstObjectByType<RobotCompanion>();
@@ -322,26 +323,6 @@ public class TestManager : MonoBehaviour
     }
     
     
-    private void ApplyLightSettings(TestLightSettings lightSettings)
-    {
-        RenderSettings.ambientIntensity = lightSettings.ambientIntensity;
-        RenderSettings.defaultReflectionMode = lightSettings.reflectionMode;
-        
-        RenderSettings.fog = lightSettings.useFog;
-        RenderSettings.fogMode = lightSettings.fogMode;
-        RenderSettings.fogColor = lightSettings.fogColor;
-        switch (lightSettings.fogMode)
-        {
-            case FogMode.Exponential or FogMode.ExponentialSquared:
-                RenderSettings.fogDensity = lightSettings.fogDensity;
-                break;
-            case FogMode.Linear:
-                RenderSettings.fogStartDistance = lightSettings.fogStart;
-                RenderSettings.fogEndDistance = lightSettings.fogEnd;
-                break;
-        }
-    }
-    
     
     #endregion Test control ----------------------------------------------------------------------------
     
@@ -507,7 +488,7 @@ public class TestManager : MonoBehaviour
         
         currentTest = testIndex;
         currentTheme = currentTest.GetTheme();
-        ApplyLightSettings(currentTest.GetLightSettings());
+        currentLightSettings = currentTest.GetLightSettings();
         currentEnvironment = Instantiate(currentTest.GetPrefab());
         currentEnvironment.name = currentTest.Name + " Environment";
 
@@ -622,7 +603,7 @@ public class TestManager : MonoBehaviour
         currentEnvironment = null;
         _currentSpawnPoint = null;
         currentTheme = null;
-        ApplyLightSettings(defaultTest.GetLightSettings());
+        currentLightSettings = defaultTest.GetLightSettings();
         _activeUnloadCoroutine = null;
         onTestUnloaded?.Invoke(test);
         Debug.Log("Unloaded " + test.Name);
@@ -670,12 +651,14 @@ public class TestManager : MonoBehaviour
                 string creditsInfo = IsCreditsSequenceActive ? $"Credits Sequence {_creditsSequenceTime:F0}/{CreditsSequenceDuration}" : "";
                 string introInfo = IsIntroSequenceActive ? $"Intro Sequence {_introSequenceTime:F0}/{IntroSequenceDuration}" : "";
                 string testInfo = currentTest ? $"Test: {currentTest.Name}" : "Test: null";
+                string controlInfo = inputReader ? $"Control: {inputReader.CurrentControlScheme}" :"Controls: null";
             
-                debugTextBottomRight.text = $"Test: {testInfo}\n" +
+                debugTextBottomRight.text = $"{testInfo}\n" +
                                             $"{playerInfo}\n" +
                                             $"{robotInfo}\n" +
                                             $"{creditsInfo}\n" +
-                                            $"{introInfo}\n"
+                                            $"{introInfo}\n" +
+                                            $"{controlInfo}\n"
           
                     ;
             }

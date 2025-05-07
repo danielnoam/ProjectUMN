@@ -17,7 +17,12 @@ public class MenuPage : MonoBehaviour
     [Header("Page Settings")] 
     [SerializeField] private List<Selectable> selectables = new List<Selectable>();
     
-    [Foldout("Selectables Animations")]
+    [Space(10)]
+    [CustomAttribute.ReadOnly] public Selectable currentSelectable;
+    [CustomAttribute.ReadOnly] public Selectable previousSelectable;
+    [CustomAttribute.ReadOnly] public bool canSelect;
+    
+    [Tab("Selectables Animations")]
     [Header("Scale")]
     [SerializeField] private bool scaleOnSelect = false;
     [ShowIf("scaleOnSelect")]
@@ -44,9 +49,9 @@ public class MenuPage : MonoBehaviour
     [SerializeField] private Ease shakeEase = Ease.Default;
     [SerializeField] private List<Selectable> shakeExclusions = new List<Selectable>();
     [EndIf]
-    [EndFoldout]
+    [EndTab]
     
-    [Foldout("Page Animations")]
+    [Tab("Page Animations")]
     [Header("Selected")]
     [SerializeField] private float selectedAnimationDuration = 0.3f;
     [SerializeField] private float selectedAnimationDelay = 0.2f;
@@ -61,19 +66,17 @@ public class MenuPage : MonoBehaviour
     [SerializeField] private Ease moveOutEase = Ease.OutSine;
     [SerializeField] private List<GameObject> moveOutObjects = new List<GameObject>();
     [SerializeField] private List<GameObject> fadeOutObjects = new List<GameObject>();
-    [EndFoldout]
+    [EndTab]
     
-    [Foldout("Audio")]
+    [Tab("References")]
+    [SerializeField] private InteractPrompt selectPrompt;
+    [SerializeField] private InteractPrompt cancelPrompt;
     [SerializeField] private SOAudioEvent sfxSelectableSelected;
     [SerializeField] private SOAudioEvent sfxButtonClick;
     [SerializeField] private SOAudioEvent sfxButtonMoveIn;
     [SerializeField] private SOAudioEvent sfxButtonMoveOut;
-    [EndFoldout]
+    [EndTab]
     
-    [Space(10)]
-    [CustomAttribute.ReadOnly] public Selectable currentSelectable;
-    [CustomAttribute.ReadOnly] public Selectable previousSelectable;
-    [CustomAttribute.ReadOnly] public bool canSelect;
     
     
     private MenuController _menuController;
@@ -137,7 +140,7 @@ public class MenuPage : MonoBehaviour
         _animationSequence.Stop();
     }
     
-    // Called when page is selected
+
     public void OnPageSelected(bool playAnimation)
     {
         SetPageState(true);
@@ -151,8 +154,8 @@ public class MenuPage : MonoBehaviour
             SetSelectedInstantly();
         }
     }
+
     
-    // Called when page is deselected
     public void OnPageDeselected(bool playAnimation)
     {
         SetPageState(false);
@@ -173,6 +176,12 @@ public class MenuPage : MonoBehaviour
 
         if (EventSystem.current.currentSelectedGameObject) return;
         SelectFirstAvailableSelectable();
+    }
+    
+    public void OnControlSchemeChanged(ControlType type) // Input event
+    {
+        selectPrompt?.UpdateInteractPrompt(true);
+        cancelPrompt?.UpdateInteractPrompt(true);
     }
     
     
@@ -779,4 +788,6 @@ public class MenuPage : MonoBehaviour
 #endif
     
     #endregion Editor // ---------------------------------------------------------------------
+
+
 }

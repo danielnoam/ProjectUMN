@@ -6,7 +6,7 @@ public class PlayerInteractingState : PlayerBaseState
     
     public override void EnterState()
     {
-        StateMachine.inputHandler.ConsumeInteractBuffer();
+        StateMachine.inputHandler.ConsumeInteractInput();
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
     }

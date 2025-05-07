@@ -197,7 +197,7 @@ Light:
   m_Type: 0
   m_Color: {r: 0.5251572, g: 0.8866811, b: 1, a: 1}
   m_Intensity: 9
-  m_Range: 7
+  m_Range: 9
   m_SpotAngle: 50
   m_InnerSpotAngle: 30
   m_CookieSize: 10
@@ -487,6 +487,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lightSmoothSpeed: 5
+  eyeLightIntensityMultiplier: 4
+  eyeLightOuterSpotMultiplier: 1.5
+  eyeLightInnerSpotMultiplier: 1.5
   animationDuration: 5
   animationEase: 9
   bodyEmissionIntensity: 25

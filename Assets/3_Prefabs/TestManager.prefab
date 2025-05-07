@@ -599,6 +599,7 @@ GameObject:
   - component: {fileID: 6050077395804514476}
   - component: {fileID: 1820426967260782076}
   - component: {fileID: 5569753130856830593}
+  - component: {fileID: 8264076444438630937}
   - component: {fileID: 1110974351329431119}
   - component: {fileID: 1766623227296409465}
   - component: {fileID: 877771211570101660}
@@ -784,6 +785,20 @@ MonoBehaviour:
   totalAnimationTime: 0
   numberOfObjectsToAnimate: 0
   objectsToAnimate: []
+--- !u!114 &8264076444438630937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6817677396046505635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdc825d6fc939c648b2b03314543d8b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animationEase: 1
+  testManager: {fileID: 877771211570101660}
 --- !u!114 &1110974351329431119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -822,6 +837,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cfef650c342a9d945a937561e5b1312c, type: 2}
   testManager: {fileID: 877771211570101660}
   audioSource: {fileID: 1820426967260782076}
+  _availableThemes: []
 --- !u!114 &877771211570101660
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -838,6 +854,7 @@ MonoBehaviour:
   robotPrefab: {fileID: 4432918703769448186, guid: df63db802e516df4784a7b51bed7cfa5, type: 3}
   defaultTest: {fileID: 11400000, guid: fecaa2c40ab17704eb44450039a533e9, type: 2}
   audioManager: {fileID: 11400000, guid: 4ff6779915ae13148a0dfb4b1109db6b, type: 2}
+  inputReader: {fileID: 11400000, guid: bc4b1fd8e08cece4899198f6f0f7ad7f, type: 2}
   introSequenceDuration: 12
   introTest: {fileID: 11400000, guid: f8dc08a105e066c488c549ce1c4f61eb, type: 2}
   creditsSequenceDuration: 60

@@ -177,11 +177,12 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         InMenuState = new PlayerInMenuState(this);
         _defaultCharacterHeight = controller.height;
         _defaultCharacterCenter = controller.center;
-        
         _lineRendererDefaultWidth = lineRenderer.startWidth;
         lineRenderer.startWidth = 0.0f;
         lineRenderer.endWidth = _lineRendererDefaultWidth;
         IsAiming = cameraMode == CameraMode.AimOnly;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         SwitchState(GroundedState);
     }
 
@@ -1086,7 +1087,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         
         if (inputHandler.CommandRobotInput)
         {
-            inputHandler.ConsumeCommandRobotBuffer();
+            inputHandler.ConsumeCommandRobotInput();
             
             if (CurrentAimedInteractable && !CurrentAimedInteractable.OnlyPlayerCanInteract)
             {

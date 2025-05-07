@@ -14,10 +14,21 @@ public class PlayerInMenuState : PlayerBaseState
     
     public override void EnterState()
     {
+        if (StateMachine.inputHandler.InputReader.CurrentControlScheme == ControlType.Gamepad)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        
         StateMachine.onPlayerOpenedMenu?.Invoke();
         StateMachine.ClearCurrentInteractable();
         StateMachine.ClearCurrentAimedInteractable();
-        StateMachine.inputHandler.ConsumeToggleMenuBuffer();
+        StateMachine.inputHandler.ConsumeToggleMenuInput();
 
 
         if (StateMachine.TestManager && StateMachine.TestManager.CurrentTest == StateMachine.TestManager.IntroTest)
@@ -33,13 +44,15 @@ public class PlayerInMenuState : PlayerBaseState
     
     public override void ExitState()
     {
-        // When exiting, only deselect the current page
         if (CurrentPage)
         {
             MenuController.DeselectAllPages(true);
             PreviousPage = null;
             CurrentPage = null;
         }
+        
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public override void UpdateState()
@@ -68,7 +81,7 @@ public class PlayerInMenuState : PlayerBaseState
         // Grounded
         if (StateMachine.inputHandler.ToggleMenuInput)
         {
-            StateMachine.inputHandler.ConsumeToggleMenuBuffer();
+            StateMachine.inputHandler.ConsumeToggleMenuInput();
             ExitMenu();
             return;
         }
@@ -94,7 +107,8 @@ public class PlayerInMenuState : PlayerBaseState
 
     public void ExitMenu()
     {
-        StateMachine.inputHandler.ConsumeJumpBuffer();
+        StateMachine.inputHandler.ConsumeJumpInput();
+        StateMachine.inputHandler.ConsumeCrouchInput();
         StateMachine.SwitchState(StateMachine.GroundedState);
     }
 }

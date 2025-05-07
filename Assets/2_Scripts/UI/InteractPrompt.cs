@@ -1,14 +1,15 @@
-using System;
 using PrimeTween;
+using Shapes;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class InteractPrompt : MonoBehaviour
 {
+
     [Header("References")]
-    [SerializeField] private Image promptBackground;
+    [SerializeField] private ShapeGroup promptBackgroundRectangle;
+    [SerializeField] private ShapeGroup promptBackgroundCircle;
     [SerializeField] private TextMeshProUGUI promptText;
     [SerializeField] private SOInputReader inputReader;
 
@@ -26,7 +27,6 @@ public class InteractPrompt : MonoBehaviour
     [SerializeField] private Vector3 rotationOffset = Vector3.zero;
     
     [Header("Distance Scaling Based On Camera")]
-    
     [SerializeField] private bool smoothScaling = true;
     [SerializeField] private float minDistance = 7f;
     [SerializeField] private float maxDistance = 18f;
@@ -38,27 +38,34 @@ public class InteractPrompt : MonoBehaviour
     private Vector3 _originalScale;
     private float _originalXRotation;
     private float _originalZRotation;
-    private float _defaultBackgroundAlpha;
+    private Color _defaultBackgroundColor;
     private float _defaultTextAlpha;
     private Sequence _promptSequence;
+    private ShapeGroup _previousBackGroup;
+    private ShapeGroup _activeBackGroup;
     
 
     private void Awake()
     {
-
         Vector3 currentRotation = transform.rotation.eulerAngles;
         _originalXRotation = currentRotation.x;
         _originalZRotation = currentRotation.z;
-        
-
+    
         _originalScale = transform.localScale;
-        
-        if (promptBackground)
+    
+        if (promptBackgroundRectangle)
         {
-            _defaultBackgroundAlpha = promptBackground.color.a;
-            SetAlpha(promptBackground, 0f);
+            _defaultBackgroundColor = promptBackgroundRectangle.Color;
+            SetAlpha(promptBackgroundRectangle, 0f);
         }
-        
+    
+        if (promptBackgroundCircle)
+        {
+            if (_defaultBackgroundColor == null || _defaultBackgroundColor == Color.clear)
+                _defaultBackgroundColor = promptBackgroundCircle.Color;
+            SetAlpha(promptBackgroundCircle, 0f);
+        }
+    
         if (promptText)
         {
             _defaultTextAlpha = promptText.color.a;
@@ -95,82 +102,93 @@ public class InteractPrompt : MonoBehaviour
 
     public void UpdateInteractPrompt(bool isPlayer)
     {
+        _previousBackGroup = _activeBackGroup;
+    
         if (inputReader)
         {
             switch (inputReader.CurrentControlScheme)
             {
                 case ControlType.KeyboardMouse:
-                    promptText.text = isPlayer ? $"E" : $"R";
+                    promptText.text = isPlayer ? "E" : "R";
+                    _activeBackGroup = promptBackgroundRectangle;
                     break;
                 case ControlType.Gamepad:
-                    promptText.text = isPlayer ? $"<sprite name=xx>" : $"<sprite name=xy>";
-                    SetAlpha(promptBackground, 0f);
+                    promptText.text = isPlayer ? "X" : "Y";
+                    _activeBackGroup = promptBackgroundCircle;
                     break;
             }
         }
         else
         {
-            promptText.text = isPlayer ? $"E" : $"R";
+            promptText.text = isPlayer ? "E" : "R";
+            _activeBackGroup = promptBackgroundRectangle;
+        }
+    
+        // If we're switching backgrounds and a prompt is already visible
+        if (_previousBackGroup && _previousBackGroup != _activeBackGroup && promptText.color.a > 0)
+        {
+            // Hide the previous background
+            SetAlpha(_previousBackGroup, 0f);
+        
+            // Show the new background with the same alpha as the text
+            if (_activeBackGroup)
+            {
+                Color activeColor = _defaultBackgroundColor;
+                activeColor.a = promptText.color.a;
+                _activeBackGroup.Color = activeColor;
+            }
         }
     }
     
-    private void SetAlpha(Graphic graphic, float alpha)
-    {
-        if (!graphic) return;
-        
-        Color color = graphic.color;
-        color.a = alpha;
-        graphic.color = color;
-    }
+
     
     public void FadePrompt(bool fadeIn)
     {
         _promptSequence.Stop();
         _promptSequence = Sequence.Create();
-        
-     
-        if (promptBackground && inputReader.CurrentControlScheme != ControlType.Gamepad)
+    
+        // Only animate the active background group
+        if (_activeBackGroup)
         {
-            float targetAlpha = fadeIn ? _defaultBackgroundAlpha : 0f;
-            
+            Color targetAlpha = fadeIn ? _defaultBackgroundColor : Color.clear;
+        
             _promptSequence.Group(
-                Tween.Alpha(
-                    promptBackground,
-                    startValue: promptBackground.color.a,
+                Tween.Custom(
+                    onValueChange: newColor => _activeBackGroup.Color = newColor,
+                    startValue: _activeBackGroup.Color,
                     endValue: targetAlpha,
                     duration: promptFadeDuration,
                     ease: promptFadeEase
                 )
             );
         }
-        
-   
+    
         if (promptText)
         {
             float targetAlpha = fadeIn ? _defaultTextAlpha : 0f;
-            
+        
             if (fadeIn)
             {
                 _scaleWithDistance = true;
                 _lookAtCamera = true;
             } 
-            
+        
             _promptSequence.Group(
                 Tween.Alpha(
-                    promptText,
-                    startValue: promptText.color.a,
-                    endValue: targetAlpha,
-                    duration: promptFadeDuration,
-                    ease: promptFadeEase
-                )
-                .OnComplete( () =>
-                {
-                    if (!fadeIn)
+                        promptText,
+                        startValue: promptText.color.a,
+                        endValue: targetAlpha,
+                        duration: promptFadeDuration,
+                        ease: promptFadeEase
+                    )
+                    .OnComplete( () =>
                     {
-                        _scaleWithDistance = false;
-                        _lookAtCamera = false;
-                    } 
-                })
+                        if (!fadeIn)
+                        {
+                            _scaleWithDistance = false;
+                            _lookAtCamera = false;
+                        } 
+                    })
             );
         }
     }
@@ -240,4 +258,25 @@ public class InteractPrompt : MonoBehaviour
             }
         }
     }
+    
+    
+    
+    private void SetAlpha(ShapeGroup graphic, float alpha)
+    {
+        if (!graphic) return;
+        
+        Color color = graphic.Color;
+        color.a = alpha;
+        graphic.Color = color;
+    }
+    
+    private void SetAlpha(Graphic graphic, float alpha)
+    {
+        if (!graphic) return;
+        
+        Color color = graphic.color;
+        color.a = alpha;
+        graphic.color = color;
+    }
+
 }
