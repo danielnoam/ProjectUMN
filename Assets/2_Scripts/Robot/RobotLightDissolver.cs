@@ -28,7 +28,7 @@ public class RobotLightDissolver : MonoBehaviour
     private RobotCompanion _robot;
     private Vector3 _targetPosition;
     private bool _isMoving;
-    private bool MoveToTarget => _robot.PlayerIsAiming && _robot.IsOn() && _robot.CurrentState != RobotState.Sitting;
+    private bool MoveToTarget => _robot.PlayerIsAiming && _robot.IsOn() && _robot.CurrentState == RobotState.FollowingPlayer;
     
     // Static variables for managing multiple interactors
     private const int MaxInteractors = 20;

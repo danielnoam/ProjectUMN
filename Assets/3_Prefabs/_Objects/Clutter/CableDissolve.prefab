@@ -35,7 +35,7 @@ PrefabInstance:
     - target: {fileID: 8853760752210374097, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 47ab37849c3fa68498820d5be1f638c7, type: 2}
+      objectReference: {fileID: 2100000, guid: c7a224a9336310d4b8b2cfbdb861f4a6, type: 2}
     - target: {fileID: 8954314878755998776, guid: 4d139c5642691d9498670105193ab164, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -81,15 +81,15 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2001434069593992560, guid: 4d139c5642691d9498670105193ab164, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 646511636146775122}
+      insertIndex: 5
+      addedObject: {fileID: 4116652239852031868}
   m_SourcePrefab: {fileID: 100100000, guid: 4d139c5642691d9498670105193ab164, type: 3}
 --- !u!1 &2633914393771265162 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2001434069593992560, guid: 4d139c5642691d9498670105193ab164, type: 3}
   m_PrefabInstance: {fileID: 4560754994957378042}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &646511636146775122
+--- !u!114 &4116652239852031868
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -98,15 +98,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 2633914393771265162}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d5df26f5ff76f645866da3703bac6ac, type: 3}
+  m_Script: {fileID: 11500000, guid: a98154c81d002e242a1a78563dd50c94, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoSetupOnAwake: 1
-  includeChildRenderers: 0
-  rendererToDissolve: {fileID: 5014176542214753323}
-  dissolveMaterial: {fileID: 2100000, guid: 47ab37849c3fa68498820d5be1f638c7, type: 2}
---- !u!23 &5014176542214753323 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 8853760752210374097, guid: 4d139c5642691d9498670105193ab164, type: 3}
-  m_PrefabInstance: {fileID: 4560754994957378042}
-  m_PrefabAsset: {fileID: 0}
+  subscribeTo: 3
+  _target: {fileID: 0}
