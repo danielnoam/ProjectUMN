@@ -56,6 +56,10 @@ public class IntroSceneHandler : MonoBehaviour
         _loadingTextWriter = loadingText.GetComponent<TMPWriter>();
 
         _loadingTextWriter.OnStartWriter.AddListener(OnStartWriter);
+        
+        
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void OnDisable()

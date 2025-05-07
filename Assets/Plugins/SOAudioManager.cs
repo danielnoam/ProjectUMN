@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 
+
 public enum VolumeType
 {
     MasterVolume,
@@ -60,16 +61,32 @@ public class SOAudioManager : ScriptableObject
     
     private float LoadMasterVolume()
     {
+        if (!PlayerPrefs.HasKey(nameof(VolumeType.MasterVolume)))
+        {
+            PlayerPrefs.SetFloat(nameof(VolumeType.MasterVolume), 0.75f);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetFloat(nameof(VolumeType.MasterVolume), 0.75f);
     }
     
     private float LoadMusicVolume()
     {
+        if (!PlayerPrefs.HasKey(nameof(VolumeType.MusicVolume)))
+        {
+            PlayerPrefs.SetFloat(nameof(VolumeType.MusicVolume), 0.4f);
+            PlayerPrefs.Save();
+        }
+        
         return PlayerPrefs.GetFloat(nameof(VolumeType.MusicVolume), 0.4f);
     }
     
     private float LoadSoundFXVolume()
     {
+        if (!PlayerPrefs.HasKey(nameof(VolumeType.SoundFXVolume)))
+        {
+            PlayerPrefs.SetFloat(nameof(VolumeType.SoundFXVolume), 1f);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetFloat(nameof(VolumeType.SoundFXVolume), 1f);
     }
 

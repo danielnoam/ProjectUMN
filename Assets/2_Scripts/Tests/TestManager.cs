@@ -148,10 +148,6 @@ public class TestManager : MonoBehaviour
         {
             StartIntroSequence();
         }
-        else if (SceneManager.GetActiveScene().name == "TestScene" && !debugMode)
-        {
-            StartClearTestSequence();
-        }
     }
     
     private void Update()
@@ -180,7 +176,7 @@ public class TestManager : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.Keypad8))
         {
-            StartCreditsSequence(false);
+            StartCreditsSequence(DebugMode);
         }
         
         if (Input.GetKeyDown(KeyCode.Keypad9))

@@ -559,6 +559,11 @@ public class TestEnvironmentAnimator : MonoBehaviour
             objectsToAnimate.Sort((objectA, objectB) => {
                 if (!objectA || !objectB) return 0;
                 
+                if (_floorGameObject && objectA == _floorGameObject)
+                {
+                    objectsToAnimate.Remove(_floorGameObject);
+                }
+                
                 try {
                     float distA = Vector3.Distance(objectA.transform.position, playerTransform.position);
                     float distB = Vector3.Distance(objectB.transform.position, playerTransform.position);
@@ -569,6 +574,8 @@ public class TestEnvironmentAnimator : MonoBehaviour
                     // If any exception occurs, consider the objects equal
                     return 0;
                 }
+                
+
             });
         }
         else

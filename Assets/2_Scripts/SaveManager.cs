@@ -30,7 +30,7 @@ public class SaveManager : MonoBehaviour
     }
     
     // Delete all saved data
-    public void DeleteAllKeys()
+    public static void DeleteAllKeys()
     {
         PlayerPrefs.DeleteAll();
         PlayerPrefs.Save();
@@ -65,21 +65,45 @@ public class SaveManager : MonoBehaviour
     // Load methods for different data types
     public static int LoadInt(string key, int defaultValue = 0)
     {
+        // Check if the key exists
+        if (!HasKey(key))
+        {
+            PlayerPrefs.SetInt(key, defaultValue);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetInt(key, defaultValue);
     }
 
     public static float LoadFloat(string key, float defaultValue = 0f)
     {
+        // Check if the key exists
+        if (!HasKey(key))
+        {
+            PlayerPrefs.SetFloat(key, defaultValue);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetFloat(key, defaultValue);
     }
 
     public static string LoadString(string key, string defaultValue = "")
     {
+        // Check if the key exists
+        if (!HasKey(key))
+        {
+            PlayerPrefs.SetString(key, defaultValue);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetString(key, defaultValue);
     }
 
     public static bool LoadBool(string key, bool defaultValue = false)
     {
+        // Check if the key exists
+        if (!HasKey(key))
+        {
+            PlayerPrefs.SetInt(key, defaultValue ? 1 : 0);
+            PlayerPrefs.Save();
+        }
         return PlayerPrefs.GetInt(key, defaultValue ? 1 : 0) == 1;
     }
 
