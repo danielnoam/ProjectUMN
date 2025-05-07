@@ -278,7 +278,6 @@ public class CreditsText : MonoBehaviour
             _attributionTextObject.color = textColor;
             
             _attributionReachedCenter = true;
-            Debug.Log("Attribution text positioned at center");
         }
     }
     

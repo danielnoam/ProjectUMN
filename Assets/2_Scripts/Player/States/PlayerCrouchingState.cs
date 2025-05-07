@@ -58,7 +58,7 @@ public class PlayerCrouchingState : PlayerBaseState
         // Grounded
         if (StateMachine.CanStand)
         {
-            if (StateMachine.inputHandler.IsCrouchToggle)
+            if (StateMachine.inputHandler.InputReader.ActiveSettings.toggleCrouch)
             {
                 if (StateMachine.inputHandler.CrouchInput)
                 {

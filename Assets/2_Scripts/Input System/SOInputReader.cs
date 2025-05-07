@@ -2,24 +2,61 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
 using System.Collections.Generic;
+using UnityEngine.Events;
 using UnityEngine.InputSystem.XR;
+using UnityEngine.Serialization;
+using VInspector;
+
+[Serializable]
+public class InputSettings
+{
+    public bool toggleMoveSpeed;
+    public bool toggleCrouch;
+    public bool toggleSprint;
+    public bool toggleAimInput;
+    [Range(0f, 1f)] public float movementInputThreshold = 0.01f;
+    [Range(0.1f, 10f)] public float mouseSensitivity = 1f;
+    [Range(0.1f, 10f)] public float freeCameraSensitivity = 1f;
+    [Range(0.1f, 10f)] public float aimCameraSensitivity = 0.5f;
+    
+    public InputSettings Clone()
+    {
+        return new InputSettings
+        {
+            toggleMoveSpeed = this.toggleMoveSpeed,
+            toggleCrouch = this.toggleCrouch,
+            toggleSprint = this.toggleSprint,
+            toggleAimInput = this.toggleAimInput,
+            movementInputThreshold = this.movementInputThreshold,
+            mouseSensitivity = this.mouseSensitivity,
+            freeCameraSensitivity = this.freeCameraSensitivity,
+            aimCameraSensitivity = this.aimCameraSensitivity
+        };
+    }
+}
+
+
 
 /// <summary>
 /// Scriptable Object that handles input system events and broadcasts them to listeners
-/// create a scriptable object and connect the input asset to it
-/// create a reference to the input reader and subscribe to the needed events in the mono behavior
+/// create a scriptable object and connect the input asset to it,
+/// create a reference to the input reader and subscribe to the necessary events in the mono behavior
 /// </summary>
 [CreateAssetMenu(fileName = "InputReader", menuName = "SO Manager/Input Reader")]
 public class SOInputReader : ScriptableObject
 {
+    [Header("Settings")]
     [SerializeField] private InputActionAsset inputAsset;
     [SerializeField] private bool printDebug;
     
-    
-    [Header("Keybind Icons")]
-    public KeyboardIcons keyboardIcons;
-    public GamepadIcons gamepadIcons;
-    
+    [Header("Control Schemes")]
+    [SerializeField] private InputSettings mouseKeyboardDefaultSettings ;
+    [SerializeField] private InputSettings gamepadDefaultSettings;
+    [SerializeField,ReadOnly] private InputSettings activeSettings = new InputSettings();
+    [SerializeField,ReadOnly] private InputSettings mouseKeyboardSettings = new InputSettings();
+    [SerializeField,ReadOnly] private InputSettings gamepadSettings = new InputSettings();
+    public UnityEvent onResetInputSettingEvent = new UnityEvent();
+
     // Actions from the input asset
     private InputAction _toggleMenu;
     private InputAction _navigateAction;
@@ -54,10 +91,11 @@ public class SOInputReader : ScriptableObject
     public ControlType CurrentControlScheme { get; private set; }
     public Vector2 CurrentMoveInput { get; private set; }
     public Vector2 CurrentLookInput { get; private set; }
-    
-    
+    public InputSettings ActiveSettings => activeSettings;
+    public InputSettings MouseKeyboardSettings => mouseKeyboardSettings;
+    public InputSettings GamepadSettings => gamepadSettings;
 
-    
+
     private void OnEnable()
     {
         if (inputAsset == null)
@@ -172,12 +210,13 @@ public class SOInputReader : ScriptableObject
         
         CurrentControlScheme = newScheme;
         ControlSchemeChangedEvent?.Invoke(CurrentControlScheme);
+        activeSettings = newScheme == ControlType.KeyboardMouse ? mouseKeyboardSettings : gamepadSettings;
         if (printDebug) Debug.Log($"Control Scheme changed to: {CurrentControlScheme}");
     }
     
     private void CheckInputControlScheme(InputAction.CallbackContext context)
     {
-        // Only check for device changes on 'started' phase
+        // Only check for device changes on the 'started' phase
         if (!context.started)
             return;
             
@@ -376,7 +415,7 @@ public class SOInputReader : ScriptableObject
                 switch (controlType.Value)
                 {
                     case ControlType.KeyboardMouse:
-                        // For keyboard/mouse, check for keyboard path or empty groups
+                        // For keyboard/mouse, check for a keyboard path or empty groups
                         matchesScheme = binding.path.StartsWith("<Keyboard>") || 
                                       binding.path.StartsWith("<Mouse>") ||
                                       string.IsNullOrEmpty(binding.groups) ||
@@ -400,7 +439,7 @@ public class SOInputReader : ScriptableObject
             string displayString = action.GetBindingDisplayString(i, InputBinding.DisplayStringOptions.DontUseShortDisplayNames);
             if (string.IsNullOrEmpty(displayString)) continue;
 
-            // Add control scheme prefix if we're showing all schemes
+            // Add a control scheme prefix if we're showing all schemes
             if (!controlType.HasValue)
             {
                 string schemePrefix;
@@ -435,209 +474,158 @@ public class SOInputReader : ScriptableObject
     
     #endregion Controls Information -----------------------------------------------------------------------------------------------------------------
     
-
-
-#region Icons  -----------------------------------------------------------------------------------------------------------------
-
-
-[Serializable] 
-public struct GamepadIcons
-{
-    public Sprite buttonSouth;
-    public Sprite buttonNorth;
-    public Sprite buttonEast;
-    public Sprite buttonWest;
-    public Sprite startButton;
-    public Sprite selectButton;
-    public Sprite leftTrigger;
-    public Sprite rightTrigger;
-    public Sprite leftShoulder;
-    public Sprite rightShoulder;
-    public Sprite dpad;
-    public Sprite dpadUp;
-    public Sprite dpadDown;
-    public Sprite dpadLeft;
-    public Sprite dpadRight;
-    public Sprite leftStick;
-    public Sprite rightStick;
-    public Sprite leftStickPress;
-    public Sprite rightStickPress;
-
-    public Sprite GetSprite(string controlPath)
-    {
-        // From the input system, we get the path of the control on device. So we can just
-        // map from that to the sprites we have for gamepads.
-        switch (controlPath)
-        {
-            case "buttonSouth": return buttonSouth;
-            case "buttonNorth": return buttonNorth;
-            case "buttonEast": return buttonEast;
-            case "buttonWest": return buttonWest;
-            case "start": return startButton;
-            case "select": return selectButton;
-            case "leftTrigger": return leftTrigger;
-            case "rightTrigger": return rightTrigger;
-            case "leftShoulder": return leftShoulder;
-            case "rightShoulder": return rightShoulder;
-            case "dpad": return dpad;
-            case "dpad/up": return dpadUp;
-            case "dpad/down": return dpadDown;
-            case "dpad/left": return dpadLeft;
-            case "dpad/right": return dpadRight;
-            case "leftStick": return leftStick;
-            case "rightStick": return rightStick;
-            case "leftStickPress": return leftStickPress;
-            case "rightStickPress": return rightStickPress;
-        }
-        return null;
-    }
-}
-
-[Serializable]
-public struct KeyboardIcons
-{
-    // Letter keys
-    public Sprite keyA;
-    public Sprite keyB;
-    public Sprite keyC;
-    public Sprite keyD;
-    public Sprite keyE;
-    public Sprite keyF;
-    public Sprite keyG;
-    public Sprite keyH;
-    public Sprite keyI;
-    public Sprite keyJ;
-    public Sprite keyK;
-    public Sprite keyL;
-    public Sprite keyM;
-    public Sprite keyN;
-    public Sprite keyO;
-    public Sprite keyP;
-    public Sprite keyQ;
-    public Sprite keyR;
-    public Sprite keyS;
-    public Sprite keyT;
-    public Sprite keyU;
-    public Sprite keyV;
-    public Sprite keyW;
-    public Sprite keyX;
-    public Sprite keyY;
-    public Sprite keyZ;
-
-    // Number keys
-    public Sprite key1;
-    public Sprite key2;
-    public Sprite key3;
-    public Sprite key4;
-    public Sprite key5;
-    public Sprite key6;
-    public Sprite key7;
-    public Sprite key8;
-    public Sprite key9;
-    public Sprite key0;
-
-    // Special keys
-    public Sprite keySpace;
-    public Sprite keyEnter;
-    public Sprite keyEscape;
-    public Sprite keyTab;
-    public Sprite keyBackspace;
-    public Sprite keyDelete;
-    public Sprite keyShift;
-    public Sprite keyCtrl;
-    public Sprite keyAlt;
     
-    // Arrow keys
-    public Sprite keyArrowUp;
-    public Sprite keyArrowDown;
-    public Sprite keyArrowLeft;
-    public Sprite keyArrowRight;
-
-    // Mouse
-    public Sprite mouseLeft;
-    public Sprite mouseRight;
-    public Sprite mouseMiddle;
-    public Sprite mouseWheel;
-
-    public Sprite GetSprite(string controlPath)
+    #region Player Settings --------------------------------------------------------------------------------------------
+    
+    [Button]
+    private void ResetInputSettings()
     {
-        // Remove the device prefix if present
-        string key = controlPath.Replace("<Keyboard>/", "").Replace("<Mouse>/", "");
-        
-        switch (key.ToLower())
+        mouseKeyboardSettings = mouseKeyboardDefaultSettings.Clone();
+        gamepadSettings = gamepadDefaultSettings.Clone();
+        activeSettings = CurrentControlScheme == ControlType.KeyboardMouse ? mouseKeyboardSettings : gamepadSettings;
+    
+        SaveSettings();
+        onResetInputSettingEvent?.Invoke();
+    }
+    
+    public void LoadSettings()
+    {
+        // Check if the settings files exist
+        if (System.IO.File.Exists(Application.persistentDataPath + "/mouseKeyboardSettings.json"))
         {
-            // Letters
-            case "a": return keyA;
-            case "b": return keyB;
-            case "c": return keyC;
-            case "d": return keyD;
-            case "e": return keyE;
-            case "f": return keyF;
-            case "g": return keyG;
-            case "h": return keyH;
-            case "i": return keyI;
-            case "j": return keyJ;
-            case "k": return keyK;
-            case "l": return keyL;
-            case "m": return keyM;
-            case "n": return keyN;
-            case "o": return keyO;
-            case "p": return keyP;
-            case "q": return keyQ;
-            case "r": return keyR;
-            case "s": return keyS;
-            case "t": return keyT;
-            case "u": return keyU;
-            case "v": return keyV;
-            case "w": return keyW;
-            case "x": return keyX;
-            case "y": return keyY;
-            case "z": return keyZ;
-
-            // Numbers
-            case "1": return key1;
-            case "2": return key2;
-            case "3": return key3;
-            case "4": return key4;
-            case "5": return key5;
-            case "6": return key6;
-            case "7": return key7;
-            case "8": return key8;
-            case "9": return key9;
-            case "0": return key0;
-
-            // Special keys
-            case "space": return keySpace;
-            case "enter": return keyEnter;
-            case "escape": return keyEscape;
-            case "tab": return keyTab;
-            case "backspace": return keyBackspace;
-            case "delete": return keyDelete;
-            case "leftshift":
-            case "rightshift": return keyShift;
-            case "leftctrl":
-            case "rightctrl": return keyCtrl;
-            case "leftalt":
-            case "rightalt": return keyAlt;
-
-            // Arrow keys
-            case "uparrow": return keyArrowUp;
-            case "downarrow": return keyArrowDown;
-            case "leftarrow": return keyArrowLeft;
-            case "rightarrow": return keyArrowRight;
-
-            // Mouse
-            case "leftbutton": return mouseLeft;
-            case "rightbutton": return mouseRight;
-            case "middlebutton": return mouseMiddle;
-            case "scroll": return mouseWheel;
+            // Load the settings from JSON
+            string mouseKeyboardSettingsJson = System.IO.File.ReadAllText(Application.persistentDataPath + "/mouseKeyboardSettings.json");
+            mouseKeyboardSettings = JsonUtility.FromJson<InputSettings>(mouseKeyboardSettingsJson);
+        }
+        else
+        {
+            mouseKeyboardSettings = mouseKeyboardDefaultSettings.Clone();
         }
         
-        return null;
+        if (System.IO.File.Exists(Application.persistentDataPath + "/gamepadSettings.json"))
+        {
+            // Load the settings from JSON
+            string gamepadSettingsJson = System.IO.File.ReadAllText(Application.persistentDataPath + "/gamepadSettings.json");
+            gamepadSettings = JsonUtility.FromJson<InputSettings>(gamepadSettingsJson);
+        }
+        else
+        {
+            gamepadSettings = gamepadDefaultSettings.Clone();
+        }
+        
+        // Set the active settings based on the current control scheme
+        if (CurrentControlScheme == ControlType.KeyboardMouse)
+        {
+            activeSettings = mouseKeyboardSettings;
+        }
+        else
+        {
+            activeSettings = gamepadSettings;
+        }
     }
-}
+    
+    public void SaveSettings()
+    {
+        
+        // Save each setting to JSON
+        string mouseKeyboardSettingsJson = JsonUtility.ToJson(mouseKeyboardSettings);
+        string gamepadSettingsJson = JsonUtility.ToJson(gamepadSettings);
+        // Save to file
+        System.IO.File.WriteAllText(Application.persistentDataPath + "/mouseKeyboardSettings.json", mouseKeyboardSettingsJson);
+        System.IO.File.WriteAllText(Application.persistentDataPath + "/gamepadSettings.json", gamepadSettingsJson);
+    }
+    
+    public void SetAimCameraSensitivity(ControlType type, float value)
+    {
+        
+        if (value < 0.1f || value > 10f)
+        {
+            Debug.LogError("Aim camera sensitivity must be between 0.1 and 10");
+            return;
+        }
 
-#endregion Icons  -----------------------------------------------------------------------------------------------------------------
+        activeSettings.aimCameraSensitivity = value;
+        if (type == ControlType.Gamepad)
+        {
+            gamepadSettings.aimCameraSensitivity = value;
+        }
+        else
+        {
+            mouseKeyboardSettings.aimCameraSensitivity = value;
+        }
+        
+        SaveSettings();
+    }
+    
+    public void SetFreeCameraSensitivity(ControlType type, float value)
+    {
+        if (value < 0.1f || value > 10f)
+        {
+            Debug.LogError("Free camera sensitivity must be between 0.1 and 10");
+            return;
+        }
+
+        activeSettings.freeCameraSensitivity = value;
+        if (type == ControlType.Gamepad)
+        {
+            gamepadSettings.freeCameraSensitivity = value;
+        }
+        else
+        {
+            mouseKeyboardSettings.freeCameraSensitivity = value;
+        }
+        
+        SaveSettings();
+    }
+    
+    public void SetToggleSprint(ControlType type, bool value)
+    {
+        activeSettings.toggleSprint = value;
+        if (type == ControlType.Gamepad)
+        {
+            gamepadSettings.toggleSprint = value;
+        }
+        else
+        {
+            mouseKeyboardSettings.toggleSprint = value;
+        }
+        
+        SaveSettings();
+    }
+    
+    public void SetToggleCrouch(ControlType type, bool value)
+    {
+        activeSettings.toggleCrouch = value;
+        if (type == ControlType.Gamepad)
+        {
+            gamepadSettings.toggleCrouch = value;
+        }
+        else
+        {
+            mouseKeyboardSettings.toggleCrouch = value;
+        }
+        
+        SaveSettings();
+    }
+    
+    public void SetToggleAimInput(ControlType type, bool value)
+    {
+        activeSettings.toggleAimInput = value;
+        if (type == ControlType.Gamepad)
+        {
+            gamepadSettings.toggleAimInput = value;
+        }
+        else
+        {
+            mouseKeyboardSettings.toggleAimInput = value;
+        }
+        
+        SaveSettings();
+    }
+    
+
+    #endregion Player Settings --------------------------------------------------------------------------------------------
+
 
 
 }

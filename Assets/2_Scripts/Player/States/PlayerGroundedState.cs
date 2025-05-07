@@ -54,7 +54,7 @@ public class PlayerGroundedState : PlayerBaseState
         }
         
         // Crouching
-        if (StateMachine.inputHandler.IsCrouchToggle)
+        if (StateMachine.inputHandler.InputReader.ActiveSettings.toggleCrouch)
         {
             if (StateMachine.inputHandler.CrouchInput)
             {

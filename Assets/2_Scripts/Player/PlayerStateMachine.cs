@@ -354,7 +354,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
     {
         bool lockSprintGait = inputHandler.MoveSpeedInput || !allowSprint || IsAiming || CurrentState == CrouchingState;
 
-        if (movementIntensity < inputHandler.MovementInputThreshold)
+        if (movementIntensity < inputHandler.InputReader.ActiveSettings.movementInputThreshold)
             return 0f;
 
         // Determine base speed based on input and state
@@ -700,7 +700,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         );
         
         // Check if input is above threshold
-        bool hasMovementInput = movementIntensity > inputHandler.MovementInputThreshold;
+        bool hasMovementInput = movementIntensity > inputHandler.InputReader.ActiveSettings.movementInputThreshold;
         
         // Process movement if allowed
         if (allowMovement && hasMovementInput)
@@ -771,7 +771,7 @@ public class PlayerStateMachine : MonoBehaviour, Iinteractor
         }
         
         // Track if we're moving laterally for animation/rotation purposes
-        _isMovingLaterally = ActiveHorizontalVelocity > inputHandler.MovementInputThreshold;
+        _isMovingLaterally = ActiveHorizontalVelocity > inputHandler.InputReader.ActiveSettings.movementInputThreshold;
     }
 
 

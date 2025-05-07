@@ -155,7 +155,7 @@ private void UpdateMovementDirectionAnimation()
                               isAiming || 
                               isCrouching;
         
-        if (inputIntensity > player.inputHandler.MovementInputThreshold)
+        if (inputIntensity > player.inputHandler.InputReader.ActiveSettings.movementInputThreshold)
         {
             if (!lockSprintGait)
             {

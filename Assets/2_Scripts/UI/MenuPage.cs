@@ -9,6 +9,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using VInspector;
 using Shapes;
+using UnityEngine.Events;
 
 
 public class MenuPage : MonoBehaviour
@@ -16,6 +17,10 @@ public class MenuPage : MonoBehaviour
     
     [Header("Page Settings")] 
     [SerializeField] private List<Selectable> selectables = new List<Selectable>();
+    [Foldout("Events")]
+    public UnityEvent onPageSelected = new UnityEvent();
+    public UnityEvent onPageDeselected = new UnityEvent();
+    [EndFoldout]
     
     [Space(10)]
     [CustomAttribute.ReadOnly] public Selectable currentSelectable;
@@ -153,6 +158,8 @@ public class MenuPage : MonoBehaviour
         {
             SetSelectedInstantly();
         }
+        
+        onPageSelected?.Invoke();
     }
 
     
@@ -168,6 +175,8 @@ public class MenuPage : MonoBehaviour
         {
             SetDeselectedInstantly();
         }
+        
+        onPageDeselected?.Invoke();
     }
 
     public void OnNavigate(InputAction.CallbackContext context) // Input event

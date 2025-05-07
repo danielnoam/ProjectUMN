@@ -14,77 +14,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputAsset: {fileID: -944628639613478452, guid: bff2f86e27a85fb4bbbd33c6f197cd91, type: 3}
   printDebug: 0
-  keyboardIcons:
-    keyA: {fileID: 0}
-    keyB: {fileID: 0}
-    keyC: {fileID: 0}
-    keyD: {fileID: 0}
-    keyE: {fileID: 0}
-    keyF: {fileID: 0}
-    keyG: {fileID: 0}
-    keyH: {fileID: 0}
-    keyI: {fileID: 0}
-    keyJ: {fileID: 0}
-    keyK: {fileID: 0}
-    keyL: {fileID: 0}
-    keyM: {fileID: 0}
-    keyN: {fileID: 0}
-    keyO: {fileID: 0}
-    keyP: {fileID: 0}
-    keyQ: {fileID: 0}
-    keyR: {fileID: 0}
-    keyS: {fileID: 0}
-    keyT: {fileID: 0}
-    keyU: {fileID: 0}
-    keyV: {fileID: 0}
-    keyW: {fileID: 0}
-    keyX: {fileID: 0}
-    keyY: {fileID: 0}
-    keyZ: {fileID: 0}
-    key1: {fileID: 0}
-    key2: {fileID: 0}
-    key3: {fileID: 0}
-    key4: {fileID: 0}
-    key5: {fileID: 0}
-    key6: {fileID: 0}
-    key7: {fileID: 0}
-    key8: {fileID: 0}
-    key9: {fileID: 0}
-    key0: {fileID: 0}
-    keySpace: {fileID: 0}
-    keyEnter: {fileID: 0}
-    keyEscape: {fileID: 0}
-    keyTab: {fileID: 0}
-    keyBackspace: {fileID: 0}
-    keyDelete: {fileID: 0}
-    keyShift: {fileID: 0}
-    keyCtrl: {fileID: 0}
-    keyAlt: {fileID: 0}
-    keyArrowUp: {fileID: 0}
-    keyArrowDown: {fileID: 0}
-    keyArrowLeft: {fileID: 0}
-    keyArrowRight: {fileID: 0}
-    mouseLeft: {fileID: 0}
-    mouseRight: {fileID: 0}
-    mouseMiddle: {fileID: 0}
-    mouseWheel: {fileID: 0}
-  gamepadIcons:
-    buttonSouth: {fileID: 21300000, guid: f609c9b3b1675f947a865ec558b5ad90, type: 3}
-    buttonNorth: {fileID: 21300000, guid: 17fd7d74524d4cc4ea612a100880d012, type: 3}
-    buttonEast: {fileID: 21300000, guid: d08c52c09554ca8418a86627f4bd14e1, type: 3}
-    buttonWest: {fileID: 21300000, guid: cde7469096582e04897fae80dfc34fbe, type: 3}
-    startButton: {fileID: 0}
-    selectButton: {fileID: 0}
-    leftTrigger: {fileID: 0}
-    rightTrigger: {fileID: 0}
-    leftShoulder: {fileID: 21300000, guid: 672696fcd6aec9d4c84945fa59765f64, type: 3}
-    rightShoulder: {fileID: 21300000, guid: ed60ff0de79971e468ae179e077d66ca, type: 3}
-    dpad: {fileID: 21300000, guid: d1610599218d48042bffac0712c379a6, type: 3}
-    dpadUp: {fileID: 21300000, guid: 4cc6aa9aa8107734da22c80d289cff98, type: 3}
-    dpadDown: {fileID: 21300000, guid: d544feb63b186dd45b32d12cfc6762bf, type: 3}
-    dpadLeft: {fileID: 21300000, guid: 44d8f279ef345c442ae875caa0c26731, type: 3}
-    dpadRight: {fileID: 21300000, guid: cfa9b832ea5877745a96e61e8ffaeca2, type: 3}
-    leftStick: {fileID: 0}
-    rightStick: {fileID: 0}
-    leftStickPress: {fileID: 0}
-    rightStickPress: {fileID: 0}
+  mouseKeyboardDefaultSettings:
+    toggleMoveSpeed: 1
+    toggleCrouch: 0
+    toggleSprint: 0
+    toggleAimInput: 0
+    movementInputThreshold: 0.01
+    mouseSensitivity: 1
+    freeCameraSensitivity: 1
+    aimCameraSensitivity: 1
+  gamepadDefaultSettings:
+    toggleMoveSpeed: 1
+    toggleCrouch: 1
+    toggleSprint: 0
+    toggleAimInput: 0
+    movementInputThreshold: 0.01
+    mouseSensitivity: 1
+    freeCameraSensitivity: 2
+    aimCameraSensitivity: 3
+  activeSettings:
+    toggleMoveSpeed: 1
+    toggleCrouch: 0
+    toggleSprint: 0
+    toggleAimInput: 0
+    movementInputThreshold: 0.01
+    mouseSensitivity: 1
+    freeCameraSensitivity: 1
+    aimCameraSensitivity: 1
+  mouseKeyboardSettings:
+    toggleMoveSpeed: 1
+    toggleCrouch: 0
+    toggleSprint: 0
+    toggleAimInput: 0
+    movementInputThreshold: 0.01
+    mouseSensitivity: 1
+    freeCameraSensitivity: 1
+    aimCameraSensitivity: 1
+  gamepadSettings:
+    toggleMoveSpeed: 1
+    toggleCrouch: 1
+    toggleSprint: 0
+    toggleAimInput: 0
+    movementInputThreshold: 0.01
+    mouseSensitivity: 1
+    freeCameraSensitivity: 1
+    aimCameraSensitivity: 0.5
+  onResetInputSettingEvent:
+    m_PersistentCalls:
+      m_Calls: []

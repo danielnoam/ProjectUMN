@@ -1,26 +1,15 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using VInspector;
 
 
-[Serializable]
-public class InputSettings
-{
-    public bool toggleMoveSpeed = false;
-    public bool toggleCrouch = false;
-    public bool toggleSprint = false;
-    public bool toggleAimInput = false;
-    [Range(0f, 1f)] public float movementInputThreshold = 0.01f;
-    [Range(0.1f, 10f)] public float mouseSensitivity = 1f;
-    [Range(0.1f, 10f)] public float freeCameraSensitivity = 1f;
-    [Range(0.1f, 10f)] public float aimCameraSensitivity = 0.5f;
-}
+
 
 
 public class PlayerInputHandler : MonoBehaviour
 {
     [Header("Settings")] 
-    [SerializeField] private SOInputReader inputReader;
     [SerializeField, Min(0f)] private float jumpBufferTime = 0.2f;
     [SerializeField, Min(0f)] private float interactBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float commandRobotBufferTime = 0.15f;
@@ -29,19 +18,11 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField, Min(0f)] private float sprintBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float moveSpeedBufferTime = 0.15f;
     [SerializeField, Min(0f)] private float aimBufferTime = 0.15f;
-    [SerializeField] private InputSettings mouseKeyboardSettings = new InputSettings();
-    [SerializeField] private InputSettings gamepadSettings = new InputSettings();
+    
+    [Header("References")]
+    [SerializeField] private SOInputReader inputReader;
 
     private PlayerStateMachine _player;
-    private InputSettings _activeSettings;
-    private bool _toggleMoveSpeed;
-    private bool _toggleCrouch;
-    private bool _toggleSprint;
-    private bool _toggleAimInput;
-    private float _mouseSensitivity;
-    private float _movementInputThreshold;
-    private float _freeCameraSensitivity;
-    private float _aimCameraSensitivity;
     private float _jumpBufferCounter;
     private float _interactBufferCounter;
     private float _commandRobotBufferCounter;
@@ -63,17 +44,18 @@ public class PlayerInputHandler : MonoBehaviour
     public bool CommandRobotInput { get; private set; }
     public bool AimInput { get; private set; }
     public bool ToggleMenuInput { get; private set; }
-    public float MovementInputThreshold => _movementInputThreshold;
-    public float MouseSensitivity => _mouseSensitivity;
-    public float FreeCameraSensitivity => _freeCameraSensitivity;
-    public float AimCameraSensitivity => _aimCameraSensitivity;
-    public bool IsCrouchToggle => _toggleCrouch;
 
 
     private void Awake()
     {
         _player = GetComponent<PlayerStateMachine>();
     }
+
+    private void Start()
+    {
+        inputReader.LoadSettings();
+    }
+
 
     private void OnEnable()
     {
@@ -117,20 +99,6 @@ public class PlayerInputHandler : MonoBehaviour
     
     private void OnControlSchemeChanged(ControlType controlType)
     {
-        // Set the active settings based on the control type
-        _activeSettings = controlType == ControlType.KeyboardMouse ? mouseKeyboardSettings : gamepadSettings;
-    
-        // Update the local variables to match the active settings
-        _toggleMoveSpeed = _activeSettings.toggleMoveSpeed;
-        _toggleCrouch = _activeSettings.toggleCrouch;
-        _toggleSprint = _activeSettings.toggleSprint;
-        _toggleAimInput = _activeSettings.toggleAimInput;
-        _mouseSensitivity = _activeSettings.mouseSensitivity;
-        _movementInputThreshold = _activeSettings.movementInputThreshold;
-        _freeCameraSensitivity = _activeSettings.freeCameraSensitivity;
-        _aimCameraSensitivity = _activeSettings.aimCameraSensitivity;
-        
-        
         if (_player && _player.CurrentState == _player.InMenuState)
         {
             if (controlType == ControlType.Gamepad)
@@ -171,7 +139,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnAimInput(InputAction.CallbackContext context)
     {
-        if (_toggleAimInput)
+        if (inputReader.ActiveSettings.toggleAimInput)
         {
             if (context.started) 
             {
@@ -215,7 +183,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnCrouchInput(InputAction.CallbackContext context)
     {
-        if (_toggleCrouch)
+        if (inputReader.ActiveSettings.toggleCrouch)
         {
             if (context.started) 
             {
@@ -235,7 +203,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnSprintInput(InputAction.CallbackContext context)
     {
-        if (_toggleSprint)
+        if (inputReader.ActiveSettings.toggleSprint)
         {
             if (context.started) 
             {
@@ -255,7 +223,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnMoveSpeedInput(InputAction.CallbackContext context)
     {
-        if (_toggleMoveSpeed)
+        if (inputReader.ActiveSettings.toggleMoveSpeed)
         {
             if (context.started) 
             {
@@ -309,25 +277,25 @@ public class PlayerInputHandler : MonoBehaviour
         }
         
         // Crouch buffer (for non-toggle mode)
-        if (!_toggleCrouch && _crouchBufferCounter > 0)
+        if (!inputReader.ActiveSettings.toggleCrouch && _crouchBufferCounter > 0)
         {
             _crouchBufferCounter -= Time.deltaTime;
         }
         
         // Sprint buffer (for non-toggle mode)
-        if (!_toggleSprint && _sprintBufferCounter > 0)
+        if (!inputReader.ActiveSettings.toggleSprint && _sprintBufferCounter > 0)
         {
             _sprintBufferCounter -= Time.deltaTime;
         }
         
         // Move speed buffer (for non-toggle mode)
-        if (!_toggleMoveSpeed && _moveSpeedBufferCounter > 0)
+        if (!inputReader.ActiveSettings.toggleMoveSpeed && _moveSpeedBufferCounter > 0)
         {
             _moveSpeedBufferCounter -= Time.deltaTime;
         }
         
         // Aim buffer (for non-toggle mode)
-        if (!_toggleAimInput && _aimBufferCounter > 0)
+        if (!inputReader.ActiveSettings.toggleAimInput && _aimBufferCounter > 0)
         {
             _aimBufferCounter -= Time.deltaTime;
         }
@@ -383,4 +351,7 @@ public class PlayerInputHandler : MonoBehaviour
     }
 
     #endregion Buffers -------------------------------------------------------------------------------------------
+
+
+
 }

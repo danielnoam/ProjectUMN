@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using VInspector;
 
 [SelectionBase]
@@ -40,6 +41,7 @@ public class CameraManager : MonoBehaviour
     public CinemachineCamera creditsCamera;
     public GameObject aimCore;
     public Transform targetTransform;
+    [SerializeField] private SOInputReader inputReader;
 
 
 
@@ -201,7 +203,7 @@ public class CameraManager : MonoBehaviour
     public void Initialize(PlayerStateMachine player)
     {
         _player = player;
-        _playerInputHandler = _player.inputHandler;
+        _playerInputHandler = player.inputHandler;
         menuCamera.Follow = _player.transform;
         startMenuCamera.Follow = _player.transform;
         freeLookCamera.Follow = aimCore.transform;
@@ -298,12 +300,12 @@ public class CameraManager : MonoBehaviour
         // Get the appropriate sensitivity based on current camera state
         float cameraSensitivityMultiplier = !_unloadingTest ? 1f : 0.25f;
         float cameraSensitivity = IsAimCameraActive() 
-            ? _playerInputHandler.AimCameraSensitivity 
-            : _playerInputHandler.FreeCameraSensitivity;
+            ? inputReader.ActiveSettings.aimCameraSensitivity 
+            : inputReader.ActiveSettings.freeCameraSensitivity;
 
         // Accumulate rotation values from mouse input
-        _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
-        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * _playerInputHandler.MouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
+        _yawAccumulation += _playerInputHandler.MouseDelta.x * inputReader.ActiveSettings.mouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
+        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * inputReader.ActiveSettings.mouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
 
         // Clamp pitch to prevent camera flipping
         _pitchAccumulation = Mathf.Clamp(_pitchAccumulation, -aimMaxPitch, aimMaxPitch);
