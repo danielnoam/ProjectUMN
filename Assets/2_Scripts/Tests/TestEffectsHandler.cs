@@ -14,23 +14,23 @@ public class TestEffectsHandler : MonoBehaviour
     [SerializeField, Min(0f)] private float creditsDurationEffectMultiplier = 1f;
     
     [Header("References")]
+    [SerializeField] private TestManager testManager;
     [SerializeField] private Image fullscreenImage;
-    private Volume _volume;
+    [SerializeField] private Volume volume;
     private ChromaticAberration _chromaticAberration;
     private PaniniProjection _paniProjection;
     private Vignette _vignette;
-    private TestManager _testManager;
+    
     private Sequence _fadeSequence;
     
     private void Awake()
     {
-        _testManager = GetComponent<TestManager>();
-        _volume = FindFirstObjectByType<Volume>();
-        if (_volume)
+        if (!volume) volume = FindFirstObjectByType<Volume>();
+        if (volume)
         {
-            _volume.profile.TryGet(out _chromaticAberration);
-            _volume.profile.TryGet(out _paniProjection);
-            _volume.profile.TryGet(out _vignette);
+            volume.profile.TryGet(out _chromaticAberration);
+            volume.profile.TryGet(out _paniProjection);
+            volume.profile.TryGet(out _vignette);
             
             _chromaticAberration.active = true;
             _chromaticAberration.intensity.overrideState = true;
@@ -41,20 +41,20 @@ public class TestEffectsHandler : MonoBehaviour
 
     private void OnEnable()
     {
-        _testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
-        _testManager?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
-        _testManager?.onTestStartLoading.AddListener(OnTestStartLoading);
-        _testManager?.onTestStartUnloading.AddListener(OnTestStartUnloading);
+        testManager?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
+        testManager?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
+        testManager?.onTestStartLoading.AddListener(OnTestStartLoading);
+        testManager?.onTestStartUnloading.AddListener(OnTestStartUnloading);
     }
 
 
 
     private void OnDisable()
     {
-        _testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
-        _testManager?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
-        _testManager?.onTestStartLoading.RemoveListener(OnTestStartLoading);
-        _testManager?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
+        testManager?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
+        testManager?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
+        testManager?.onTestStartLoading.RemoveListener(OnTestStartLoading);
+        testManager?.onTestStartUnloading.RemoveListener(OnTestStartUnloading);
         _fadeSequence.Stop();
     }
     
@@ -66,7 +66,7 @@ public class TestEffectsHandler : MonoBehaviour
         }
         
         
-        float time = _testManager.IntroSequenceDuration * introDurationEffectMultiplier;
+        float time = testManager.IntroSequenceDuration * introDurationEffectMultiplier;
         float startValue = 1;
         float endValue = 0;
 
@@ -92,7 +92,7 @@ public class TestEffectsHandler : MonoBehaviour
             _fadeSequence.Stop();
         }
 
-        float time = _testManager.CreditsSequenceDuration * creditsDurationEffectMultiplier;
+        float time = testManager.CreditsSequenceDuration * creditsDurationEffectMultiplier;
         
         _fadeSequence = Sequence.Create()
                 .Group(Tween.Custom(0, 0.3f,  duration: time, onValueChange: val => _vignette.intensity.value = val))

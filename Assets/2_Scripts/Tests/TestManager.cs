@@ -10,9 +10,9 @@ using VInspector;
 
 [SelectionBase]
 [DefaultExecutionOrder(-5)]
-[RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(TestEnvironmentAnimator))]
 [RequireComponent(typeof(TestEffectsHandler))]
+[RequireComponent(typeof(TestMusicHandler))]
 public class TestManager : MonoBehaviour
 {
     public static TestManager Instance { get; private set; }
@@ -45,7 +45,7 @@ public class TestManager : MonoBehaviour
     [SerializeField, ReadOnly] private RobotCompanion currentRobot;
     [SerializeField, ReadOnly] private SOTest currentTest;
     [SerializeField, ReadOnly] private GameObject currentEnvironment;
-    [SerializeField, ReadOnly] private ISpawnPoint currentSpawnPoint;
+    [ReadOnly] private ISpawnPoint _currentSpawnPoint;
     [SerializeField, ReadOnly] private SOAudioEvent currentTheme;
     [SerializeField, ReadOnly] private TestLightSettings currentLightSettings;
     [EndFoldout]
@@ -77,7 +77,7 @@ public class TestManager : MonoBehaviour
     public ISpawnPoint CurrentSpawnPoint {
         get
         {
-            if (currentSpawnPoint != null) return currentSpawnPoint;
+            if (_currentSpawnPoint != null) return _currentSpawnPoint;
             if (currentTest) currentTest.GetPlayerStartPoint();
             return null;
         }
@@ -97,7 +97,6 @@ public class TestManager : MonoBehaviour
     private Coroutine _activeLoadCoroutine;
     private Coroutine _activeUnloadCoroutine;
     private Coroutine _activeSequenceCoroutine;
-    private AudioSource _audioSource;
     private TestEnvironmentAnimator _testEnvironmentAnimator;
     private TestEffectsHandler _testEffectsHandler;
     private float _introSequenceTime;
@@ -120,8 +119,6 @@ public class TestManager : MonoBehaviour
         PrimeTweenConfig.SetTweensCapacity(800);
         _testEnvironmentAnimator = GetComponent<TestEnvironmentAnimator>();
         _testEffectsHandler = GetComponent<TestEffectsHandler>();
-        _audioSource = GetComponent<AudioSource>();
-
         
 
         if (SaveManager.HasKey("playerDeaths"))
@@ -131,7 +128,7 @@ public class TestManager : MonoBehaviour
         
         if (SaveManager.HasKey("gameCompleted"))
         {
-            _gameCompleted = SaveManager.LoadInt("gameCompleted", 0);
+            _gameCompleted = SaveManager.LoadInt("gameCompleted");
         }
     }
     
@@ -320,8 +317,8 @@ public class TestManager : MonoBehaviour
     
     public void SetSpawnPosition(ISpawnPoint spawnPoint)
     {
-        currentSpawnPoint?.SetSpawnPointNotReached();
-        currentSpawnPoint = spawnPoint;
+        _currentSpawnPoint?.SetSpawnPointNotReached();
+        _currentSpawnPoint = spawnPoint;
     }
     
     
@@ -353,7 +350,7 @@ public class TestManager : MonoBehaviour
 
     
     [Button]
-    public void StartIntroSequence()
+    private void StartIntroSequence()
     {
         StartCoroutine(IntroSequenceCoroutine());
     }
@@ -451,7 +448,7 @@ public class TestManager : MonoBehaviour
         {
             int unloadTime = currentTest.GetTimeToUnload();
             
-            // If an unload is already running, wait for it to finish
+            // If an unloading is already running, wait for it to finish
             if (_activeUnloadCoroutine != null)
             {
                 yield return _activeUnloadCoroutine;
@@ -546,7 +543,7 @@ public class TestManager : MonoBehaviour
                 currentRobot = null;
                 currentRobot = FindFirstObjectByType<RobotCompanion>();
             
-            } else if (!currentRobot && robotPrefab) // The new test has no robot and there is no robot in the scene
+            } else if (!currentRobot && robotPrefab) // The new test has no robot, and there is no robot in the scene
             {
                 currentRobot = Instantiate(robotPrefab, currentTest.GetRobotSpawnPoint(), quaternion.identity);
                 currentRobot.TurnOn();
@@ -578,9 +575,7 @@ public class TestManager : MonoBehaviour
         {
             yield return new WaitForSeconds(currentTest.GetTimeToLoad());
         }
-
         
-        currentTheme?.Play(_audioSource);
         _activeLoadCoroutine = null;
         onTestLoaded?.Invoke(currentTest);
         Debug.Log("Loaded " + currentTest.Name);
@@ -601,7 +596,7 @@ public class TestManager : MonoBehaviour
         SOTest test = currentTest;
         Debug.Log("Unloading... " + test.Name);
         onTestStartUnloading?.Invoke(test);
-        if (currentTheme) StartCoroutine(currentTheme?.FadeOutRoutine(_audioSource, test.GetTimeToUnload()));
+        
         
         // Play scale-down animation if enabled and MeshScaleSequence exists
         if (_testEnvironmentAnimator && _testEnvironmentAnimator.PlayOnTestUnloading)
@@ -616,7 +611,7 @@ public class TestManager : MonoBehaviour
         }
         else
         {
-            // If not using animations, still wait the unload time
+            // If not using animations, still wait the unloaded time
             yield return new WaitForSeconds(test.GetTimeToUnload());
         }
         
@@ -625,7 +620,7 @@ public class TestManager : MonoBehaviour
         if (currentRobot) Destroy(currentRobot.gameObject);
         currentTest = null;
         currentEnvironment = null;
-        currentSpawnPoint = null;
+        _currentSpawnPoint = null;
         currentTheme = null;
         ApplyLightSettings(defaultTest.GetLightSettings());
         _activeUnloadCoroutine = null;

@@ -32,38 +32,56 @@ public class ReflectionProbePositioner : MonoBehaviour
         reflectionProbe?.RenderProbe();
     }
 
+
     [Button]
     private void PositionInMiddle()
     {
-        // Get the bounds of all objects in the parent
+        // Get the bounds of all objects in the scene
         Bounds bounds = new Bounds();
         bool boundsInitialized = false;
 
-        foreach (var obj in GetComponentsInParent<Renderer>())
+        // Find all renderers in the scene
+        Renderer[] allRenderers = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+
+        foreach (var renderer in allRenderers)
         {
-            // Skip objects whose names contain any of the strings to ignore
+            // Check if this renderer or any of its parents have names containing strings to ignore
             bool shouldIgnore = false;
-            foreach (string ignoreString in objectsToIgnore)
+        
+            // Check the renderer and all its parent objects
+            Transform current = renderer.transform;
+            while (current != null)
             {
-                if (obj.name.Contains(ignoreString))
+                // Check against each ignore string
+                foreach (string ignoreString in objectsToIgnore)
                 {
-                    shouldIgnore = true;
-                    break;
+                    if (current.name.Contains(ignoreString))
+                    {
+                        shouldIgnore = true;
+                        break;
+                    }
                 }
-            }
             
-            if (shouldIgnore)
+                if (shouldIgnore)
+                    break;
+                
+                // Move up to the parent
+                current = current.parent;
+            }
+        
+            // Also skip inactive GameObjects
+            if (shouldIgnore || !renderer.gameObject.activeSelf)
                 continue;
 
             // Initialize or encapsulate bounds
             if (!boundsInitialized)
             {
-                bounds = obj.bounds;
+                bounds = renderer.bounds;
                 boundsInitialized = true;
             }
             else
             {
-                bounds.Encapsulate(obj.bounds);
+                bounds.Encapsulate(renderer.bounds);
             }
         }
 
@@ -71,7 +89,14 @@ public class ReflectionProbePositioner : MonoBehaviour
         {
             // Set the position and size of the reflection probe
             transform.position = bounds.center;
-            reflectionProbe.size = bounds.size;
+        
+            // Add a small buffer to make sure everything is captured
+            Vector3 sizeWithBuffer = bounds.size * 1.1f;
+            reflectionProbe.size = sizeWithBuffer;
+        }
+        else
+        {
+            Debug.LogWarning("No valid renderers found for the reflection probe bounds calculation.");
         }
     }
 }
