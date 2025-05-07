@@ -120,7 +120,7 @@ public class RobotLightDissolver : MonoBehaviour
         }
         else
         {
-            // Move to the original position - now using the robot transform (this transform)
+            // Move to the original position
             targetTransform.position = Vector3.MoveTowards(
                 targetTransform.position, 
                 transform.position, 

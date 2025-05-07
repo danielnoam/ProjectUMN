@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
@@ -68,6 +69,8 @@ public class CameraManager : MonoBehaviour
     private int _creditsCameraPriority;
     private float _introCameraStartingNoiseAmplitude;
     private float _introCameraStartingNoiseFrequency;
+    private bool _unloadingTest;
+    private bool _loadingTest;
     
 
     private void Awake()
@@ -110,6 +113,9 @@ public class CameraManager : MonoBehaviour
 
     private void OnEnable()
     {
+        TestManager.Instance?.onTestStartUnloading.AddListener(OnTestStartUnLoading);
+        TestManager.Instance?.onTestStartLoading.AddListener(OnTestStartLoading);
+        TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
         TestManager.Instance?.onIntroSequenceStart.AddListener(OnIntroSequenceStart);
         TestManager.Instance?.onIntroSequenceEnd.AddListener(OnIntroSequenceEnd);
         TestManager.Instance?.onCreditsSequenceStart.AddListener(OnCreditsSequenceStart);
@@ -119,12 +125,47 @@ public class CameraManager : MonoBehaviour
 
     private void OnDisable()
     {
+        TestManager.Instance?.onTestStartUnloading.RemoveListener(OnTestStartUnLoading);
+        TestManager.Instance?.onTestStartLoading.RemoveListener(OnTestStartLoading);
+        TestManager.Instance?.onTestLoaded.RemoveListener(OnTestLoaded);
         TestManager.Instance?.onIntroSequenceStart.RemoveListener(OnIntroSequenceStart);
         TestManager.Instance?.onIntroSequenceEnd.RemoveListener(OnIntroSequenceEnd);
         TestManager.Instance?.onCreditsSequenceStart.RemoveListener(OnCreditsSequenceStart);
         TestManager.Instance?.onCreditsSequenceEnd.RemoveListener(OnCreditsSequenceEnd);
     }
 
+    private void OnTestStartUnLoading(SOTest test)
+    {
+        _unloadingTest = true;
+    }
+    
+    private void OnTestStartLoading(SOTest test)
+    {
+        _loadingTest = true;
+        float loadTime = test ? test.GetTimeToLoad() : 0;
+        StartCoroutine(ResetCameraRotation(loadTime));
+    }
+    
+    private void OnTestLoaded(SOTest test)
+    {
+        _unloadingTest = false;
+        _loadingTest = false;
+    }
+    
+    private IEnumerator ResetCameraRotation(float duration)
+    {
+        float timeElapsed = 0f;
+        
+        while (timeElapsed < duration)
+        {
+            aimCore.transform.rotation = Quaternion.Slerp(aimCore.transform.rotation, Quaternion.Euler(0, 0, 0), Time.deltaTime * 2f);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        _yawAccumulation = 0f;
+        _pitchAccumulation = 0f;
+    }
 
 
     private void Update()
@@ -151,7 +192,6 @@ public class CameraManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        
         UpdateAimCore();
     }
 
@@ -253,15 +293,17 @@ public class CameraManager : MonoBehaviour
         // Apply position with smooth offset
         aimCore.transform.position = _player.transform.position + _currentOffset;
         
-
+        if (_loadingTest) return;
+        
         // Get the appropriate sensitivity based on current camera state
+        float cameraSensitivityMultiplier = !_unloadingTest ? 1f : 0.25f;
         float cameraSensitivity = IsAimCameraActive() 
             ? _playerInputHandler.AimCameraSensitivity 
             : _playerInputHandler.FreeCameraSensitivity;
 
         // Accumulate rotation values from mouse input
-        _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity;
-        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * _playerInputHandler.MouseSensitivity * cameraSensitivity;
+        _yawAccumulation += _playerInputHandler.MouseDelta.x * _playerInputHandler.MouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
+        _pitchAccumulation -= _playerInputHandler.MouseDelta.y * _playerInputHandler.MouseSensitivity * cameraSensitivity * cameraSensitivityMultiplier;
 
         // Clamp pitch to prevent camera flipping
         _pitchAccumulation = Mathf.Clamp(_pitchAccumulation, -aimMaxPitch, aimMaxPitch);

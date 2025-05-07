@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3781191240580006092
+--- !u!114 &-8597609426550157861
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,15 +20,18 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: URP-Custom-RobotBodyMetal
+  m_Name: URP-Custom-Cable
   m_Shader: {fileID: -6465566751694194690, guid: 72e83e4c692b51842b39cc343ee1d5fc, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _DISSOLVE_STYLE_APPEAR
-  - _DITHER_FROM_CAMERA
+  - _DISSOLVE_STYLE_SWAPTEXTURES
+  - _DITHER_FROM_NON
   - _UVPOSITION_OBJECT
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _DISTANCE_FROM_A
+  - _DITHER_DISTANCE_FROM_A
+  - _DITHER_DISTANCE_FROM_CAMERA
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -49,15 +52,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Base_Texture:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 48cb66963c3c64713948e41b4b215996, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Emission_Texture:
-        m_Texture: {fileID: 2800000, guid: 21dde9b6a63a84eadba0a7681b526b66, type: 3}
+        m_Texture: {fileID: 2800000, guid: dddf130f96654413e88fb786eb7395ba, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Metallic_Texture:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 04496201f54aa4a02863694789f92dbf, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Texture:
@@ -83,28 +86,28 @@ Material:
     - Vector1_FBD9E64: 0.05
     - _Ambient_Occlusion: 1
     - _Blend: 1
-    - _DISSOLVE_STYLE: 1
+    - _DISSOLVE_STYLE: 0
     - _DISTANCE_FROM: 0
     - _DITHER_DISTANCE_FROM: 0
-    - _DITHER_FROM: 1
+    - _DITHER_FROM: 0
     - _Dissolve_Noise_Move_Speed: 0.3
     - _Dissolve_Noise_Strength: 1
     - _Dither: 0
     - _Dither_Camera_Fade_Distance: 0
-    - _Dither_Fade_Distance: 0.5
+    - _Dither_Fade_Distance: 0
     - _Dither_From_Camera: 0
-    - _Emission: 0
+    - _Emission: 1
     - _Metallic: 1
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Smoothness: 0.85
+    - _Smoothness: 1
     - _Tile: 1
-    - _Tiling: 1
+    - _Tiling: 2
     - _UVPOSITION: 0
     m_Colors:
     - Color_F69F1A11: {r: 0, g: 1, b: 0.8703723, a: 1}
-    - _Base_Color: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 1}
+    - _Base_Color: {r: 0.28235292, g: 0.28235292, b: 0.28235292, a: 1}
     - _Dither_World_Position: {r: 0, g: 0, b: 0, a: 0}
-    - _Emission_Color: {r: 6.88318, g: 3.1457925, b: 0, a: 0}
+    - _Emission_Color: {r: 0, g: 3.158097, b: 6.88318, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
