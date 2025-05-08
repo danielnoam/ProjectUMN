@@ -24,8 +24,10 @@ public class DynamicStairs : MonoBehaviour
     private enum TargetType { Player, Robot, Custom }
     private readonly Dictionary<GameObject, Vector3> _stepsPositions = new Dictionary<GameObject, Vector3>();
     private Vector3 _stepsBottomPosition;
-    private List<GameObject> _colliderObjects = new List<GameObject>();
-    private List<GameObject> _visualObjects = new List<GameObject>();
+    private readonly List<GameObject> _colliderObjects = new List<GameObject>();
+    private readonly List<GameObject> _visualObjects = new List<GameObject>();
+    private Material _stepMaterial;
+    private static readonly int WorldPosition = Shader.PropertyToID("_Dither_World_Position");
 
     private void Awake()
     {
@@ -174,9 +176,9 @@ public class DynamicStairs : MonoBehaviour
     }
 
     #region Editor -----------------------------------
-    
+
     [Button]
-    public void RebuildStairs()
+    private void RemoveAllSteps()
     {
         // Clear existing steps
         var currentSteps = new List<GameObject>();
@@ -193,12 +195,18 @@ public class DynamicStairs : MonoBehaviour
         _stepsPositions.Clear();
         _colliderObjects.Clear();
         _visualObjects.Clear();
+    }
+    [Button]
+    public void RebuildSteps()
+    {
         
         if (stepPrefab == null)
         {
             Debug.LogError("Step prefab is not assigned!");
             return;
         }
+        
+        RemoveAllSteps();
 
         Vector3 currentPosition = Vector3.zero;
         _stepsBottomPosition = currentPosition; // Store the bottom-most position
@@ -301,15 +309,9 @@ public class DynamicStairs : MonoBehaviour
             // Get the object's rotation to apply to the gizmo
             Quaternion worldRotation = transform.rotation * Quaternion.Euler(0, 90, 0);
             
-            // Apply position offset in local space
-            Vector3 drawOffset = new Vector3(0, stepSize.y / 2, stepSize.z / 2);
-            
-            // Convert the offset to world space
-            Vector3 worldOffset = transform.TransformDirection(drawOffset);
-            
             // Set up matrix for the gizmo
             Matrix4x4 gizmoMatrix = Matrix4x4.TRS(
-                worldPosition + worldOffset,
+                worldPosition,
                 worldRotation,
                 stepSize
             );
