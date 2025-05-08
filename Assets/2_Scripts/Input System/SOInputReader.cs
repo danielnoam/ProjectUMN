@@ -478,7 +478,7 @@ public class SOInputReader : ScriptableObject
     #region Player Settings --------------------------------------------------------------------------------------------
     
     [Button]
-    private void ResetInputSettings()
+    public void ResetInputSettings()
     {
         mouseKeyboardSettings = mouseKeyboardDefaultSettings.Clone();
         gamepadSettings = gamepadDefaultSettings.Clone();
