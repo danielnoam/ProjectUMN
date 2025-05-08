@@ -4,6 +4,11 @@ using UnityEditor;
 using UnityEngine;
 using VInspector;
 
+
+
+
+public  enum RadiusMode { Single, StartEnd, Curve }
+
 [ExecuteInEditMode]
 [SelectionBase]
 public class TubeRenderer : MonoBehaviour
@@ -60,7 +65,6 @@ public class TubeRenderer : MonoBehaviour
     [Tooltip("Array of points defining the tube's path")]
     [SerializeField] private Vector3[] positions;
     
-    private enum RadiusMode { Single, StartEnd, Curve }
     private Vector3[] _vertices;
     private Mesh _mesh;
     private MeshFilter _meshFilter;
