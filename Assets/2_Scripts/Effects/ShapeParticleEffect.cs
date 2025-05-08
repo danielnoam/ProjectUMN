@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PrimeTween;
 using Shapes;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 using VInspector;
 using Random = UnityEngine.Random;
+
 
 public class ShapeParticleEffect : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private float baseCycleDuration = 0.3f;
     [SerializeField] private float randomCycleVariation = 0.2f;
+    [SerializeField] private float randomScaleMin = -0.5f;
+    [SerializeField] private float randomScaleMax = 0.5f;
     [SerializeField] private bool randomizeNextShape = true;
     [SerializeField] private ShapeGroup[] shapesToDisplay;
 
@@ -34,7 +32,7 @@ public class ShapeParticleEffect : MonoBehaviour
     [SerializeField] private bool lookAtCamera = true;
     [SerializeField] private bool rotateX = true;
     [SerializeField] private bool rotateY = true;
-    [SerializeField] private bool rotateZ = false;
+    [SerializeField] private bool rotateZ;
     [SerializeField] private bool smoothRotation = true;
     [SerializeField] private float rotationSpeed = 5f;
     [SerializeField] private Vector3 rotationOffset = Vector3.zero;
@@ -57,7 +55,7 @@ public class ShapeParticleEffect : MonoBehaviour
     private Vector3 _originalRotation;
     private readonly Dictionary<ShapeGroup, Color> _shapesDefaultColors = new Dictionary<ShapeGroup, Color>();
     private int _currentShapeIndex;
-    private int _previousShapeIndex; // Added to avoid selecting the same shape twice in a row when randomizing
+    private int _previousShapeIndex;
     
     // Variables for random cycle timing
     private float _nextCycleTime;
@@ -70,7 +68,7 @@ public class ShapeParticleEffect : MonoBehaviour
     private void Awake()
     {
         _originalRotation = transform.eulerAngles;
-        _originalScale = transform.localScale;
+        _originalScale = transform.localScale + (Vector3.one * Random.Range(randomScaleMin, randomScaleMax));
         _originalPosition = transform.localPosition;
         
         
@@ -87,7 +85,7 @@ public class ShapeParticleEffect : MonoBehaviour
         // Set a random starting shape
         if (shapesToDisplay.Length > 0)
         {
-            _currentShapeIndex = UnityEngine.Random.Range(0, shapesToDisplay.Length);
+            _currentShapeIndex = Random.Range(0, shapesToDisplay.Length);
             _previousShapeIndex = _currentShapeIndex;
             // Set the active shape's alpha to 1 initially
             if (shapesToDisplay[_currentShapeIndex])
@@ -114,7 +112,7 @@ public class ShapeParticleEffect : MonoBehaviour
     private void SetNextCycleTime()
     {
         // Generate a random duration within the specified range
-        _currentCycleDuration = baseCycleDuration + UnityEngine.Random.Range(-randomCycleVariation, randomCycleVariation);
+        _currentCycleDuration = baseCycleDuration + Random.Range(-randomCycleVariation, randomCycleVariation);
         
         // Ensure the duration is always positive
         _currentCycleDuration = Mathf.Max(0.05f, _currentCycleDuration);
@@ -126,10 +124,10 @@ public class ShapeParticleEffect : MonoBehaviour
         if (randomizeAlpha)
         {
             // Generate random min alpha within bounds
-            _currentMinAlpha = minAlpha + UnityEngine.Random.Range(0, alphaVariation);
+            _currentMinAlpha = minAlpha + Random.Range(0, alphaVariation);
             
             // Generate random max alpha within bounds
-            _currentMaxAlpha = maxAlpha - UnityEngine.Random.Range(0, alphaVariation);
+            _currentMaxAlpha = maxAlpha - Random.Range(0, alphaVariation);
             
             // Make sure min doesn't exceed max
             _currentMinAlpha = Mathf.Min(_currentMinAlpha, _currentMaxAlpha - 0.1f);
@@ -172,7 +170,7 @@ public class ShapeParticleEffect : MonoBehaviour
                         int newIndex;
                         do
                         {
-                            newIndex = UnityEngine.Random.Range(0, shapesToDisplay.Length);
+                            newIndex = Random.Range(0, shapesToDisplay.Length);
                         } while (newIndex == _previousShapeIndex && shapesToDisplay.Length > 1);
                         
                         _currentShapeIndex = newIndex;

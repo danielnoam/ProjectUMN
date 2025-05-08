@@ -1,21 +1,27 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using VInspector;
 
+
+[SelectionBase]
 public class DynamicStairs : MonoBehaviour
 {
     [Header("Dynamic Movement")]
     [SerializeField] private bool useDynamicMovement = true;
-    [SerializeField] private bool useDithering = false;
+    [SerializeField] private bool useDithering;
     [SerializeField] private TargetType target = TargetType.Custom;
     [SerializeField, ShowIf("target", TargetType.Custom)] private Transform targetTransform;[EndIf]
     [SerializeField] private float minDistanceThreshold = 2f;
     [SerializeField] private float maxDistanceThreshold = 5f;
     [SerializeField] private float stepMovementSpeed = 10f;
+    [SerializeField] private float checkDistanceThreshold = 15f;
+    [SerializeField] private Vector3 checkPositionOffset;
     
     
-    [Header("Step Building")]
+    [Foldout("Step Building")]
+    [Header("Steps")]
     [SerializeField] private int numberOfSteps = 10;
     [SerializeField] private float horizontalOverlap;
     [SerializeField] private bool useStepDepthForSpacing = true; 
@@ -23,18 +29,21 @@ public class DynamicStairs : MonoBehaviour
     [SerializeField] private Vector3 stepSize = new Vector3(0.2f, 0.2f, 3f);
     
     [Header("Base")]
+    [SerializeField] private bool useBase = true;
     [SerializeField] private float baseHeightOffset = 0.05f; 
+    [SerializeField] private float baseHeightMultiplier = 1.0f;
     [SerializeField] private float baseWidthMultiplier = 1.2f;
     [SerializeField] private float baseLengthMultiplier = 1.0f;
     
     [Header("Connector")]
-    [SerializeField] private bool createConnector = true;
+    [SerializeField] private bool useConnector = true;
     [SerializeField] private Vector3 connectorOffset = new Vector3(0f, 0f, 0f);
     
     [Header("References")]
     [SerializeField] private GameObject stepPrefab;
     [SerializeField] private GameObject basePrefab;
     [SerializeField] private TubeRenderer connectorPrefab;
+    [EndFoldout]
     
     private enum TargetType { Player, Robot, Custom }
     private readonly Dictionary<GameObject, Vector3> _stepsPositions = new Dictionary<GameObject, Vector3>();
@@ -54,10 +63,10 @@ public class DynamicStairs : MonoBehaviour
         {
             CategorizeStepObjects();
         }
-        StoreStepPositions();
-        _stepsBottomPosition = Vector3.zero;
         
-        if (createConnector)
+        StoreStepPositions();
+        
+        if (useConnector)
         {
             _connector = GetComponentInChildren<TubeRenderer>();
         }
@@ -68,13 +77,36 @@ public class DynamicStairs : MonoBehaviour
             CreateMaterialInstances();
             _materialsInitialized = true;
         }
+        
+        ResetStepsToBottomPosition();
     }
     
     private void Update()
     {
-        UpdateStepPositions();
-        UpdateStepMaterials();
-        UpdateConnectorPositions();
+        // Only proceed with updates if dynamic movement is enabled
+        if (!useDynamicMovement) return;
+        
+        Transform currentTarget = CurrentTarget();
+        if (!currentTarget) return;
+        
+        // Calculate distance between this object and the target (ignoring Y)
+        Vector3 objectPosXZ = new Vector3(transform.position.x + checkPositionOffset.x, 0 + checkPositionOffset.y, transform.position.z + checkPositionOffset.z);
+        Vector3 targetPosXZ = new Vector3(currentTarget.position.x, 0, currentTarget.position.z);
+        float distanceToTarget = Vector3.Distance(objectPosXZ, targetPosXZ);
+        
+        // Only proceed with step movements if target is within check distance threshold
+        if (distanceToTarget <= checkDistanceThreshold)
+        {
+            UpdateStepPositions(targetPosXZ);
+            UpdateStepMaterials(targetPosXZ);
+            UpdateConnectorPositions();
+        }
+        else
+        {
+            // If we're far away, we can optionally reset steps to their original positions
+            // This is commented out as it depends on the desired behavior
+            // ResetStepsToOriginalPositions();
+        }
     }
     
     private void UpdateConnectorPositions()
@@ -128,24 +160,17 @@ public class DynamicStairs : MonoBehaviour
         }
     }
     
-    private void UpdateStepMaterials()
+    private void UpdateStepMaterials(Vector3 targetPosXZ)
     {
-        // Skip if using dynamic movement is disabled or materials aren't initialized
-        if (!useDynamicMovement || !_materialsInitialized || !useDithering) return;
-        
-        // Get the current target
-        Transform currentTarget = CurrentTarget();
-        if (!currentTarget) return;
-        
-        // Get target position (ignoring Y)
-        Vector3 targetPosXZ = new Vector3(currentTarget.position.x, 0, currentTarget.position.z);
+        // Skip if materials aren't initialized or dithering is disabled
+        if (!_materialsInitialized || !useDithering) return;
         
         foreach (var pair in _stepMaterials)
         {
             GameObject stepObject = pair.Key;
             Material material = pair.Value;
             
-            if (material != null && material.HasProperty(WorldPosition))
+            if (material && material.HasProperty(WorldPosition))
             {
                 // Get the step's world position
                 Vector3 stepWorldPos = stepObject.transform.position;
@@ -199,15 +224,8 @@ public class DynamicStairs : MonoBehaviour
         }
     }
     
-    private void UpdateStepPositions()
+    private void UpdateStepPositions(Vector3 targetPosXZ)
     {
-        if (!useDynamicMovement) return;
-        
-        Transform currentTarget = CurrentTarget();
-        if (!currentTarget) return;
-        
-        Vector3 targetPosXZ = new Vector3(currentTarget.position.x, 0, currentTarget.position.z);
-        
         if (separateColliderFromVisual)
         {
             // When using separate colliders, only update visual objects
@@ -274,6 +292,7 @@ public class DynamicStairs : MonoBehaviour
         // Apply the new height while keeping X and Z unchanged
         step.transform.localPosition = new Vector3(currentLocalPos.x, newY, currentLocalPos.z);
     }
+    
 
     private void StoreStepPositions()
     {
@@ -289,7 +308,7 @@ public class DynamicStairs : MonoBehaviour
         }
         else
         {
-            // When not separating, store positions for all STEP child objects (not the base)
+            // When not separating, store positions for all step child objects (not the base)
             foreach (Transform child in transform)
             {
                 // Only store positions for actual step objects
@@ -299,23 +318,11 @@ public class DynamicStairs : MonoBehaviour
                 }
             }
         }
-    }
-
-    private Transform CurrentTarget()
-    {
-        switch (target)
+        
+        // Store the bottom-most position for the steps
+        if (_stepsPositions.Count > 0)
         {
-            case TargetType.Player:
-                if (TestManager.Instance && TestManager.Instance.Player) return TestManager.Instance.Player.transform;
-                return null;
-            case TargetType.Robot:
-                if (TestManager.Instance && TestManager.Instance.Robot) return TestManager.Instance.Robot.transform;
-                return null;
-            case TargetType.Custom:
-                if (targetTransform) return targetTransform;
-                return null;
-            default:
-                return null;
+            _stepsBottomPosition = _stepsPositions.First().Value;
         }
     }
     
@@ -344,10 +351,10 @@ public class DynamicStairs : MonoBehaviour
             // Get renderers (could be on the object or its children)
             Renderer[] renderers = stepObject.GetComponentsInChildren<Renderer>();
             
-            foreach (Renderer renderer in renderers)
+            foreach (Renderer rend in renderers)
             {
                 // Create instances of all materials
-                Material[] sharedMaterials = renderer.sharedMaterials;
+                Material[] sharedMaterials = rend.sharedMaterials;
                 Material[] instanceMaterials = new Material[sharedMaterials.Length];
                 
                 for (int i = 0; i < sharedMaterials.Length; i++)
@@ -363,7 +370,7 @@ public class DynamicStairs : MonoBehaviour
                 }
                 
                 // Assign the instance materials back to the renderer
-                renderer.materials = instanceMaterials;
+                rend.materials = instanceMaterials;
                 foreach (var material in instanceMaterials)
                 {
                     if (material.HasProperty(DitherFlip))
@@ -374,12 +381,75 @@ public class DynamicStairs : MonoBehaviour
             }
         }
     }
+    
+    
+    [Button]
+    private void ResetStepsToOriginalPositions()
+    {
+        if (!Application.isPlaying) return;
         
+        List<GameObject> stepsToReset = separateColliderFromVisual ? _visualObjects : new List<GameObject>();
+        if (!separateColliderFromVisual)
+        {
+            foreach (Transform child in transform)
+            {
+                if (child.name.StartsWith("Step_"))
+                {
+                    stepsToReset.Add(child.gameObject);
+                }
+            }
+        }
+        
+        foreach (GameObject step in stepsToReset)
+        {
+            // Get the original position
+            if (_stepsPositions.TryGetValue(step, out Vector3 originalPosition))
+            {
+                // Set the step's position to the original one
+                step.transform.localPosition = originalPosition;
+            }
+        }
+    }
+    
+    [Button]
+    private void ResetStepsToBottomPosition()
+    {
+        if (!Application.isPlaying) return;
+        
+        List<GameObject> stepsToReset = separateColliderFromVisual ? _visualObjects : new List<GameObject>();
+        
+        if (!separateColliderFromVisual)
+        {
+            foreach (Transform child in transform)
+            {
+                if (child.name.StartsWith("Step_"))
+                {
+                    stepsToReset.Add(child.gameObject);
+                }
+            }
+        }
+        
+        foreach (GameObject step in stepsToReset)
+        {
+            // Get the current local position
+            Vector3 currentLocalPos = step.transform.localPosition;
+            
+            // Set the Y position to the bottom position
+            step.transform.localPosition = new Vector3(currentLocalPos.x, _stepsBottomPosition.y, currentLocalPos.z);
+        }
+    }
+    
+    
+        
+
+
+    #region helper methods ---------------------------------------------------------------------
+
     private int ExtractIndexFromName(string name)
     {
         // Expected formats: "Step_X", "StepVisual_X", "StepCollider_X"
         string[] parts = name.Split('_');
-        if (parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int index))
+        if (parts.Length > 1 && int.TryParse(parts[^1], out int index))
         {
             return index;
         }
@@ -387,6 +457,30 @@ public class DynamicStairs : MonoBehaviour
         // If we can't extract a valid index, return a large number to put it at the end
         return int.MaxValue;
     }
+    
+    private Transform CurrentTarget()
+    {
+        switch (target)
+        {
+            case TargetType.Player:
+                if (TestManager.Instance && TestManager.Instance.Player) return TestManager.Instance.Player.transform;
+                return null;
+            case TargetType.Robot:
+                if (TestManager.Instance && TestManager.Instance.Robot) return TestManager.Instance.Robot.transform;
+                return null;
+            case TargetType.Custom:
+                if (targetTransform) return targetTransform;
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    #endregion helper methods ---------------------------------------------------------------------
+
+    
+
+    #region public methods ---------------------------------------------------------------------
 
     public void SetTargetModePlayer()
     {
@@ -402,12 +496,16 @@ public class DynamicStairs : MonoBehaviour
     {
         target = TargetType.Custom;
     }
-    public void SetCustomTarget(Transform target)
+    public void SetCustomTarget(Transform tar)
     {
-        targetTransform = target;
+        targetTransform = tar;
     }
 
-    #region Editor -----------------------------------
+    #endregion public methods ---------------------------------------------------------------------
+
+    
+    
+    #region steps building ---------------------------------------------------------------------
 
     [Button]
     private void RemoveAllSteps()
@@ -448,8 +546,12 @@ public class DynamicStairs : MonoBehaviour
         
         RemoveAllSteps();
 
-        Vector3 currentPosition = Vector3.zero;
-        _stepsBottomPosition = currentPosition; // Store the bottom-most position
+        // Calculate the actual base height considering multiplier
+        float actualBaseHeight = stepSize.y * baseHeightMultiplier;
+        
+        // Set the starting position for steps to be at the top of the base
+        Vector3 currentPosition = new Vector3(0, actualBaseHeight, 0);
+        _stepsBottomPosition = new Vector3(0, 0, 0); // Store the bottom-most position at 0
         
         // Calculate step depth (after rotation, x becomes depth)
         float stepDepth = stepSize.x;
@@ -460,10 +562,13 @@ public class DynamicStairs : MonoBehaviour
             stepSize.z * 0.5f; // Default spacing if not using depth
 
         // Create base first so it appears behind the steps in hierarchy
-        CreateStairsBase(horizontalIncrement);
+        if (useBase && basePrefab != null)
+        {
+            CreateStairsBase(horizontalIncrement);
+        }
         
         // Create connector as the second child in hierarchy (right after the base)
-        if (createConnector && connectorPrefab != null)
+        if (useConnector && connectorPrefab != null)
         {
             CreateConnector();
         }
@@ -478,14 +583,19 @@ public class DynamicStairs : MonoBehaviour
             if (separateColliderFromVisual)
             {
                 // Create a static collider object that will not move
-                GameObject colliderObject = new GameObject("StepCollider_" + i);
-                colliderObject.transform.parent = transform;
-                colliderObject.transform.localPosition = currentPosition;
-                colliderObject.transform.localRotation = Quaternion.Euler(0, 90, 0);
-                colliderObject.transform.localScale = stepSize;
-                
+                GameObject colliderObject = new GameObject("StepCollider_" + i)
+                {
+                    transform =
+                    {
+                        parent = transform,
+                        localPosition = currentPosition,
+                        localRotation = Quaternion.Euler(0, 90, 0),
+                        localScale = stepSize
+                    }
+                };
+
                 // Add a box collider component to the collider object
-                BoxCollider boxCollider = colliderObject.AddComponent<BoxCollider>();
+                colliderObject.AddComponent<BoxCollider>();
                 
                 // Add to collider objects list
                 _colliderObjects.Add(colliderObject);
@@ -572,7 +682,7 @@ public class DynamicStairs : MonoBehaviour
         }
         
         // Set up empty connector positions initially (will be updated later)
-        _connector.Positions = new Vector3[0];
+        _connector.Positions = Array.Empty<Vector3>();
     }
     
     private void CreateStairsBase(float horizontalIncrement)
@@ -592,11 +702,11 @@ public class DynamicStairs : MonoBehaviour
         
         // Calculate base position
         // - X position remains unchanged
-        // - Y position set using both step height and the offset value
+        // - Y position at the bottom (zero) with offset
         // - Z position is half the total depth to center it under the stairs
         Vector3 basePosition = new Vector3(
             0f,                       // X position (unchanged)
-            -stepSize.y/2 - baseHeightOffset,  // Y position (half step height down + offset)
+            -baseHeightOffset,        // Y position at bottom with offset
             totalStairsLength / 2     // Z position (centered under all steps)
         );
         
@@ -606,24 +716,33 @@ public class DynamicStairs : MonoBehaviour
         // Rotate the base 
         _baseObject.transform.localRotation = Quaternion.Euler(0, 0, -90);
         
-
         Vector3 baseScale = new Vector3(
-            stepSize.y,                              // Height = step height
-            stepSize.z * baseWidthMultiplier,        // Width = step width * multiplier
-            (totalStairsLength + stepSize.x) * baseLengthMultiplier  // Length = total stair length * multiplier
+            stepSize.y * baseHeightMultiplier,          // Height = step height * height multiplier
+            stepSize.z * baseWidthMultiplier,           // Width = step width * width multiplier
+            (totalStairsLength + stepSize.x) * baseLengthMultiplier  // Length = total stair length * length multiplier
         );
         
         // Set the base scale
         _baseObject.transform.localScale = baseScale;
     }
 
+    #endregion steps building ---------------------------------------------------------------------
+    
+    
+    
+    #region Editor ------------------------------------------------------------------------------
+
+
 
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         
-        // Start from a local origin (Vector3.zero in local space)
-        Vector3 currentLocalPosition = Vector3.zero;
+        // Calculate the actual base height considering multiplier
+        float actualBaseHeight = stepSize.y * baseHeightMultiplier;
+        
+        // Start from a position that accounts for the base height
+        Vector3 currentLocalPosition = new Vector3(0, actualBaseHeight, 0);
         
         // Calculate step depth (after rotation, x becomes depth)
         float stepDepth = stepSize.x;
@@ -634,7 +753,7 @@ public class DynamicStairs : MonoBehaviour
             stepSize.z * 0.5f; // Default spacing if not using depth
             
         // Draw base gizmo
-        if (basePrefab != null)
+        if (useBase && basePrefab)
         {
             Gizmos.color = Color.blue;
     
@@ -644,7 +763,7 @@ public class DynamicStairs : MonoBehaviour
             // Calculate base position (same as in CreateStairsBase)
             Vector3 basePosition = new Vector3(
                 0f,
-                -stepSize.y/2 - baseHeightOffset,
+                -baseHeightOffset,
                 totalStairsLength / 2
             );
     
@@ -653,7 +772,7 @@ public class DynamicStairs : MonoBehaviour
     
             // Calculate base scale (same as in CreateStairsBase)
             Vector3 baseScale = new Vector3(
-                stepSize.y,
+                stepSize.y * baseHeightMultiplier,
                 stepSize.z * baseWidthMultiplier,
                 (totalStairsLength + stepSize.x) * baseLengthMultiplier
             );
@@ -701,31 +820,22 @@ public class DynamicStairs : MonoBehaviour
         
         // Draw distance thresholds if a target is available
         Transform currentTarget = CurrentTarget();
-        if (currentTarget != null)
+        if (currentTarget)
         {
+            // Draw check distance threshold in blue
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(transform.position + checkPositionOffset, checkDistanceThreshold);
+            
+            // Draw min distance threshold in green
             Gizmos.color = Color.green;
             Gizmos.DrawWireSphere(transform.position, minDistanceThreshold);
             
+            // Draw max distance threshold in red
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, maxDistanceThreshold);
         }
-        
-        // Draw connector path if it exists
-        if (_connector != null && _connector.Positions != null && _connector.Positions.Length > 1)
-        {
-            Gizmos.color = Color.cyan;
-            Vector3[] positions = _connector.Positions;
-            
-            for (int i = 0; i < positions.Length - 1; i++)
-            {
-                // Convert local positions to world positions for drawing
-                Vector3 start = _connector.transform.TransformPoint(positions[i]);
-                Vector3 end = _connector.transform.TransformPoint(positions[i + 1]);
-                
-                Gizmos.DrawLine(start, end);
-            }
-        }
+
     }
 
-    #endregion Editor -----------------------------------
+    #endregion Editor ------------------------------------------------------------------------------
 }

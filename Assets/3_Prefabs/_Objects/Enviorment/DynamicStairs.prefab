@@ -2181,15 +2181,18 @@ MonoBehaviour:
   minDistanceThreshold: 2
   maxDistanceThreshold: 5
   stepMovementSpeed: 10
+  checkDistanceThreshold: 15
   numberOfSteps: 25
   horizontalOverlap: 0
   useStepDepthForSpacing: 1
   separateColliderFromVisual: 1
   stepSize: {x: 0.5, y: 0.2, z: 3}
-  baseHeightOffset: 0.1
+  useBase: 1
+  baseHeightOffset: 0
+  baseHeightMultiplier: 1
   baseWidthMultiplier: 1
   baseLengthMultiplier: 1
-  createConnector: 1
+  useConnector: 1
   connectorOffset: {x: 0, y: -0.15, z: 0}
   stepPrefab: {fileID: 576005582247338535, guid: 22bc7ae3571e2b847818daf917dc447e, type: 3}
   basePrefab: {fileID: 576005582247338535, guid: bd869d684162b8049a547e991eff75ec, type: 3}

@@ -1,5 +1,3 @@
-using System;
-using PrimeTween;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -11,6 +9,8 @@ public class TextParticleEffect : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float baseCycleDuration = 0.3f;
     [SerializeField] private float randomCycleVariation = 0.2f;
+    [SerializeField] private float randomScaleMin = -0.5f;
+    [SerializeField] private float randomScaleMax = 0.5f;
     [SerializeField] private bool randomizeNextText = true;
     [SerializeField] private string[] textToDisplay;
     
@@ -53,7 +53,9 @@ public class TextParticleEffect : MonoBehaviour
     private Vector3 _originalRotation;
     private float _defaultTextAlpha;
     private int _currentTextIndex;
-    private int _previousTextIndex; // Added to avoid selecting the same text twice in a row when randomizing
+    private int _previousTextIndex;
+    private string _prefixText;
+    private string _suffixText;
     
     // Variables for random cycle timing
     private float _nextCycleTime;
@@ -66,7 +68,7 @@ public class TextParticleEffect : MonoBehaviour
     private void Awake()
     {
         _originalRotation = transform.eulerAngles;
-        _originalScale = transform.localScale;
+        _originalScale = transform.localScale + (Vector3.one * Random.Range(randomScaleMin, randomScaleMax));
         _originalPosition = transform.localPosition;
         
         if (text)
@@ -153,7 +155,7 @@ public class TextParticleEffect : MonoBehaviour
                             int newIndex;
                             do
                             {
-                                newIndex = UnityEngine.Random.Range(0, textToDisplay.Length);
+                                newIndex = Random.Range(0, textToDisplay.Length);
                             } while (newIndex == _previousTextIndex && textToDisplay.Length > 1);
                             
                             _currentTextIndex = newIndex;
@@ -165,7 +167,33 @@ public class TextParticleEffect : MonoBehaviour
                         _currentTextIndex = (_currentTextIndex + 1) % textToDisplay.Length;
                     }
                     
-                    text.text = textToDisplay[_currentTextIndex];
+                    int shouldUsePrefix = Random.Range(0, 5);
+                    switch (shouldUsePrefix)
+                    {
+                        case 0:
+                            _prefixText = "";
+                            _suffixText = "";
+                            break;
+                        case 1:
+                            _prefixText = "<char>";
+                            _suffixText = "</>";
+                            break;
+                        case 2:
+                            _prefixText = "<shake>";
+                            _suffixText = "</>";
+                            break;
+                        case 3:
+                            _prefixText = "<sketchy>";
+                            _suffixText = "</>";
+                            break;
+                        case 4:
+                            _prefixText = "<grow>";
+                            _suffixText = "</>";
+                            break;
+                            
+                    }
+                    text.text = $"{_prefixText}{textToDisplay[_currentTextIndex]}{_suffixText}";
+                    
                     
                     // Set the next cycle time with randomness
                     SetNextCycleTime();

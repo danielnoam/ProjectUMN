@@ -2320,6 +2320,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseCycleDuration: 0.1
   randomCycleVariation: 0.4
+  randomScaleMin: -0.8
+  randomScaleMax: 0
   randomizeNextShape: 1
   shapesToDisplay:
   - {fileID: 1117097300407220428}
@@ -2347,7 +2349,7 @@ MonoBehaviour:
   lookAtCamera: 1
   rotateX: 1
   rotateY: 1
-  rotateZ: 0
+  rotateZ: 1
   smoothRotation: 1
   rotationSpeed: 5
   rotationOffset: {x: 0, y: 0, z: 0}
