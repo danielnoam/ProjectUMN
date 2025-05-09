@@ -110,18 +110,18 @@ public class InteractPrompt : MonoBehaviour
             {
                 case ControlType.KeyboardMouse:
                     promptText.text = isPlayer ? "E" : "R";
-                    _activeBackGroup = promptBackgroundRectangle;
+                    _activeBackGroup = isPlayer ? promptBackgroundRectangle : promptBackgroundCircle;
                     break;
                 case ControlType.Gamepad:
                     promptText.text = isPlayer ? "X" : "Y";
-                    _activeBackGroup = promptBackgroundCircle;
+                    _activeBackGroup = isPlayer ? promptBackgroundRectangle : promptBackgroundCircle;
                     break;
             }
         }
         else
         {
             promptText.text = isPlayer ? "E" : "R";
-            _activeBackGroup = promptBackgroundRectangle;
+            _activeBackGroup = isPlayer ? promptBackgroundRectangle : promptBackgroundCircle;
         }
     
         // If we're switching backgrounds and a prompt is already visible

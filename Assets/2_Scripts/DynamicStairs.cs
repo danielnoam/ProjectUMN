@@ -10,6 +10,7 @@ public class DynamicStairs : MonoBehaviour
 {
     [Header("Dynamic Movement")]
     [SerializeField] private bool useDynamicMovement = true;
+    [SerializeField] private bool flipMovement = false;
     [SerializeField] private bool useDithering;
     [SerializeField] private TargetType target = TargetType.Custom;
     [SerializeField, ShowIf("target", TargetType.Custom)] private Transform targetTransform;[EndIf]
@@ -18,15 +19,18 @@ public class DynamicStairs : MonoBehaviour
     [SerializeField] private float stepMovementSpeed = 10f;
     [SerializeField] private float checkDistanceThreshold = 15f;
     [SerializeField] private Vector3 checkPositionOffset;
+    [SerializeField] private bool resetPositionsOnStart = true;
     
     
     [Foldout("Step Building")]
     [Header("Steps")]
     [SerializeField] private int numberOfSteps = 10;
     [SerializeField] private float horizontalOverlap;
+    [SerializeField] private float verticalOverlap;
     [SerializeField] private bool useStepDepthForSpacing = true; 
     [SerializeField] private bool separateColliderFromVisual;
     [SerializeField] private Vector3 stepSize = new Vector3(0.2f, 0.2f, 3f);
+    [SerializeField] private Vector3 stepPositonOffset;
     
     [Header("Base")]
     [SerializeField] private bool useBase = true;
@@ -78,7 +82,7 @@ public class DynamicStairs : MonoBehaviour
             _materialsInitialized = true;
         }
         
-        ResetStepsToBottomPosition();
+        if (resetPositionsOnStart) ResetStepsToBottomPosition();
     }
     
     private void Update()
@@ -112,7 +116,7 @@ public class DynamicStairs : MonoBehaviour
     private void UpdateConnectorPositions()
     {
         // Skip if connector is not initialized
-        if (!_connector) return;
+        if (!_connector || !useConnector) return;
     
         List<Vector3> connectorPoints = new List<Vector3>();
     
@@ -170,14 +174,17 @@ public class DynamicStairs : MonoBehaviour
             GameObject stepObject = pair.Key;
             Material material = pair.Value;
             
-            if (material && material.HasProperty(WorldPosition))
+            if (material && material.HasProperty(WorldPosition) && _stepsPositions.TryGetValue(stepObject, out Vector3 originalLocalPosition))
             {
-                // Get the step's world position
-                Vector3 stepWorldPos = stepObject.transform.position;
+                // Transform the original local position to world space
+                Vector3 originalWorldPos = transform.TransformPoint(originalLocalPosition);
                 
-                // Calculate horizontal distance (ignoring Y)
-                Vector3 stepPosXZ = new Vector3(stepWorldPos.x, 0, stepWorldPos.z);
-                float distance = Vector3.Distance(targetPosXZ, stepPosXZ);
+                // Calculate horizontal distance using the original position (ignoring Y)
+                Vector3 origPosXZ = new Vector3(originalWorldPos.x, 0, originalWorldPos.z);
+                float distance = Vector3.Distance(targetPosXZ, origPosXZ);
+                
+                // Get the step's current world position (for shader property)
+                Vector3 stepWorldPos = stepObject.transform.position;
                 
                 // Set the bottom position value based on distance
                 Vector3 worldBottomPosition;
@@ -266,21 +273,45 @@ public class DynamicStairs : MonoBehaviour
         // Calculate target Y position based on distance
         float targetYPosition;
         
-        if (distance <= minDistanceThreshold)
+        if (flipMovement)
         {
-            // At the original height when close enough
-            targetYPosition = originalPosition.y;
-        }
-        else if (distance >= maxDistanceThreshold)
-        {
-            // At bottom position when far enough
-            targetYPosition = _stepsBottomPosition.y;
+            // FLIPPED LOGIC: When flip is true, closer = bottom, farther = original
+            if (distance >= maxDistanceThreshold)
+            {
+                // At the original height when far enough
+                targetYPosition = originalPosition.y;
+            }
+            else if (distance <= minDistanceThreshold)
+            {
+                // At bottom position when close enough
+                targetYPosition = _stepsBottomPosition.y;
+            }
+            else
+            {
+                // Interpolate between bottom and original height based on distance
+                float t = (distance - minDistanceThreshold) / (maxDistanceThreshold - minDistanceThreshold);
+                targetYPosition = Mathf.Lerp(_stepsBottomPosition.y, originalPosition.y, t);
+            }
         }
         else
         {
-            // Interpolate between original and bottom height based on distance
-            float t = (distance - minDistanceThreshold) / (maxDistanceThreshold - minDistanceThreshold);
-            targetYPosition = Mathf.Lerp(originalPosition.y, _stepsBottomPosition.y, t);
+            // ORIGINAL LOGIC: When flip is false, closer = original, farther = bottom
+            if (distance <= minDistanceThreshold)
+            {
+                // At the original height when close enough
+                targetYPosition = originalPosition.y;
+            }
+            else if (distance >= maxDistanceThreshold)
+            {
+                // At bottom position when far enough
+                targetYPosition = _stepsBottomPosition.y;
+            }
+            else
+            {
+                // Interpolate between original and bottom height based on distance
+                float t = (distance - minDistanceThreshold) / (maxDistanceThreshold - minDistanceThreshold);
+                targetYPosition = Mathf.Lerp(originalPosition.y, _stepsBottomPosition.y, t);
+            }
         }
         
         // Get the current local position
@@ -292,7 +323,7 @@ public class DynamicStairs : MonoBehaviour
         // Apply the new height while keeping X and Z unchanged
         step.transform.localPosition = new Vector3(currentLocalPos.x, newY, currentLocalPos.z);
     }
-    
+        
 
     private void StoreStepPositions()
     {
@@ -409,6 +440,8 @@ public class DynamicStairs : MonoBehaviour
                 step.transform.localPosition = originalPosition;
             }
         }
+
+        UpdateConnectorPositions();
     }
     
     [Button]
@@ -437,6 +470,8 @@ public class DynamicStairs : MonoBehaviour
             // Set the Y position to the bottom position
             step.transform.localPosition = new Vector3(currentLocalPos.x, _stepsBottomPosition.y, currentLocalPos.z);
         }
+
+        UpdateConnectorPositions();
     }
     
     
@@ -588,7 +623,7 @@ public class DynamicStairs : MonoBehaviour
                     transform =
                     {
                         parent = transform,
-                        localPosition = currentPosition,
+                        localPosition = currentPosition + stepPositonOffset,
                         localRotation = Quaternion.Euler(0, 90, 0),
                         localScale = stepSize
                     }
@@ -628,8 +663,8 @@ public class DynamicStairs : MonoBehaviour
             // Add to visual objects list
             _visualObjects.Add(visualObject);
             
-            // Position the step (visual or regular)
-            visualObject.transform.localPosition = currentPosition;
+            // Position the step (visual or regular) with the added step position offset
+            visualObject.transform.localPosition = currentPosition + stepPositonOffset;
             
             // Rotate the step 90 degrees around the Y-axis
             visualObject.transform.localRotation = Quaternion.Euler(0, 90, 0);
@@ -637,11 +672,11 @@ public class DynamicStairs : MonoBehaviour
             // Scale the step to match the desired size
             visualObject.transform.localScale = stepSize;
             
-            // Store the original position for this step
-            _stepsPositions[visualObject] = currentPosition;
+            // Store the original position for this step (including offset)
+            _stepsPositions[visualObject] = currentPosition + stepPositonOffset;
             
             // Move position for the next step (up and forward)
-            currentPosition.y += stepSize.y; // Vertical rise
+            currentPosition.y += stepSize.y * (1 - verticalOverlap); // Vertical rise with overlap
             currentPosition.z += horizontalIncrement; // Horizontal run
         }
         
@@ -792,12 +827,15 @@ public class DynamicStairs : MonoBehaviour
             Gizmos.matrix = Matrix4x4.identity;
         }
         
-        // Draw steps gizmos (unchanged)
+        // Draw steps gizmos (with step position offset applied)
         Gizmos.color = Color.yellow;
         for (int i = 0; i < numberOfSteps; i++)
         {
+            // Apply the step position offset to the gizmo position
+            Vector3 stepPosition = currentLocalPosition + stepPositonOffset;
+            
             // Convert local position to world position for the gizmo
-            Vector3 worldPosition = transform.TransformPoint(currentLocalPosition);
+            Vector3 worldPosition = transform.TransformPoint(stepPosition);
             
             // Get the object's rotation to apply to the gizmo
             Quaternion worldRotation = transform.rotation * Quaternion.Euler(0, 90, 0);
@@ -814,26 +852,21 @@ public class DynamicStairs : MonoBehaviour
             Gizmos.matrix = Matrix4x4.identity;
             
             // Move position for the next step (in local space)
-            currentLocalPosition.y += stepSize.y;
-            currentLocalPosition.z += horizontalIncrement;
+            currentLocalPosition.y += stepSize.y * (1 - verticalOverlap); // Vertical rise with overlap
+            currentLocalPosition.z += horizontalIncrement; // Horizontal run
         }
         
-        // Draw distance thresholds if a target is available
-        Transform currentTarget = CurrentTarget();
-        if (currentTarget)
-        {
-            // Draw check distance threshold in blue
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(transform.position + checkPositionOffset, checkDistanceThreshold);
+        // Draw check distance threshold in blue
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position + checkPositionOffset, checkDistanceThreshold);
             
-            // Draw min distance threshold in green
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, minDistanceThreshold);
+        // Draw min distance threshold in green
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, minDistanceThreshold);
             
-            // Draw max distance threshold in red
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, maxDistanceThreshold);
-        }
+        // Draw max distance threshold in red
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, maxDistanceThreshold);
 
     }
 
