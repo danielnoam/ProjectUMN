@@ -2,6 +2,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using VInspector;
 
 
@@ -148,6 +149,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     [SerializeField] private SOAudioEvent sfxDeath;
     [SerializeField] private SOAudioEvent sfxReceiveCommand;
     [SerializeField] private SOAudioEvent sfxImpact;
+    [SerializeField] private SOAudioEvent sfxHum;
+    [SerializeField] private AudioSource effectAudioSource;
+    [SerializeField] private AudioSource humAudioSource;
+    [SerializeField] private Rigidbody rigidBody;
     [EndFoldout]
     
     [Foldout("Events")]
@@ -157,8 +162,6 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
     public UnityEvent onRobotTurnedOff = new UnityEvent();
     [EndFoldout]
     
-    private AudioSource _audioSource;
-    private Rigidbody _rigidBody;
     private PlayerStateMachine _player;
     private Transform _playerFollowPosition;
     private Transform _playerAimingFollowPosition;
@@ -187,10 +190,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
    private void Awake()
    {
-       _rigidBody = GetComponent<Rigidbody>();
-       _audioSource = GetComponent<AudioSource>();
+       if (IsOn()) sfxHum?.Play(humAudioSource);
        currentBattery = fullBattery;
-       _previousState = currentState;
    }
 
    private void Start()
@@ -272,10 +273,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        bool allowSfx = CurrentState != RobotState.Dead && 
                        CurrentState != RobotState.Off &&
                        CurrentState != RobotState.Sitting &&
-                       (_rigidBody.linearVelocity.x > 4f || _rigidBody.linearVelocity.y > 4f || _rigidBody.linearVelocity.z > 4f);
+                       (rigidBody.linearVelocity.x > 4f || rigidBody.linearVelocity.y > 4f || rigidBody.linearVelocity.z > 4f);
        if (allowSfx)
        {
-           sfxImpact?.Play(_audioSource);
+           sfxImpact?.Play(effectAudioSource);
        }
 
 
@@ -370,9 +371,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    [Button]
    public void TurnOff()
    {
-       sfxTurnOff?.Play(_audioSource);
+       sfxTurnOff?.Play(effectAudioSource);
+       sfxHum?.Stop(humAudioSource);
        currentState = RobotState.Off;
-       _rigidBody.useGravity = true;
+       rigidBody.useGravity = true;
        onRobotTurnedOff?.Invoke();
    }
 
@@ -382,9 +384,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (currentBattery <= 0) return;
        
        currentState = RobotState.Idle;
-       sfxTurnOn?.Play(_audioSource);
-       _rigidBody.useGravity = false;
-       _rigidBody.isKinematic = false;
+       sfxTurnOn?.Play(effectAudioSource);
+       sfxHum?.Play(humAudioSource);
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
        onRobotTurnedOn?.Invoke();
    }
 
@@ -394,9 +397,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        if (currentState == RobotState.Dead) return;
          
        currentState = RobotState.Dead;
-       sfxDeath?.Play(_audioSource);
-       _rigidBody.useGravity = false;
-       _rigidBody.isKinematic = true;
+       sfxDeath?.Play(effectAudioSource);
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = true;
        onRobotDeath?.Invoke();
    }
 
@@ -419,12 +422,12 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend()) return;
 
-       sfxReceiveCommand?.Play(_audioSource);
+       sfxReceiveCommand?.Play(effectAudioSource);
        CurrentInteractable = interactable;
        _target = interactable.GetInteractPosition(this);
        currentState = RobotState.GoingToTarget;
-       _rigidBody.isKinematic = false;
-       _rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
+       rigidBody.useGravity = false;
    }
    
    
@@ -433,9 +436,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!_player || !IsOn() || currentState == RobotState.FollowingPlayer) return;
        
-       sfxReceiveCommand?.Play(_audioSource);
-       _rigidBody.isKinematic = false;
-       _rigidBody.useGravity = false;
+       sfxReceiveCommand?.Play(effectAudioSource);
+       rigidBody.isKinematic = false;
+       rigidBody.useGravity = false;
        currentState = RobotState.FollowingPlayer;
        
        _stuckTimer = 0f;
@@ -447,11 +450,11 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend() || currentState == RobotState.Idle) return;
        
-       sfxReceiveCommand?.Play(_audioSource);
+       sfxReceiveCommand?.Play(effectAudioSource);
        _target = target;
        currentState = RobotState.Idle;
-       _rigidBody.useGravity = false;
-       _rigidBody.isKinematic = false;
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
    }
    
    [Button]
@@ -459,11 +462,11 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    {
        if (!CanCommend() || currentState == RobotState.Sitting) return;
 
-       sfxReceiveCommand?.Play(_audioSource);
+       sfxReceiveCommand?.Play(effectAudioSource);
        currentState = RobotState.Sitting;
        _sitCommandTime = Time.time; 
-       _rigidBody.useGravity = false;
-       _rigidBody.isKinematic = false;
+       rigidBody.useGravity = false;
+       rigidBody.isKinematic = false;
 
        // Find the ground position
        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, Mathf.Infinity, environmentLayer))
@@ -488,7 +491,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    public void OnInteractionStart(Interactable interactable)
    {
        currentState = RobotState.Interacting;
-       _rigidBody.linearVelocity = Vector3.zero;
+       rigidBody.linearVelocity = Vector3.zero;
    }
 
    public void OnInteractionEnd(Interactable interactable)
@@ -532,13 +535,13 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
        {
            // We've reached the sitting position
            transform.position = new Vector3(transform.position.x, _targetSitHeight, transform.position.z);
-           _rigidBody.useGravity = false;
-           _rigidBody.isKinematic = true; 
+           rigidBody.useGravity = false;
+           rigidBody.isKinematic = true; 
            return;
        }
 
        // Calculate and apply downward velocity
-       Vector3 currentVelocity = _rigidBody.linearVelocity;
+       Vector3 currentVelocity = rigidBody.linearVelocity;
        float desiredVerticalVelocity = -sitDownSpeed;
 
        Vector3 newVelocity = new Vector3(
@@ -547,7 +550,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            currentVelocity.z
        );
 
-       _rigidBody.linearVelocity = newVelocity;
+       rigidBody.linearVelocity = newVelocity;
    }
    
    
@@ -584,7 +587,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         float finalTargetHeight = Mathf.Clamp(_lastTargetHeight + hoverOffset, minHeight, maxHeight);
 
         // Get current vertical velocity
-        float currentVerticalVelocity = _rigidBody.linearVelocity.y;
+        float currentVerticalVelocity = rigidBody.linearVelocity.y;
 
         // Calculate desired vertical velocity
         float heightError = finalTargetHeight - transform.position.y;
@@ -605,7 +608,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         float velocityChange = totalForce * Time.fixedDeltaTime;
 
         // Create new velocity vector, preserving X and Z components
-        Vector3 currentVelocity = _rigidBody.linearVelocity;
+        Vector3 currentVelocity = rigidBody.linearVelocity;
         Vector3 newVelocity = new Vector3(
             currentVelocity.x,
             currentVerticalVelocity + velocityChange,
@@ -613,7 +616,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         );
 
         // Apply final velocity
-        _rigidBody.linearVelocity = newVelocity;
+        rigidBody.linearVelocity = newVelocity;
     }
 
     // New method to get the target height based on the robot's current state
@@ -744,13 +747,13 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    
    private void ApplyFriction()
    {
-       if (_rigidBody.isKinematic) return;
+       if (rigidBody.isKinematic) return;
        
        // Only apply friction when there's no target
        if (!_target)
        {
            // Get current velocity
-           Vector3 currentVelocity = _rigidBody.linearVelocity;
+           Vector3 currentVelocity = rigidBody.linearVelocity;
         
            // Calculate friction force for X and Z components
            float frictionX = -currentVelocity.x * friction * Time.fixedDeltaTime;
@@ -764,7 +767,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            );
         
            // Apply the new velocity
-           _rigidBody.linearVelocity = newVelocity;
+           rigidBody.linearVelocity = newVelocity;
        }
    }
    
@@ -784,9 +787,9 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
 
         // Get current horizontal velocity
         Vector3 currentHorizontalVelocity = new Vector3(
-            _rigidBody.linearVelocity.x,
+            rigidBody.linearVelocity.x,
             0f,
-            _rigidBody.linearVelocity.z
+            rigidBody.linearVelocity.z
         );
 
         // Calculate desired velocity
@@ -853,7 +856,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
             // Increase deceleration even more when aiming
             float decelMultiplier = isPlayerAiming ? 4f : 3f;
             dampingForce = -currentHorizontalVelocity * (effectiveSmoothness * decelMultiplier);
-            _rigidBody.AddForce(dampingForce, ForceMode.Acceleration);
+            rigidBody.AddForce(dampingForce, ForceMode.Acceleration);
         }
 
         // Calculate acceleration needed to reach desired velocity
@@ -868,7 +871,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         // Create new velocity vector, preserving Y component (handled by hover)
         Vector3 newVelocity = new Vector3(
             currentHorizontalVelocity.x + velocityChange.x,
-            _rigidBody.linearVelocity.y,
+            rigidBody.linearVelocity.y,
             currentHorizontalVelocity.z + velocityChange.z
         );
 
@@ -892,7 +895,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         }
 
         // Apply final velocity
-        _rigidBody.linearVelocity = newVelocity;
+        rigidBody.linearVelocity = newVelocity;
     }
    
    
@@ -922,12 +925,12 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            
            Vector3 newVelocity = new Vector3(
                moveDirection.x * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime),
-               _rigidBody.linearVelocity.y,
+               rigidBody.linearVelocity.y,
                moveDirection.z * (horizontalMoveSpeed * 13 * Time.fixedDeltaTime)
            );
            
            // Apply the movement
-           _rigidBody.linearVelocity = newVelocity;
+           rigidBody.linearVelocity = newVelocity;
        }
    }
    
@@ -947,16 +950,16 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
            
            Vector3 newVelocity = new Vector3(
                moveDirection.x * (horizontalMoveSpeed * Time.fixedDeltaTime),
-               _rigidBody.linearVelocity.y,
+               rigidBody.linearVelocity.y,
                moveDirection.z * (horizontalMoveSpeed * Time.fixedDeltaTime)
            );
            
            // Apply the movement
-           _rigidBody.linearVelocity = newVelocity;
+           rigidBody.linearVelocity = newVelocity;
        }
        else
        {
-            _rigidBody.linearVelocity = new Vector3(0, _rigidBody.linearVelocity.y, 0);
+            rigidBody.linearVelocity = new Vector3(0, rigidBody.linearVelocity.y, 0);
        }
    }
 
@@ -1002,7 +1005,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         }
 
         // Get current angular velocity
-        Vector3 currentAngularVelocity = _rigidBody.angularVelocity;
+        Vector3 currentAngularVelocity = rigidBody.angularVelocity;
 
         // Calculate the angle difference
         float angleDifference = Quaternion.Angle(transform.rotation, targetRotation);
@@ -1047,10 +1050,10 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         }
 
         // Clamp the maximum angular velocity
-        _rigidBody.maxAngularVelocity = effectiveMaxAngularVelocity;
+        rigidBody.maxAngularVelocity = effectiveMaxAngularVelocity;
         
         // Apply the final torque
-        _rigidBody.AddTorque(stabilizationTorque, ForceMode.Acceleration);
+        rigidBody.AddTorque(stabilizationTorque, ForceMode.Acceleration);
     }
     
    #endregion Actions -------------------------------------------------------------------
@@ -1061,8 +1064,8 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
    private void Teleport(Vector3 position, Quaternion rotation)
    {
        Vector3 offset = new Vector3(1,1,1);
-       _rigidBody.rotation = rotation;
-       _rigidBody.position = position + offset;
+       rigidBody.rotation = rotation;
+       rigidBody.position = position + offset;
    }
    
    private void CheckBattery()
@@ -1090,7 +1093,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
         float distanceToPlayer = Vector3.Distance(transform.position, _player.transform.position);
         
         // Get current movement speed
-        float currentSpeed = _rigidBody.linearVelocity.magnitude;
+        float currentSpeed = rigidBody.linearVelocity.magnitude;
         
         // Check if we're too far away and moving too slowly
         bool isTooFar = distanceToPlayer > maxFollowTeleportDistance;
@@ -1123,7 +1126,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
                 _isCheckingStuck = false;
                 
                 // Optional: Play teleport sound effect
-                sfxReceiveCommand?.Play(_audioSource);
+                sfxReceiveCommand?.Play(effectAudioSource);
             }
         }
         else
@@ -1170,7 +1173,7 @@ public class RobotCompanion : MonoBehaviour, Iinteractor
                 
                 _debugText.text = $"State: {CurrentState}\n" +
                                   $"Battery: {currentBattery}\n" +
-                                  $"Velocity: {_rigidBody.linearVelocity}\n" +
+                                  $"Velocity: {rigidBody.linearVelocity}\n" +
                                   $"Target: {_target}\n" +
                                   $"Stuck Timer: {_stuckTimer:F2} / {teleportAfterStuckTime}\n" +
                                   $"Distance to Player: {distanceToPlayer}\n"

@@ -4,6 +4,7 @@ using UnityEngine;
 using VInspector;
 using PrimeTween;
 using UnityEngine.Events;
+using Random = UnityEngine.Random;
 
 public class TestClosingWalls : MonoBehaviour
 {
@@ -20,7 +21,7 @@ public class TestClosingWalls : MonoBehaviour
     [SerializeField] private float moveToSemiClosedStartDelay = 0.5f;
     [SerializeField] private float moveToSemiClosedEndDelay = 1f;
     [SerializeField] private float moveToSemiClosedTime = 5f;
-    [SerializeField] private float wallStartDelayIncrement = 0.2f; // Delay increment between each wall
+    [SerializeField] private float wallStartDelayIncrement = 0.2f; 
     [SerializeField] private Ease moveToSemiClosedEase = Ease.Linear;
     [SerializeField] private UnityEvent moveToSemiClosedEvent = new UnityEvent();
     
@@ -56,8 +57,15 @@ public class TestClosingWalls : MonoBehaviour
     [Foldout("Right Walls")]
     [SerializeField] private List<Transform> rightWalls = new List<Transform>();
     [SerializeField] private float semiClosedPosR; 
-    [SerializeField] private float closedPosR; 
+    [SerializeField] private float closedPosR;
     [EndFoldout]
+    
+    [Header("Sfx")]
+    [SerializeField] private SerializedDictionary<Transform, AudioSource> leftWallsAudioSources = new SerializedDictionary<Transform, AudioSource>();
+    [SerializeField] private SerializedDictionary<Transform, AudioSource> rightWallsAudioSources = new SerializedDictionary<Transform, AudioSource>();
+    [SerializeField] private SOAudioEvent wallMovingSfx;
+    [SerializeField] private SOAudioEvent wallClosedSfx;
+    [SerializeField] private SOAudioEvent wallOpenedSfx;
     
     [Header("Debug")]
     [SerializeField, ReadOnly] private bool isOpen = true;
@@ -106,7 +114,11 @@ public class TestClosingWalls : MonoBehaviour
         _animationSequence.Stop();
     }
 
-    [Button]
+
+
+    #region State control --------------------------------------------------------------------------------
+
+        [Button]
     public void Open()
     {
         SetState(false, false);
@@ -190,8 +202,14 @@ public class TestClosingWalls : MonoBehaviour
             }
         }
     }
+
+    #endregion State control --------------------------------------------------------------------------------
     
-    public void DisableMechanism()
+
+
+    #region Disable Mechanism -------------------------------------------------------------------------------
+
+        public void DisableMechanism()
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
             
@@ -206,7 +224,10 @@ public class TestClosingWalls : MonoBehaviour
         _animationSequence = Sequence.Create();
 
         _animationSequence = _animationSequence
-            .ChainCallback(() => { Debug.Log("Disabling"); });
+            .ChainCallback(() =>
+            {
+                Debug.Log("Disabling");
+            });
         
 
         // Animate all left walls
@@ -214,13 +235,38 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (leftWalls[i] != null && i < _openedPosL.Count)
             {
+                Transform wall = leftWalls[i];
+                
                 if (i == 0)
                 {
-                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                    }
+                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(wall, _openedPosL[i], tweenSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallOpenedSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                            }
+                        }));
                 }
                 else
                 {
-                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                    }
+                    
+                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, _openedPosL[i], tweenSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallOpenedSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                            }
+                        }));
                 }
             }
         }
@@ -230,17 +276,39 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (rightWalls[i] != null && i < _openedPosR.Count)
             {
-                _animationSequence = _animationSequence.Group(Tween.LocalPosition(rightWalls[i], _openedPosR[i], tweenSettings));
+                Transform wall = rightWalls[i];
+                
+                if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                {
+                    wallMovingSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                }
+                _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, _openedPosR[i], tweenSettings)
+                    .OnComplete(() => 
+                    {
+                        if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                        {
+                            wallOpenedSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                        }
+                    }));
             }
         }
 
         _animationSequence = _animationSequence
-            .ChainCallback(() => { mechanismDisabledEvent?.Invoke(); })
-            .ChainCallback(() => isOpen = true)
-            .ChainCallback(() => isSemiClosed = false)
-            .ChainCallback(() => isClosed = false);
+            .ChainCallback(() =>
+            {
+                isOpen = true;
+                isClosed = false;
+                isSemiClosed = false;
+                mechanismDisabledEvent?.Invoke();
+            });
     }
+
+    #endregion Disable Mechanism -------------------------------------------------------------------------------
+
     
+    
+    #region Open animation -------------------------------------------------------------------------------
+
     private void OpenWalls()
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
@@ -256,8 +324,11 @@ public class TestClosingWalls : MonoBehaviour
         _animationSequence = Sequence.Create();
 
         _animationSequence = _animationSequence
-            .ChainCallback(() => { Debug.Log("Opening"); })
-            .ChainCallback(() => { openingStartEvent?.Invoke(); });
+            .ChainCallback(() => 
+            {
+                Debug.Log("Opening");
+                openingStartEvent?.Invoke();
+            });
         
 
         // Animate all left walls
@@ -265,13 +336,30 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (leftWalls[i] != null && i < _openedPosL.Count)
             {
+                Transform wall = leftWalls[i];
+                
                 if (i == 0)
                 {
-                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+
+                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(wall, _openedPosL[i], tweenSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallOpenedSfx?.Play(audioSource);
+                            }
+                        }));
                 }
                 else
                 {
-                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(leftWalls[i], _openedPosL[i], tweenSettings));
+                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, _openedPosL[i], tweenSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallOpenedSfx?.Play(audioSource);
+                            }
+                        }));
                 }
             }
         }
@@ -281,17 +369,35 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (rightWalls[i] != null && i < _openedPosR.Count)
             {
-                _animationSequence = _animationSequence.Group(Tween.LocalPosition(rightWalls[i], _openedPosR[i], tweenSettings));
+                Transform wall = rightWalls[i];
+                
+                _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, _openedPosR[i], tweenSettings)
+                    .OnComplete(() => 
+                    {
+                        if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                        {
+                            wallOpenedSfx?.Play(audioSource);
+                        }
+                    }));
             }
         }
 
         _animationSequence = _animationSequence
-            .ChainCallback(() => { openingStartEvent?.Invoke(); })
-            .ChainCallback(() => isOpen = true)
-            .ChainCallback(() => isSemiClosed = false)
-            .ChainCallback(() => isClosed = false);
+            .ChainCallback(() =>
+            {
+                isOpen = true;
+                isSemiClosed = false;
+                isClosed = false;
+                openingEndEvent?.Invoke();
+            });
     }
+
+    #endregion Open animation -------------------------------------------------------------------------------
     
+    
+    
+    #region Close animation -----------------------------------------------------------------------
+
     private void CloseWalls()
     {
         if (leftWalls.Count == 0 && rightWalls.Count == 0) return;
@@ -308,22 +414,37 @@ public class TestClosingWalls : MonoBehaviour
 
         _animationSequence = _animationSequence
             // Part 1: Initial shake
-            .ChainCallback(() => { isOpen = false; })
-            .ChainCallback(() => { Debug.Log("Initial Shake"); })
-            .ChainCallback(() => { initialShakeEvent?.Invoke(); });
+            .ChainCallback(() =>
+            {
+                Debug.Log("Initial Shake");
+                isOpen = false;
+                initialShakeEvent?.Invoke();
+            });
         
         // Shake all left walls
         for (int i = 0; i < leftWalls.Count; i++)
         {
             if (leftWalls[i] != null && i < _openedPosL.Count)
             {
+                Transform wall = leftWalls[i];
+                
                 if (i == 0)
                 {
-                    _animationSequence = _animationSequence.Chain(Tween.ShakeLocalPosition(leftWalls[i], shakeSettings));
+                    
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource);
+                    }
+                    _animationSequence = _animationSequence.Chain(Tween.ShakeLocalPosition(wall, shakeSettings));
                 }
                 else
                 {
-                    _animationSequence = _animationSequence.Group(Tween.ShakeLocalPosition(leftWalls[i], shakeSettings));
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource);
+                    }
+                    
+                    _animationSequence = _animationSequence.Group(Tween.ShakeLocalPosition(wall, shakeSettings));
                 }
             }
         }
@@ -333,7 +454,13 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (rightWalls[i] != null && i < _openedPosR.Count)
             {
-                _animationSequence = _animationSequence.Group(Tween.ShakeLocalPosition(rightWalls[i], shakeSettings));
+                Transform wall = rightWalls[i];
+                
+                if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                {
+                    wallMovingSfx?.Play(audioSource);
+                }
+                _animationSequence = _animationSequence.Group(Tween.ShakeLocalPosition(wall, shakeSettings));
             }
         }
 
@@ -347,6 +474,12 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (leftWalls[i] != null && i < _openedPosL.Count)
             {
+                Transform wall = leftWalls[i];
+                
+                if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                {
+                    wallMovingSfx?.Play(audioSource);
+                }
                 // Calculate staggered start delay for each wall
                 float wallStartDelay = moveToSemiClosedStartDelay + (i * wallStartDelayIncrement);
                 var semiClosedSettings = new TweenSettings(moveToSemiClosedTime, moveToSemiClosedEase, startDelay: wallStartDelay, endDelay: moveToSemiClosedEndDelay);
@@ -355,11 +488,11 @@ public class TestClosingWalls : MonoBehaviour
                 
                 if (i == 0)
                 {
-                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(leftWalls[i], startValue: _openedPosL[i], endValue: semiClosedPos, semiClosedSettings));
+                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(wall, startValue: _openedPosL[i], endValue: semiClosedPos, semiClosedSettings));
                 }
                 else
                 {
-                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(leftWalls[i], startValue: _openedPosL[i], endValue: semiClosedPos, semiClosedSettings));
+                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, startValue: _openedPosL[i], endValue: semiClosedPos, semiClosedSettings));
                 }
             }
         }
@@ -369,13 +502,20 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (rightWalls[i] != null && i < _openedPosR.Count)
             {
+                Transform wall = rightWalls[i];
+                
+                if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                {
+                    wallMovingSfx?.Play(audioSource);
+                }
                 // Calculate staggered start delay for each wall
                 float wallStartDelay = moveToSemiClosedStartDelay + (i * wallStartDelayIncrement);
                 var semiClosedSettings = new TweenSettings(moveToSemiClosedTime, moveToSemiClosedEase, startDelay: wallStartDelay, endDelay: moveToSemiClosedEndDelay);
                 
                 Vector3 semiClosedPos = new Vector3(_openedPosR[i].x + semiClosedPosR, _openedPosR[i].y, _openedPosR[i].z);
                 
-                _animationSequence = _animationSequence.Group(Tween.LocalPosition(rightWalls[i], startValue: _openedPosR[i], endValue: semiClosedPos, semiClosedSettings));
+                _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, startValue: _openedPosR[i], endValue: semiClosedPos, semiClosedSettings));
+                
             }
         }
 
@@ -393,16 +533,41 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (leftWalls[i] != null && i < _openedPosL.Count)
             {
+                Transform wall = leftWalls[i];
                 Vector3 semiClosedPos = new Vector3(_openedPosL[i].x + semiClosedPosL, _openedPosL[i].y, _openedPosL[i].z);
                 Vector3 closedPos = new Vector3(_openedPosL[i].x + closedPosL, _openedPosL[i].y, _openedPosL[i].z);
                 
                 if (i == 0)
                 {
-                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(leftWalls[i], startValue: semiClosedPos, endValue: closedPos, closedSettings));
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource);
+                    }
+                    
+                    _animationSequence = _animationSequence.Chain(Tween.LocalPosition(wall, startValue: semiClosedPos, endValue: closedPos, closedSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallClosedSfx?.Play(audioSource);
+                            }
+                        }));
                 }
                 else
                 {
-                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(leftWalls[i], startValue: semiClosedPos, endValue: closedPos, closedSettings));
+                    if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                    {
+                        wallMovingSfx?.Play(audioSource);
+                    }
+                    
+                    _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, startValue: semiClosedPos, endValue: closedPos, closedSettings)
+                        .OnComplete(() => 
+                        {
+                            if (leftWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                            {
+                                wallClosedSfx?.Play(audioSource);
+                            }
+                        }));
                 }
             }
         }
@@ -412,19 +577,43 @@ public class TestClosingWalls : MonoBehaviour
         {
             if (rightWalls[i] != null && i < _openedPosR.Count)
             {
+                Transform wall = rightWalls[i];
                 Vector3 semiClosedPos = new Vector3(_openedPosR[i].x + semiClosedPosR, _openedPosR[i].y, _openedPosR[i].z);
                 Vector3 closedPos = new Vector3(_openedPosR[i].x + closedPosR, _openedPosR[i].y, _openedPosR[i].z);
                 
-                _animationSequence = _animationSequence.Group(Tween.LocalPosition(rightWalls[i], startValue: semiClosedPos, endValue: closedPos, closedSettings));
+                if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                {
+                    wallMovingSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                }
+                
+                _animationSequence = _animationSequence.Group(Tween.LocalPosition(wall, startValue: semiClosedPos, endValue: closedPos, closedSettings)
+                    .OnComplete(() => 
+                    {
+                        if (rightWallsAudioSources.TryGetValue(wall, out AudioSource audioSource))
+                        {
+                            wallClosedSfx?.Play(audioSource, Random.Range(0f, 0.3f));
+                        }
+                    }));
             }
         }
         
         _animationSequence = _animationSequence
-            .ChainCallback(() => isClosed = true)
-            .ChainCallback(() => { moveToClosedFinishedEvent?.Invoke(); });
+            .ChainCallback(() =>
+            {
+                isClosed = true;
+                moveToClosedFinishedEvent?.Invoke();
+            });
     }
 
+    #endregion Close animation -----------------------------------------------------------------------
+
+    
+    
 #if UNITY_EDITOR
+    
+    #region Editor -------------------------------------------------------------------------------------
+
+
     private void OnDrawGizmosSelected()
     {
         // Check if we have any walls to visualize
@@ -541,5 +730,9 @@ public class TestClosingWalls : MonoBehaviour
             }
         }
     }
+
+
+    #endregion Editor -------------------------------------------------------------------------------------
 #endif
+
 }

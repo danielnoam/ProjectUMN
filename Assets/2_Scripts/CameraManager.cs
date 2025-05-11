@@ -29,8 +29,10 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private float maxAmplitude = 0.2f;
     [SerializeField] private float maxFrequency = 4f;
     
+
     [Header("Intro Sequence")]
-    [SerializeField] private AnimationCurve introSequenceCameraCurve = AnimationCurve.EaseInOut(0,0,1,1);
+    [SerializeField] private AnimationCurve introSequenceSpeedCurve = AnimationCurve.EaseInOut(0,0,1,1);
+    [SerializeField] private AnimationCurve introSequenceNoiseCurve = AnimationCurve.EaseInOut(0,0,1,1);
     
     [Header("References")]
     public CinemachineCamera freeLookCamera;
@@ -175,13 +177,14 @@ public class CameraManager : MonoBehaviour
         if (TestManager.Instance && TestManager.Instance.IsIntroSequenceActive)
         {
             // Set the camera position along the spline
-            float easedPosition = introSequenceCameraCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
+            float easedPosition = introSequenceSpeedCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
+            float easedNoise = introSequenceNoiseCurve.Evaluate(1f - TestManager.Instance.IntroSequenceState);
             _introCameraDolly.CameraPosition = easedPosition;
             
             // lower the noise amplitude and frequency until the end of the intro sequence
             // then set it to 0
-            _introCameraNoise.AmplitudeGain = Mathf.MoveTowards(_introCameraStartingNoiseAmplitude, 0, _introCameraStartingNoiseAmplitude * easedPosition /3);
-            _introCameraNoise.FrequencyGain = Mathf.MoveTowards(_introCameraStartingNoiseFrequency, 0, _introCameraStartingNoiseFrequency * easedPosition/3);
+            _introCameraNoise.AmplitudeGain = Mathf.MoveTowards(_introCameraStartingNoiseAmplitude, 0, _introCameraStartingNoiseAmplitude * easedNoise);
+            _introCameraNoise.FrequencyGain = Mathf.MoveTowards(_introCameraStartingNoiseFrequency, 0, _introCameraStartingNoiseFrequency * easedNoise);
         }
         else
         {

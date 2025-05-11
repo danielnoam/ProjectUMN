@@ -10,29 +10,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2a624d22ac92d244b8b610c87a78af8, type: 3}
-  m_Name: ThemeExtra2
+  m_Name: RobotOnHum
   m_EditorClassIdentifier: 
-  aoName: 9C (Caillasses)
-  aoAuthor: 'Guillaume Ferran '
   clips:
-  - {fileID: 8300000, guid: 68d65fea74daa824a806f4f25f61eaad, type: 3}
-  mixerGroup: {fileID: -2275059836342526547, guid: 01c289713e2dcb84394f3377bb29e428, type: 2}
+  - {fileID: 8300000, guid: 4558ba739d23b5d46ac8ac68b75a8c28, type: 3}
+  mixerGroup: {fileID: 803142984188274624, guid: 01c289713e2dcb84394f3377bb29e428, type: 2}
   volume:
-    minValue: 0.3
-    maxValue: 0.3
-  pitch:
     minValue: 1
     maxValue: 1
+  pitch:
+    minValue: 0.8
+    maxValue: 0.8
   stereoPan: 0
-  spatialBlend: 0
+  spatialBlend: 1
   reverbZoneMix: 1
   bypassEffects: 0
   bypassListenerEffects: 0
   bypassReverbZones: 0
   loop: 1
-  set3DSettings: 0
+  debug: 0
+  set3DSettings: 1
   dopplerLevel: 1
-  spread: 0
+  spread: 5
   rolloffMode: 0
   minDistance: 1
-  maxDistance: 500
+  maxDistance: 2
+  aoName: Name
+  aoAuthor: Author

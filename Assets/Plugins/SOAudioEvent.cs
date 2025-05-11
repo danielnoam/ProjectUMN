@@ -48,7 +48,9 @@ public class SOAudioEvent : ScriptableObject
 
     public void Play(AudioSource source)
     {
-        if (clips.Length == 0 || !source) 
+        if (!source || !source.enabled) return;
+        
+        if (clips.Length == 0) 
         {
             #if UNITY_EDITOR
             Debug.Log("No clips found");
@@ -63,11 +65,13 @@ public class SOAudioEvent : ScriptableObject
 
     public void Play(AudioSource source, float delay)
     {
-        if (clips.Length == 0 || !source) 
+        if (!source || !source.enabled) return;
+        
+        if (clips.Length == 0) 
         {
-            #if UNITY_EDITOR
-            Debug.Log("No clips found");
-            #endif
+        #if UNITY_EDITOR
+                    Debug.Log("No clips found");
+        #endif
             return;
         }
         

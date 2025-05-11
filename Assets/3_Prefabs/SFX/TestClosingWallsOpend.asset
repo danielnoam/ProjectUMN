@@ -10,29 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2a624d22ac92d244b8b610c87a78af8, type: 3}
-  m_Name: ThemeExtra1
+  m_Name: TestClosingWallsOpend
   m_EditorClassIdentifier: 
   clips:
-  - {fileID: 8300000, guid: 8da64417269cba24596db757d0f6b3f4, type: 3}
-  mixerGroup: {fileID: -2275059836342526547, guid: 01c289713e2dcb84394f3377bb29e428, type: 2}
+  - {fileID: 8300000, guid: e216d9830f2175a48b6222bd48c25ced, type: 3}
+  - {fileID: 8300000, guid: 9fdf20aecf9bcbe45ad19d9586aacc64, type: 3}
+  - {fileID: 8300000, guid: 6bd04f4228a64dd4ebd08f9e832615b6, type: 3}
+  mixerGroup: {fileID: 803142984188274624, guid: 01c289713e2dcb84394f3377bb29e428, type: 2}
   volume:
-    minValue: 0.3
-    maxValue: 0.3
+    minValue: 0.9
+    maxValue: 1
   pitch:
-    minValue: 1
+    minValue: 0.7
     maxValue: 1
   stereoPan: 0
-  spatialBlend: 0
+  spatialBlend: 1
   reverbZoneMix: 1
   bypassEffects: 0
   bypassListenerEffects: 0
   bypassReverbZones: 0
-  loop: 1
-  set3DSettings: 0
+  loop: 0
+  debug: 0
+  set3DSettings: 1
   dopplerLevel: 1
-  spread: 0
+  spread: 5
   rolloffMode: 0
   minDistance: 1
-  maxDistance: 500
-  aoName: The Life Equation
-  aoAuthor: Sid Acharya
+  maxDistance: 4
+  aoName: Name
+  aoAuthor: Author

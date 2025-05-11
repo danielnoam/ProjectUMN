@@ -73,6 +73,7 @@ public class RobotEmissonHandler : MonoBehaviour
     {
         robot.onRobotTurnedOn.AddListener(OnTurnedOn);
         robot.onRobotTurnedOff.AddListener(OnTurnedOff);
+        robot.onRobotDeath.AddListener(OnTurnedOff);
         TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
     }
 
@@ -80,6 +81,7 @@ public class RobotEmissonHandler : MonoBehaviour
     {
         robot.onRobotTurnedOn.RemoveListener(OnTurnedOn);
         robot.onRobotTurnedOff.RemoveListener(OnTurnedOff);
+        robot.onRobotDeath.RemoveListener(OnTurnedOff);
         TestManager.Instance?.onTestLoaded.AddListener(OnTestLoaded);
     }
 
