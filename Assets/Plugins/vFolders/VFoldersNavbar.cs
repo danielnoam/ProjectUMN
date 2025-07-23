@@ -96,6 +96,16 @@ namespace VFolders
                 }
 
 
+                if (isTwoColumns)
+                {
+                    var forceCompactMode = EditorPrefsCached.GetBool("vFolders-forceCompactMode", defaultValue: false);
+
+                    menu.AddSeparator("");
+                    menu.AddItem(new GUIContent("Enable compact bookmarks"), forceCompactMode, () => EditorPrefsCached.SetBool("vFolders-forceCompactMode", !forceCompactMode));
+                }
+
+
+
                 menu.AddSeparator("");
                 menu.AddItem(new GUIContent("Select data"), false, selectData);
                 menu.AddItem(new GUIContent("Select palette"), false, selectPalette);
@@ -542,7 +552,13 @@ namespace VFolders
         bool isTwoColumns => !isOneColumn;
         bool isSearchActive;
 
-        bool isCompactMode => isOneColumn;
+        bool isCompactMode
+        {
+            get
+            {
+                return isOneColumn || EditorPrefsCached.GetBool("vFolders-forceCompactMode", defaultValue: false);
+            }
+        }
 
         Rect navbarRect;
         Rect bookmarksRect;

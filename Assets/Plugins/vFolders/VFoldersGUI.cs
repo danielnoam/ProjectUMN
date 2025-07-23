@@ -19,6 +19,12 @@ using static VFolders.VFolders;
 using static VFolders.VFoldersData;
 using static VFolders.VFoldersCache;
 
+#if UNITY_6000_2_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
+
+
 
 
 namespace VFolders
@@ -32,8 +38,6 @@ namespace VFolders
 
             var isRowHovered = fullRowRect.IsHovered();
 
-            var isListArea = rowRect.x == 14;
-
             var isFolder = AssetDatabase.IsValidFolder(guid.ToPath());
             var isAsset = !isFolder && !guid.IsNullOrEmpty();
             var isFavorite = !isFolder && !isAsset && rowRect.x != 16;
@@ -41,6 +45,8 @@ namespace VFolders
             var isFavoritesRoot = rowRect.x == 16 && !isFolder && rowRect.y == 0;
             var isAssetsRoot = rowRect.x == 16 && isFolder && guid.ToPath() == "Assets";
             var isPackagesRoot = rowRect.x == 16 && !isFavoritesRoot && !isAssetsRoot && guid.IsNullOrEmpty();
+
+            var isListArea = isTwoColumns && (rowRect.x == 14 || !isFolder);
 
             var useMinimalMode = VFoldersMenu.minimalModeEnabled && !isListArea;
             var useBackgroundColors = (VFoldersMenu.backgroundColorsEnabled || useMinimalMode) && !isListArea;
@@ -178,7 +184,7 @@ namespace VFolders
                 var makeTriangleBrighter = rowHasColor && isDarkTheme;
                 var makeNameBrighter = rowHasColor && isDarkTheme;
                 var makeIconBrighter = rowHasColor && isFolder;
-
+                var makeExtraSpaceForVCSIcons = isVersionControlEnabled;
 
 
                 var defaultBackground = isListArea ? Greyscale(isDarkTheme ? .2f : .75f)
@@ -197,7 +203,7 @@ namespace VFolders
 
                     var name = isListArea ? guid.ToPath().GetFilename() : treeItem != null ? treeItem.displayName : "Favorites";
 
-                    var nameRect = rowRect.SetWidth(name.GetLabelWidth() + 3).MoveX(16).MoveX(isListArea ? 3 : 0);
+                    var nameRect = rowRect.SetWidth(name.GetLabelWidth(isBold: isFavorite || isAssetsRoot || isPackagesRoot) + 6).MoveX(16).MoveX(isListArea ? 3 : 0);
 
                     nameRect.Draw(defaultBackground);
 
@@ -207,6 +213,9 @@ namespace VFolders
                     if (!hideDefaultIcon) return;
 
                     var iconRect = rowRect.SetWidth(16).MoveX(isListArea ? 3 : 0);
+
+                    if (makeExtraSpaceForVCSIcons)
+                        iconRect = iconRect.MoveX(8);
 
 
                     if (isListArea)
@@ -323,6 +332,9 @@ namespace VFolders
                     if (makeNameBrighter)
                         nameRect = nameRect.MoveX(-2).MoveY(-.5f);
 
+                    if (makeExtraSpaceForVCSIcons)
+                        nameRect = nameRect.MoveX(16);
+
 
 
                     var styleName = makeNameBrighter ? "WhiteLabel" : "TV Line";
@@ -354,6 +366,10 @@ namespace VFolders
 
 
                     var iconRect = rowRect.SetWidth(16).MoveX(isListArea ? 3 : 0);
+
+                    if (makeExtraSpaceForVCSIcons)
+                        iconRect = iconRect.MoveX(8);
+
 
                     var icon = isAsset ? AssetDatabase.GetCachedIcon(guid.ToPath())
                                        : makeIconBrighter ? EditorIcons.GetIcon(folderInfo.folderState.isEmpty ? "FolderEmpty On Icon" : "Folder On Icon")
@@ -390,8 +406,21 @@ namespace VFolders
 
                     iconRect = iconRect.SetWidth(iconRect.height / icon.height * icon.width);
 
+                    if (makeExtraSpaceForVCSIcons)
+                        iconRect = iconRect.MoveX(7);
+
 
                     GUI.DrawTexture(iconRect, icon);
+
+                }
+                void versionControlOverlay()
+                {
+                    if (!isFolder) return;
+                    if (!hideDefaultIcon && !rowHasColor) return;
+
+                    if (!isVersionControlEnabled) return;
+
+                    typeof(Editor).Assembly.GetType("UnityEditorInternal.VersionControl.ProjectHooks").InvokeMethod("HandleVersionControlOverlays", guid, rowRect.MoveX(3));
 
                 }
 
@@ -578,6 +607,7 @@ namespace VFolders
                 triangle();
                 defaultIcon();
                 customIcon();
+                versionControlOverlay();
                 name();
 
                 hierarchyLines();
@@ -733,7 +763,13 @@ namespace VFolders
                     if (!isFolder) return;
                     if (!folderInfo.hasColor) return;
 
-                    cellRect.SetHeight(cellRect.width).Resize(4).Draw(EditorGUIUtility.isProSkin ? Greyscale(.2f) : Greyscale(.75f));
+                    var maskRect = cellRect.SetHeight(cellRect.width).Resize(4);
+
+                    // if (isVersionControlEnabled)
+                    // maskRect = maskRect.SetHeightFromBottom(maskRect.height * 2 / 3);
+
+
+                    maskRect.Draw(EditorGUIUtility.isProSkin ? Greyscale(.2f) : Greyscale(.75f));
 
                 }
                 void icon()
@@ -742,6 +778,16 @@ namespace VFolders
                     if (!folderInfo.hasColor && !folderInfo.hasIcon) return;
 
                     DrawBigFolderIcon(cellRect, folderInfo);
+
+                }
+                void versionControlOverlay()
+                {
+                    if (!isFolder) return;
+                    if (!folderInfo.hasColor) return;
+
+                    if (!isVersionControlEnabled) return;
+
+                    typeof(Editor).Assembly.GetType("UnityEditorInternal.VersionControl.ProjectHooks").InvokeMethod("HandleVersionControlOverlays", guid, cellRect);
 
                 }
                 void twoLineName()
@@ -996,8 +1042,10 @@ namespace VFolders
 
                 }
 
+
                 hideIcon();
                 icon();
+                versionControlOverlay();
                 twoLineName();
                 hoverHighlight();
 
@@ -1162,6 +1210,10 @@ namespace VFolders
             treeView_normalSelectionList = isTwoColumns ? treeViewController?.GetFieldValue("m_CachedSelection")?.GetFieldValue<List<int>>("m_List") ?? new() : null;
 
 
+
+            // isVersionControlEnabled = typeof(Editor).Assembly.GetType("UnityEditor.AssetsTreeViewGUI").GetMemberValue<bool>("s_VCEnabled");
+
+
             // only treeView_normalSelectionList must be updated in repaint, the rest can be moved to UpdateState_Layout
             // but they are all grouped here since they are only used for drawing
 
@@ -1194,6 +1246,7 @@ namespace VFolders
         List<int> treeView_dragSelectionList = new();
         List<int> treeView_normalSelectionList = new();
 
+        bool isVersionControlEnabled;
 
 
 

@@ -19,6 +19,12 @@ using static VFolders.VFolders;
 using static VFolders.VFoldersData;
 using static VFolders.VFoldersCache;
 
+#if UNITY_6000_2_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
+
+
 
 
 namespace VFolders
